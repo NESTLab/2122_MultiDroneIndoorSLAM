@@ -2,10 +2,28 @@ import numpy as np
 import hough_sift_mapmerge as merge
 import time, socket, threading
 
+CHUNK_SIZE = 1024               # 1024 bytes
 BANDWIDTH_IN_BYTES = 25000000   # 25Mb
 LATENCY_IN_SECONDS = 0.02       # 20ms
 PORT = 9090
 IP_ADDRESS = "127.0.0.1"
+
+class Map():
+    def __init__(self, map):
+        self.map = map
+        self.num_rows = len(map)
+        self.num_col = len(map[0])
+
+    def __repr__(self):
+        return str(self.map)
+    
+    def to_bytes(self):
+        return self.map.tobytes()
+    
+    def from_bytes(self, data):
+        m = np.frombuffer(data, dtype=np.uint8)
+        m = m.reshape(self.num_rows, self.num_col)
+        return Map(m)
 
 class Net():
     def __init__(self):
@@ -38,20 +56,26 @@ class Network:
 
 class Robot:
     """Simulated UAV robot"""
-    def __init__(self, name, map, net):
+    def __init__(self, name, map):
         self.name = name
         self.map = map
-        self.net = net
     
     def send_map(self, sock):
         con, _ = sock.accept()
-        con.send(("from robot " + self.name).encode())
+        con.sendall(self.map.to_bytes())
         con.close()
 
     def recv_map(self, sock):
         sock.connect((IP_ADDRESS, PORT))
-        data = sock.recv(1024).decode()
-        print(self.name, "recieved:", data)
+        payload = b''
+        while True:
+            data = sock.recv(CHUNK_SIZE)
+            if data:
+                payload += data
+            else:
+                break
+        m = self.map.from_bytes(payload)
+        print("Robot", self.name, "got", m)
 
 class Strategy:
     """Strategy for transfering occupancy grid between robots"""
@@ -95,7 +119,7 @@ def evaluate(strat):
 if __name__ == "__main__":
     m1, m2 = merge.TRAIN_FILENAMES[0], merge.TRAIN_FILENAMES[1]
     net = Network(LATENCY_IN_SECONDS, BANDWIDTH_IN_BYTES)
-    rob_a = Robot('A', merge.load_mercer_map(m1), net)
-    rob_b = Robot('B', merge.load_mercer_map(m2), net)
+    rob_a = Robot('A', Map(merge.load_mercer_map(m1)))
+    rob_b = Robot('B', Map(merge.load_mercer_map(m2)))
     strat = Strategy("testing", rob_a, rob_b)
     strat.sync()
