@@ -25,10 +25,7 @@ class Map():
         m = m.reshape(self.num_rows, self.num_col)
         return Map(m)
 
-class Net():
-    def __init__(self):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+# ************* UNUSED
 class Network:
     def __init__(self, latency, bandwidth):
         self._latency = latency
@@ -123,3 +120,11 @@ if __name__ == "__main__":
     rob_b = Robot('B', Map(merge.load_mercer_map(m2)))
     strat = Strategy("testing", rob_a, rob_b)
     strat.sync()
+
+""" TODO
+- Add metrics in evalutation function
+- Create the full map transfer non-stategy
+- Test mock network -> (maybe try the unused Network implimentation)
+- Create the Equality and Error Correction startegy
+- Create the DAG strategy
+"""
