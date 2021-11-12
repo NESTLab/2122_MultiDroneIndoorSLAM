@@ -8,3 +8,10 @@ WIP
 ```bash
 roslaunch turtlebot3_gazebo multi_turtlebot3_all.launch
 ```
+## Needed packages
+(Please update as needed)
+
+(will be linked later)
+* Turtlebot3 
+* turtlebot3 slam
+* turtlebot3 navigation
