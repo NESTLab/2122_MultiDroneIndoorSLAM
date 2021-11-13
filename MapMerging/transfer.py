@@ -1,11 +1,14 @@
-import hough_sift_mapmerge as merge
+from hough_sift_mapmerge import TRAIN_FILENAMES, load_mercer_map
 from Strategies.strategy import Robot, Map, Strategy, Evaluation
 
+# Test Maps
+m1, m2 = TRAIN_FILENAMES[0], TRAIN_FILENAMES[1]
+
 if __name__ == "__main__":
-    m1, m2 = merge.TRAIN_FILENAMES[0], merge.TRAIN_FILENAMES[1]
-    rob_a = Robot('A', Map(merge.load_mercer_map(m1)))
-    rob_b = Robot('B', Map(merge.load_mercer_map(m2)))
-    strat = Strategy("testing", rob_a, rob_b)
+    
+    rob_a = Robot('A', Map(load_mercer_map(m1)))
+    rob_b = Robot('B', Map(load_mercer_map(m2)))
+    strat = Strategy("Full Map", rob_a, rob_b)
 
     e = Evaluation(strat).start()
     print(e)

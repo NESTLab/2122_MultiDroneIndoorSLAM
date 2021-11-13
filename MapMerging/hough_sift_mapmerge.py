@@ -261,7 +261,7 @@ def accept(map1, map2):
     iou = 0 if a == 0 else (a / (a+d))
     return iou
 
-if __name__ == "__main__":
+def experiment(N_ITERS):
     # trying out SIFT...
     filename1 = TRAIN_FILENAMES[0]
     filename2 = TRAIN_FILENAMES[5]
@@ -270,7 +270,6 @@ if __name__ == "__main__":
 
     maps = [filename1, filename2, filename3, filename4]
 
-    N_ITERS = 1000
     SIFT_RESULTS = [[], [], [], []]
     SIFT_TIMES = [[], [], [], []]
     ORB_RESULTS = [[], [], [], []]
@@ -301,6 +300,25 @@ if __name__ == "__main__":
             orb_elapsed = orb_start - orb_end
             ORB_RESULTS[m_idx].append(accept(map1, orb_map))
             ORB_TIMES[m_idx].append(orb_elapsed)
+    
+    return {
+        "SIFT_RESULTS": SIFT_RESULTS,
+        "SIFT_TIMES": SIFT_TIMES,
+        "ORB_RESULTS": ORB_RESULTS,
+        "ORB_TIMES": ORB_TIMES,
+        "HOUGH_RESULTS": HOUGH_RESULTS,
+        "HOUGH_TIMES": HOUGH_TIMES,
+    }
+
+if __name__ == "__main__":
+    N_ITERS = 1000
+    results = experiment(N_ITERS)
+    SIFT_RESULTS = results["SIFT_RESULTS"]
+    SIFT_TIMES = results["SIFT_TIMES"]
+    ORB_RESULTS = results["ORB_RESULTS"]
+    ORB_TIMES = results["ORB_TIMES"]
+    HOUGH_RESULTS = results["HOUGH_RESULTS"]
+    HOUGH_TIMES = results["HOUGH_TIMES"]
     
     SIFT_MU, SIFT_STD, SIFT_TIME = np.mean(SIFT_RESULTS, axis=1), np.std(SIFT_RESULTS, axis=1), np.mean(SIFT_TIMES, axis=1)
     print("(Average Acc, Std Acc, Average Time) per map: (SIFT)")

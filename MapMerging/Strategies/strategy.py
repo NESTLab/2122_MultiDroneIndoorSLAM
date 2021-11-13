@@ -1,9 +1,12 @@
 from __future__ import annotations # Allows classes to type hint their own class.
 import numpy as np
 import time, socket, threading, timeit
+from hough_sift_mapmerge import experiment
+
+NUM_MERGES_TO_TEST = 5          # determins number of map merges to average
 
 CHUNK_SIZE = 2312               # 2312 bytes | Reasoning: The MTU of wireless networks is 2312 bytes
-BANDWIDTH_IN_BYTES = 25000000   # 25Mb
+BANDWIDTH_IN_BYTES = 25000000   # 25Mbps
 LATENCY_IN_SECONDS = 0.02       # 20ms
 PORT = 9090
 IP_ADDRESS = "127.0.0.1"
@@ -84,8 +87,9 @@ class Robot:
         map_chunks = [map_data[i:i+CHUNK_SIZE] for i in range(0, len(map_data), CHUNK_SIZE)]
         for chunk in map_chunks:
             connection.send(chunk)
-        # connection.close()
-        self.net._bytesSent = connection._bytesSent 
+
+        self.net._bytesSent = connection._bytesSent
+        connection.close()
 
     def recv_map(self) -> Map:
         self.net.connect((IP_ADDRESS, PORT))
@@ -135,7 +139,7 @@ class Strategy:
 class Evaluation():
     def __init__(self, strat) -> None:
         self.strat = strat
-        self.duration = 0 # ms
+        self.duration = 0
         self.megabytes_transfered = 0
         self.accuracy = 0
     
@@ -143,15 +147,18 @@ class Evaluation():
         start = time.time()
         self.strat.sync()
         end = time.time()
-        self.duration = (end - start) / 1000
+        self.duration = (end - start)
         self.megabytes_transfered = self.strat.bytes_transfered / 1000
+
+        results = experiment(NUM_MERGES_TO_TEST)
+        self.accuracy = results["SIFT_RESULTS"][0][0] * 100
         return self
 
     def __repr__(self) -> str:
         return """###############################################
         Evaluation of "{}"
 
-Duration: \t\t{} ms
+Duration: \t\t{} seconds
 Data Transfered: \t{} Mb
-Accuracy: \t\t{}
+Accuracy (SIFT): \t{} %
 """.format(self.strat.name, self.duration, self.megabytes_transfered, self.accuracy)
