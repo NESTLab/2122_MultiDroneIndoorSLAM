@@ -70,21 +70,27 @@ def paper_benchmark(n_iters=1000, shift_limit=0.1, rotate_limit=360):
 def dan_map_benchmark():
     """
     Sanity check merge using three sets of pgm maps from Dan's example
-    currently fails due to minimal overlap
+    currently fails due to minimal (non-existant?) overlap
     """
     # load maps
-    map0, map1, map2 = [pgm_to_numpy(BASE_PGM_MAP_PATH+filename) for filename in PGM_FILENAMES]
+    gt, map0, map1, map2 = [pgm_to_numpy(BASE_PGM_MAP_PATH+filename) for filename in PGM_FILENAMES]
     # map0 has different shape, resize to match
-    map0 = resize_map(map0, dsize=map1.shape)
+    map0 = resize_map(map0, dsize=gt.shape)
     # align map1 and map2 w.r.t. maps
-    print(map0.shape, map1.shape, map2.shape)
+    print(gt.shape, map0.shape, map1.shape, map2.shape)
     map1_aligned = orb_mapmerge(map0, map1)
     map01 = combine_aligned_maps(map0, map1_aligned)
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4)
+    fig, (ax0, ax1, ax2, ax3, ax4) = plt.subplots(1, 5)
+    ax0.imshow(gt, cmap="gray")
+    ax0.set_title("Ground Truth")
     ax1.imshow(map0, cmap="gray")
+    ax1.set_title("Map Part 1")
     ax2.imshow(map1, cmap="gray")
+    ax2.set_title("Map Part 2")
     ax3.imshow(map1_aligned, cmap="gray")
+    ax3.set_title("Map Part 2 - Attempted Alignment")
     ax4.imshow(map01, cmap="gray")
+    ax4.set_title("Attempted Merge")
     plt.show()
     # map2_aligned = sift_mapmerge(map01, map2)
     # map012 = combine_aligned_maps(map01, map2_aligned)

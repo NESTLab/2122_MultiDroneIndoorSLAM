@@ -13,4 +13,4 @@ TEST_FILENAMES = ["intel.txt", "intel1000.txt"]
 BASE_MERCER_MAP_PATH = "Data/Mercer/"
 BASE_PGM_MAP_PATH = "Data/PGM/"
 
-PGM_FILENAMES = ["map0.pgm", "map1.pgm", "map2.pgm"]
+PGM_FILENAMES = ["full_map.pgm", "map_part0.pgm", "map_part1.pgm", "map_part2.pgm"]
