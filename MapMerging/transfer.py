@@ -16,9 +16,6 @@ if __name__ == "__main__":
     
 
 """ TODO
-- Add metrics in evalutation function
-- Create the full map transfer non-stategy
-- Test mock network -> (maybe try the unused Network implimentation)
 - Create the Equality and Error Correction startegy
 - Create the DAG strategy
 """
