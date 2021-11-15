@@ -1,6 +1,8 @@
 import numpy as np
 import hashlib
+from Communications.map import Map
 
+# Consistant hash function
 def uhash(data) -> bytes:
     h = hashlib.sha256()
     h.update(str(data).encode())
@@ -31,7 +33,7 @@ class DAG():
             new_map.append(r)
         self.root = self.build_hierarchy(new_map)
     
-    # Split the grid into 4ths (half width, half height) to make smaller DAG maps until only the root is left
+    # Repeatedly split the grid into 4ths making the map smaller each iteration
     def build_hierarchy(self, map) -> Node:
         while len(map) > 1 or len(map[0]) > 1:
             height, width = len(map), len(map[0])
@@ -40,7 +42,6 @@ class DAG():
             for y_start in range(0, height, self.resolution):
                 row = []
                 for x_start in range(0, width, self.resolution):
-                    # print(y_start, x_start)
                     node = self.compress(map, y_start, x_start)
                     row.append(node)
                 
@@ -48,6 +49,7 @@ class DAG():
             map = next_map
         return map[0][0]
 
+    # Creates a node from a section of the map
     def compress(self, map, y_start, x_start) -> Node:
         children = []
         for y in range(y_start, y_start + self.resolution):
@@ -62,19 +64,5 @@ class DAG():
                         children.append(address)
         return Node(children=children)
 
-
-
-
-def main() -> None:
-    map = np.array([
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0]
-    ])
-
-    m = DAG(map)
-    for c in m.root.children:
-        print(c)
-
-main()
+    def to_map(self) -> Map:
+        pass

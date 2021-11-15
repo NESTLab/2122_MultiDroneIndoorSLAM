@@ -1,85 +1,11 @@
 from __future__ import annotations # Allows classes to type hint their own class.
 import time, socket, threading
+from Communications.dag import DAG
 from hough_sift_mapmerge import experiment, load_mercer_map
 from Communications.map import Map
 from Communications.network import Network, CHUNK_SIZE, IP_ADDRESS, PORT
 
 NUM_MERGES_TO_TEST = 5          # determins number of map merges to average
-
-class Full_Robot:
-    """Transfering FULL map"""
-    def __init__(self, name, map) -> None:
-        self.name = name
-        self.map = map
-
-    def setup_network(self):
-        self.net = Network()
-
-    def get_bytes_sent(self) -> bytes:
-        return self.net._bytesSent
-    
-    def send_map(self) -> None:
-        con, _ = self.net.accept()
-        connection = Network(self.net._latency, self.net._bandwidth, sock = con)
-        map_data = self.map.to_bytes()
-        map_chunks = [map_data[i:i+CHUNK_SIZE] for i in range(0, len(map_data), CHUNK_SIZE)]
-        for chunk in map_chunks:
-            connection.send(chunk)
-
-        self.net._bytesSent = connection._bytesSent
-        connection.close()
-
-    def recv_map(self) -> Map:
-        self.net.connect((IP_ADDRESS, PORT))
-        payload = b''
-        while True:
-            data = self.net.recv(CHUNK_SIZE)
-            if data:
-                payload += data
-            else:
-                break
-        m = self.map.from_bytes(payload)
-    
-    def close(self) -> None:
-        self.net.close()
-
-class DAG_Robot():
-    """Transfering partial DAG of map"""
-    def __init__(self, name, map) -> None:
-        self.name = name
-        self.map = map
-    
-
-    def setup_network(self):
-        self.net = Network()
-
-    def get_bytes_sent(self) -> bytes:
-        return self.net._bytesSent
-    
-    def send_map(self) -> None:
-        con, _ = self.net.accept()
-        connection = Network(self.net._latency, self.net._bandwidth, sock = con)
-        map_data = self.map.to_bytes()
-        map_chunks = [map_data[i:i+CHUNK_SIZE] for i in range(0, len(map_data), CHUNK_SIZE)]
-        for chunk in map_chunks:
-            connection.send(chunk)
-
-        self.net._bytesSent = connection._bytesSent
-        connection.close()
-
-    def recv_map(self) -> Map:
-        self.net.connect((IP_ADDRESS, PORT))
-        payload = b''
-        while True:
-            data = self.net.recv(CHUNK_SIZE)
-            if data:
-                payload += data
-            else:
-                break
-        m = self.map.from_bytes(payload)
-
-    def close(self) -> None:
-        self.net.close()
 
 class Scinario:
     """Scinario for transfering occupancy grid between robots"""
@@ -96,8 +22,8 @@ class Scinario:
         # Start server to ensure the client can connect
         r1.net.serve() 
         # Create send & recieve maps in independent threads
-        t1 = threading.Thread(target=r1.send_map, args=())
-        t2 = threading.Thread(target=r2.recv_map, args=())
+        t1 = threading.Thread(target=r1.send_data, args=())
+        t2 = threading.Thread(target=r2.recv_data, args=())
         # Start both threads
         t1.start()
         t2.start()
