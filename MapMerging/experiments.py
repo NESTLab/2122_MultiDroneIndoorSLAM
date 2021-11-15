@@ -9,8 +9,9 @@ from hough_merge import hough_mapmerge
 from keypoint_merge import sift_mapmerge, orb_mapmerge
 from ros_utils import pgm_to_numpy
 
-def paper_benchmark(n_iters=1000, shift_limit=0.1, rotate_limit=360):
+def paper_benchmark(n_iters=1000, shift_limit=0.1, rotate_limit=360, maps=None, silent=False):
     """
+    NOTE: passing in 'maps' should be an actual numpy map, NOT the path to a file
     Similar benchmark to that in Carpin et al.
 
     Inputs:
@@ -18,12 +19,14 @@ def paper_benchmark(n_iters=1000, shift_limit=0.1, rotate_limit=360):
         shift_limit: proportion of image width/height to set as translation limit
         rotate_limit: (degrees) maximum image rotation
     """
-    filename1 = TRAIN_FILENAMES[0]
-    filename2 = TRAIN_FILENAMES[5]
-    filename3 = TRAIN_FILENAMES[6]
-    filename4 = TEST_FILENAMES[0]
 
-    maps = [filename1, filename2, filename3, filename4]
+    if maps is None:
+        filename1 = TRAIN_FILENAMES[0]
+        filename2 = TRAIN_FILENAMES[5]
+        filename3 = TRAIN_FILENAMES[6]
+        filename4 = TEST_FILENAMES[0]
+
+        maps = [filename1, filename2, filename3, filename4]
 
     SIFT_RESULTS = [[], [], [], []]
     SIFT_TIMES = [[], [], [], []]
@@ -33,7 +36,10 @@ def paper_benchmark(n_iters=1000, shift_limit=0.1, rotate_limit=360):
     HOUGH_TIMES = [[], [], [], []]
     for i in tqdm(range(n_iters)):
         for m_idx in range(len(maps)):
-            map1, map2 = get_training_sample(maps[m_idx])
+            if maps and len(maps) == 2:
+                map1, map2 = maps[0], maps[1]
+            else:
+                map1, map2 = get_training_sample(maps[m_idx])
             # sift
             sift_start = time()
             sift_map = sift_mapmerge(map1, map2)
@@ -55,15 +61,17 @@ def paper_benchmark(n_iters=1000, shift_limit=0.1, rotate_limit=360):
             orb_elapsed = orb_start - orb_end
             ORB_RESULTS[m_idx].append(acceptance_index(map1, orb_map))
             ORB_TIMES[m_idx].append(orb_elapsed)
-    SIFT_MU, SIFT_STD, SIFT_TIME = np.mean(SIFT_RESULTS, axis=1), np.std(SIFT_RESULTS, axis=1), np.mean(SIFT_TIMES, axis=1)
-    print("(Average Acc, Std Acc, Average Time) per map: (SIFT)")
-    print(SIFT_MU, SIFT_STD, SIFT_TIME)
-    ORB_MU, ORB_STD, ORB_TIME = np.mean(ORB_RESULTS, axis=1), np.std(ORB_RESULTS, axis=1), np.mean(ORB_TIMES, axis=1)
-    print("(Average Acc, Std Acc, Average Time) per map: (ORB)")
-    print(ORB_MU, ORB_STD, ORB_TIME)
-    HOUGH_MU, HOUGH_STD, HOUGH_TIME = np.mean(HOUGH_RESULTS, axis=1), np.std(HOUGH_RESULTS, axis=1), np.mean(HOUGH_TIMES, axis=1)
-    print("(Average Acc, Std Acc, Average Time) per map: (HOUGH)")
-    print(HOUGH_MU, HOUGH_STD, HOUGH_TIME)
+    
+    if not silent:
+        SIFT_MU, SIFT_STD, SIFT_TIME = np.mean(SIFT_RESULTS, axis=1), np.std(SIFT_RESULTS, axis=1), np.mean(SIFT_TIMES, axis=1)
+        print("(Average Acc, Std Acc, Average Time) per map: (SIFT)")
+        print(SIFT_MU, SIFT_STD, SIFT_TIME)
+        ORB_MU, ORB_STD, ORB_TIME = np.mean(ORB_RESULTS, axis=1), np.std(ORB_RESULTS, axis=1), np.mean(ORB_TIMES, axis=1)
+        print("(Average Acc, Std Acc, Average Time) per map: (ORB)")
+        print(ORB_MU, ORB_STD, ORB_TIME)
+        HOUGH_MU, HOUGH_STD, HOUGH_TIME = np.mean(HOUGH_RESULTS, axis=1), np.std(HOUGH_RESULTS, axis=1), np.mean(HOUGH_TIMES, axis=1)
+        print("(Average Acc, Std Acc, Average Time) per map: (HOUGH)")
+        print(HOUGH_MU, HOUGH_STD, HOUGH_TIME)
 
     return {
         "SIFT_RESULTS": SIFT_RESULTS,

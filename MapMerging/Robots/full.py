@@ -8,6 +8,8 @@ class Full_Robot:
     def __init__(self, name=None, map=None) -> None:
         self.name = name
         self.map = map
+        # To be recieved/built within recv_data
+        self.remote_map = None 
 
     # REQUIRED
     def setup_network(self):
@@ -40,7 +42,8 @@ class Full_Robot:
                 payload += data
             else:
                 break
-        return self.map.from_bytes(payload)
+        self.remote_map = self.map.from_bytes(payload)
+        return self.remote_map
     
     # REQUIRED
     def close(self) -> None:

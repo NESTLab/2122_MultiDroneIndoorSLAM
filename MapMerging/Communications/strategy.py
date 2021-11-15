@@ -1,8 +1,6 @@
 from __future__ import annotations # Allows classes to type hint their own class.
-import time, socket, threading
-from Communications.dag import DAG
+import time, threading
 from Communications.map import Map
-from Communications.network import Network, CHUNK_SIZE, IP_ADDRESS, PORT
 from merge_utils import load_mercer_map
 from experiments import paper_benchmark
 
@@ -55,8 +53,16 @@ class Evaluation():
         self.duration = (end - start)
         self.megabytes_transfered = self.scene.bytes_transfered / 1000
 
-        results = paper_benchmark(n_iters=NUM_MERGES_TO_TEST)
-        self.accuracy = results["SIFT_RESULTS"][0][0] * 100
+        # Pairs together local and remote maps from both robots
+        robot_map_pairs = [
+            [self.scene.r1.map.map, self.scene.r2.remote_map.map],
+            [self.scene.r1.remote_map.map, self.scene.r2.map.map]]
+        # average SIFT results for both pairs
+        for pair in robot_map_pairs: 
+            results = paper_benchmark(n_iters=NUM_MERGES_TO_TEST, silent=True, maps=pair)
+            self.accuracy += results["SIFT_RESULTS"][0][0] * 100
+        self.accuracy = self.accuracy/len(robot_map_pairs)
+
         return self
 
     def __repr__(self) -> str:

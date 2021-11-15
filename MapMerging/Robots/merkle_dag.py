@@ -11,7 +11,9 @@ class DAG_Robot():
         self.map = map
         if map != None:
             self.dag = DAG(map.map)
-    
+        # To be recieved/built within recv_data
+        self.remote_map = None
+
     # REQUIRED
     def setup_network(self):
         self.net = Network()
@@ -44,8 +46,8 @@ class DAG_Robot():
                 payload += data
             else:
                 break
-        m = self.map.from_bytes(payload)
-        return m
+        self.remote_map = self.map.from_bytes(payload)
+        return self.remote_map
 
     # REQUIRED
     def close(self) -> None:
