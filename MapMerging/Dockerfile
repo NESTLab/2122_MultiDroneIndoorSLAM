@@ -10,4 +10,4 @@ RUN pip3 install -r ./requirements.txt
 
 FROM base
 COPY . .
-ENTRYPOINT [ "python3", "hough_sift_mapmerge.py" ]
+ENTRYPOINT [ "python3", "experiments.py" ]

@@ -1,8 +1,7 @@
 from Communications.strategy import Evaluation, Scinario
 from Robots.full import Full_Robot
 from Robots.merkle_dag import DAG_Robot
-from hough_sift_mapmerge import experiment, TRAIN_FILENAMES
-
+from constants import TRAIN_FILENAMES
 
 # Test Maps
 m1, m2 = TRAIN_FILENAMES[0], TRAIN_FILENAMES[1]

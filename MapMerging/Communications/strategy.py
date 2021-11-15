@@ -1,11 +1,12 @@
 from __future__ import annotations # Allows classes to type hint their own class.
 import time, socket, threading
 from Communications.dag import DAG
-from hough_sift_mapmerge import experiment, load_mercer_map
 from Communications.map import Map
 from Communications.network import Network, CHUNK_SIZE, IP_ADDRESS, PORT
+from merge_utils import load_mercer_map
+from experiments import paper_benchmark
 
-NUM_MERGES_TO_TEST = 5          # determins number of map merges to average
+NUM_MERGES_TO_TEST = 3          # determins number of map merges to average
 
 class Scinario:
     """Scinario for transfering occupancy grid between robots"""
@@ -54,7 +55,7 @@ class Evaluation():
         self.duration = (end - start)
         self.megabytes_transfered = self.scene.bytes_transfered / 1000
 
-        results = experiment(NUM_MERGES_TO_TEST)
+        results = paper_benchmark(n_iters=NUM_MERGES_TO_TEST)
         self.accuracy = results["SIFT_RESULTS"][0][0] * 100
         return self
 
