@@ -85,3 +85,8 @@ class Map:
 
     def dag_to_occupancy_grid(self) -> np.ndarray:
         pass
+
+class OccupancyGrid:
+    def __init__(self, array:np.ndarray, unknown = 0, free = 1, occupied = 2) -> None:
+        self.array = array
+        
