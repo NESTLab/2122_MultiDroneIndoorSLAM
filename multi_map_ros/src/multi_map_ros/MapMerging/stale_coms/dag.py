@@ -1,6 +1,6 @@
 import numpy as np
 import hashlib
-from Communications.map import Map
+from stale_coms.map import Map
 
 # Consistant hash function
 def uhash(data) -> bytes:

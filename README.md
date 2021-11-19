@@ -35,3 +35,40 @@ roslaunch turtlebot3_gazebo multi_turtlebot3_all.launch
 ```
 
 >These instructions worked on my (Ashay's) PC. Let me know if anything needs to be changed
+
+
+## Instructions
+
+
+#### Make Ros Package
+```shell
+$ source /opt/ros/noetic/setup.bash
+$ mkdir -p ~/catkin_ws/src
+$ cp -r multi_map_ros ~/catkin_ws/src/
+$ cd ~/catkin_ws/
+$ catkin_make
+$ source devel/setup.bash
+```
+
+#### Startup Ros (In The Background)
+```shell
+$ roscore 2>&1 &
+```
+
+#### Run a package
+```shell
+$ rosrun <package> <node_file_name>
+$ rosrun multi_map_ros multi_map_ros.py
+```
+
+### Debugging
+```
+rosnode # list | show | info ...
+
+rosmsg # list | show | info ...
+
+rosrun [--prefix cmd] [--debug] PACKAGE EXECUTABLE [ARGS]
+
+rostopic echo <pub or sub name>
+```
+
