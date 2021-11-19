@@ -1,5 +1,5 @@
 [build-system]
 requires = [
-    "setuptools>=42",
-    "wheel"
+    "numpy==1.21.4",
+    "poorcon==0.2.1"
 ]
