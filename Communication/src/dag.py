@@ -1,9 +1,10 @@
-from utils import uhash
+from Communication.src.utils import uhash
 
 # NOTE: This cannot conflict with the values of the occupancy grid
 EMPTY_CONTENT = -38
 
 class Node:
+    
     def __init__(self) -> None:
         self.children = []
         self.content = EMPTY_CONTENT

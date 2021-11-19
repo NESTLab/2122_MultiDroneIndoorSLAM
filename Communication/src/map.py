@@ -1,6 +1,6 @@
 import numpy as np
 from typing import List
-from dag import Node, EMPTY_CONTENT
+from Communication.src.dag import Node
 
 class Map:
     
@@ -22,7 +22,7 @@ class Map:
         # provide the last node
         return nodes[len(nodes)-1]
     
-    def _find_nodes_at_helper(self, x_bounds:tuple, y_bounds:tuple, x:int, y:int, node_str:str) -> List(Node):
+    def _find_nodes_at_helper(self, x_bounds:tuple, y_bounds:tuple, x:int, y:int, node_str:str) -> List[Node]:
         node = self.dag_store[node_str]
         results = [node]
         if not node.empty_content:

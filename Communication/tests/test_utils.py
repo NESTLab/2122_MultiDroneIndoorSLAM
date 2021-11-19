@@ -1,5 +1,5 @@
 import unittest
-from utils import uhash, b_to_mb
+from Communication.src.utils import uhash, b_to_mb
 
 class TestUtils(unittest.TestCase):
     def test_uhash(self):
