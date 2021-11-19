@@ -18,4 +18,3 @@ def _server_socket() -> socket:
     s = make_socket_patchable(s)
     delay_before_sending_upon_acceptance(s, PACKET_DELAY, PACKET_SIZE)
     return s
-

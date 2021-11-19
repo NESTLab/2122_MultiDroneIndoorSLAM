@@ -85,5 +85,3 @@ class Map:
 
     def dag_to_occupancy_grid(self) -> np.ndarray:
         pass
-
-

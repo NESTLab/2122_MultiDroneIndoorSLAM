@@ -10,3 +10,4 @@ class TestUtils(unittest.TestCase):
     def test_b_to_mb(self):
         self.assertEqual(0.0, b_to_mb(0))
         self.assertEqual(0.0032, b_to_mb(3200))
+        
