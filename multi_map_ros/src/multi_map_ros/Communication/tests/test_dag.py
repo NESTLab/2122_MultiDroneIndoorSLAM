@@ -1,5 +1,5 @@
 import unittest
-from Communication.src.dag import Node, EMPTY_CONTENT
+from coms.dag import Node, EMPTY_CONTENT
 
 class TestNode(unittest.TestCase):
     def test_init(self):

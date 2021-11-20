@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 from time import time
 from tqdm import tqdm
 
-from MapMerging.src.constants import *
-from MapMerging.src.merge_utils import acceptance_index, combine_aligned_maps, get_training_sample, resize_map
-from MapMerging.src.hough_merge import hough_mapmerge
-from MapMerging.src.keypoint_merge import sift_mapmerge, orb_mapmerge
-from MapMerging.src.ros_utils import pgm_to_numpy
+from mapmerge.constants import *
+from mapmerge.merge_utils import acceptance_index, combine_aligned_maps, get_training_sample, resize_map
+from mapmerge.hough_merge import hough_mapmerge
+from mapmerge.keypoint_merge import sift_mapmerge, orb_mapmerge
+from mapmerge.ros_utils import pgm_to_numpy
 
 def paper_benchmark(n_iters=1000, shift_limit=0.1, rotate_limit=360, maps=None, silent=False):
     """

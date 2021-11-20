@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-from constants import *
+from mapmerge.constants import *
 
 def pgm_to_numpy(filename):
     """

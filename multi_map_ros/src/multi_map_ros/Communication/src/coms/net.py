@@ -1,4 +1,4 @@
-from Communication.src.utils import b_to_mb
+from coms.utils import b_to_mb
 from socket import socket
 from poorconn import delay_before_sending, delay_before_sending_upon_acceptance, make_socket_patchable
 
