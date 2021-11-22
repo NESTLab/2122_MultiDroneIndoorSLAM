@@ -1,13 +1,15 @@
 from __future__ import annotations # Allows classes to type hint their own class.
 from typing import List
+
+from numpy import uint8
 from coms.utils import uhash
 
 # NOTE: This cannot conflict with the values of the occupancy grid
-EMPTY_CONTENT = -38
+EMPTY_CONTENT:uint8 = 38
 
 class Node:
     
-    def __init__(self, children:List[Node] = [], content:int = EMPTY_CONTENT) -> None:
+    def __init__(self, children:List[Node] = [], content:uint8 = EMPTY_CONTENT) -> None:
         self.children = []
         self.content = EMPTY_CONTENT
         self.signature = ""
