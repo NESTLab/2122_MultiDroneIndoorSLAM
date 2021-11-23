@@ -1,0 +1,3 @@
+<launch>
+    <node name="map_manager" pkg="multi_map_ros" type="multi_map_node.py" output="screen"/>
+</launch>

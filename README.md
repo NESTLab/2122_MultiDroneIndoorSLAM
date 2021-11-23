@@ -58,7 +58,7 @@ $ roscore 2>&1 &
 #### Run a package
 ```shell
 $ rosrun <package> <node_file_name>
-$ rosrun multi_map_ros multi_map_ros.py
+$ rosrun multi_map_ros multi_map_node.py
 ```
 
 ### Debugging

@@ -18,6 +18,7 @@ class multiMapMerge():
         # init merge pub and subs
         self.map_merge_sub = rospy.Subscriber('/dag_listener', dag_node, self.dag_listener_callback)
         self.map_merge_pub = rospy.Publisher('/dag_publisher', dag_node, queue_size=1)
+        print("multi map node created!")
 
     def map_merge_callback(self, req):
         # process map merge
