@@ -15,6 +15,9 @@ mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src 
 git clone --recurse-submodules https://github.com/NESTLab/2122_MultiDroneIndoorSLAM.git
 
+# Install dependencies
+rosdep install --from-paths ./ --rosdistro noetic -y
+
 # Compile the repository
 cd ~/catkin_ws
 catkin_make
