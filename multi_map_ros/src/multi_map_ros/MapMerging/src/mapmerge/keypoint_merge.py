@@ -1,8 +1,7 @@
 import numpy as np
 import cv2
-from constants import *
-
-from merge_utils import apply_warp
+from mapmerge.constants import *
+from mapmerge.merge_utils import apply_warp
 
 def blur_map(map):
     src = np.copy(map)
