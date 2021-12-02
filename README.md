@@ -2,9 +2,16 @@
 Code for 21/22 MQP and DRs on Multi Drone Indoor SLAM
 
 # Setup Instructions
-1. You will need Ubuntu 20.04 and ROS Noetic to get this repository working (You can install with instructions at [ROS Noetic](http://wiki.ros.org/noetic/Installation/Ubuntu) )
-1. Install packages needed for [turtlebot3](https://emanual.robotis.com/docs/en/platform/turtlebot3/quick-start/) (Not sure if this is needed, but I did it and don't know if the sim would run without it)
-1. Create a workspace and clone the repository
+> NOTE: We are using Ubuntu 20.04 for this example
+1. Follow the instructions for installing [ROS Noetic](http://wiki.ros.org/noetic/Installation/Ubuntu) and [Gazebo](http://www.gazebosim.org/tutorials?tut=install_ubuntu)
+
+2. Install project dependencies: [turtlebot3](https://emanual.robotis.com/docs/en/platform/turtlebot3/quick-start/) and [dwa_local_planner](http://wiki.ros.org/dwa_local_planner)
+
+```zsh
+sudo apt install ros-noetic-turtlebot3 ros-noetic-dwa-local-planner 
+```
+
+3. Create a workspace and clone the repository
 ```bash
 # Create a workspace
 # (not needed if you already have a working workspace)
@@ -15,7 +22,7 @@ mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src 
 git clone --recurse-submodules https://github.com/NESTLab/2122_MultiDroneIndoorSLAM.git
 
-# Install dependencies
+# Install local dependencies
 rosdep install --from-paths ./ --rosdistro noetic -y
 
 # Compile the repository
@@ -26,7 +33,7 @@ catkin_make
 echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
 
 # Specify the turtlebot3 model you'd like to use
-# I am using waffle
+# options: burger | waffel | waffle_pi
 echo "export TURTLEBOT3_MODEL=burger" >> ~/.bashrc
 ```
 ## Test run turtlebot in dan's huge maze
