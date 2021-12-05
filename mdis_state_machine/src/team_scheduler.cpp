@@ -105,7 +105,7 @@ void TeamScheduler::step() {
 
 //UNDERSTANDING: Each robot has its own done() and this is what is checked to perform step()
 void TeamScheduler::exec() {
-   ros::Rate r(50); // 50Hz loop rate
+   ros::Rate r(5); // 50Hz loop rate
    while(ros::ok())
    {
       step();
@@ -125,12 +125,5 @@ int main(int argc, char** argv)
    ROS_INFO("exec");
    team.exec();
 
-    // ros::Duration(1).sleep();
-//     team.setTeamMacroState(SEARCH);
-//     ros::Duration(1).sleep();
-//     team.setTeamMacroState(SEARCH);
-//     ros::Duration(1).sleep();
-//     team.setTeamMacroState(SEARCH);
-//     ros::spinOnce();
     return 0;
 }

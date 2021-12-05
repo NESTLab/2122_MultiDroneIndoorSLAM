@@ -4,6 +4,12 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
       // m_pcTeam(nullptr), 
       m_unId(un_id), m_strName(str_name) 
 {
+  explore_interface = new MoveBaseInterface(nh);
+
+  current_meeting_location.x = -31;
+  current_meeting_location.y = -6;
+  next_meeting_location.x = -28;
+  next_meeting_location.y = -6;
 }
 
 
@@ -13,6 +19,7 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
 
 bool Idle::entryPoint()
 {
+   explore_interface->stopRobot();
    return true;
 }
 
@@ -48,13 +55,17 @@ bool GoToExplore::entryPoint()
 
 bool GoToExplore::isDone()
 {
+   ROS_INFO_STREAM("Going to explore at"<<next_meeting_location);
+   explore_interface->goToPoint(next_meeting_location, true);
    return true;
 }
 
-
 TEAM_STATES GoToExplore::transition() 
 {
-  return EXPLORE;
+  if(isDone())
+    return EXPLORE;
+  else
+    return GO_TO_EXPLORE;
 }
 
 void GoToExplore::step()
@@ -73,27 +84,47 @@ void GoToExplore::exitPoint()
 
 bool Explore::entryPoint()
 {
+   starting_time = ros::Time::now();
    return true;
 }
 
 bool Explore::isDone()
 {
-   return true;
+   ros::Duration time_since_start = ros::Time::now() - starting_time;
+   return time_since_start > time_until_next_meeting;
 }
-
 
 TEAM_STATES Explore::transition() 
 {
-  return GO_TO_MEET;
+  if(isDone())
+    return GO_TO_MEET;
+  else
+    return EXPLORE;
 }
 
 void Explore::step()
 {
-  ROS_INFO("Step for Explore");
+  std_msgs::Bool msg;
+  msg.data = false;
+  pause_exploration_pub.publish(msg);
+  ROS_INFO_THROTTLE(10,"Step for Explore");
 }
 
 void Explore::exitPoint() 
 {
+  std_msgs::Bool msg;
+  msg.data = true;
+  pause_exploration_pub.publish(msg);
+
+  // TO-DO
+  // BUG!!!!
+  // Values are being changed only for the class Explore
+  // Need to change values for all
+  next_meeting_location = explore_interface->getRobotCurrentPose().pose.position;
+  
+  ROS_INFO_STREAM("Next meeting"<<next_meeting_location);
+
+  explore_interface->stopRobot();
 }
 
 
@@ -103,18 +134,26 @@ void Explore::exitPoint()
 
 bool GoToMeet::entryPoint()
 {
+   ROS_INFO_STREAM("Going to meet at"<<current_meeting_location);
+   explore_interface->goToPoint(current_meeting_location, false);
    return true;
 }
 
 bool GoToMeet::isDone()
 {
+   // Connection established
+   
+   // Temporary case
+   ros::Duration(20).sleep();
    return true;
 }
 
 
 TEAM_STATES GoToMeet::transition() 
 {
-  return MEET;
+  if(isDone())
+    return MEET;
+  else GO_TO_MEET;
 }
 
 void GoToMeet::step()
@@ -124,6 +163,7 @@ void GoToMeet::step()
 
 void GoToMeet::exitPoint() 
 {
+  explore_interface->stopRobot();
 }
 
 
@@ -138,12 +178,16 @@ bool Meet::entryPoint()
 
 bool Meet::isDone()
 {
+   // Data sync done
    return true;
 }
 
 TEAM_STATES Meet::transition() 
 {
-  return IDLE;
+  if(isDone())
+    return GO_TO_EXPLORE;
+  else 
+    return MEET;
 }
 
 void Meet::step()
@@ -153,4 +197,8 @@ void Meet::step()
 
 void Meet::exitPoint() 
 {
+  current_meeting_location = next_meeting_location;
+
+  // get time estimate from move_base_interface
+  // set exploration_duration accordingly
 }
