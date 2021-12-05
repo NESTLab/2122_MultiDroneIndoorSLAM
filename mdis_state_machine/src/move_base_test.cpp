@@ -11,8 +11,12 @@ int main(int argc, char** argv)
   point_1.y = -8;
   point_2.x = -31;
   point_2.y = -6;
-  float dist = explore.getDistancePrediction(point_1, point_2);
+  float dist = explore.getDistancePrediction(point_2);
   ROS_INFO_STREAM("Distance: "<<dist);
+
+  geometry_msgs::PoseStamped pose = explore.getRobotCurrentPose();
+
+  ROS_INFO_STREAM("Current_pose: "<<pose.pose);
 
   return 0;
 }

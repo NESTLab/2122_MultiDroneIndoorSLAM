@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   geometry_msgs
   nav_msgs
+  tf
 )
 
 
@@ -30,6 +31,7 @@ catkin_package(
                         sensor_msgs
                         geometry_msgs
                         nav_msgs
+                        tf
 #  DEPENDS system_lib
 )
 
@@ -51,15 +53,22 @@ include_directories(
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
 src/move_base_interface.cpp
+src/robot_state_machine.cpp
+src/team_scheduler.cpp
 )
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 
 ## Test Move base
-add_executable( move_base_test src/move_base_test.cpp)
+add_executable(move_base_test src/move_base_test.cpp)
 add_dependencies(move_base_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(move_base_test ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+## Test Move base
+add_executable(team_scheduler src/team_scheduler.cpp)
+add_dependencies(team_scheduler ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(team_scheduler ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 install(TARGETS move_base_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
