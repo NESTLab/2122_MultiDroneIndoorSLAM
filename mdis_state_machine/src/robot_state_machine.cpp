@@ -5,11 +5,16 @@ float RobotState::curr_meet_y = 0.0;
 float RobotState::next_meet_x = 0.0;
 float RobotState::next_meet_y = 0.0;
 
+std::string RobotState::parent_robot_name = "";
+std::string RobotState::child_robot_name = "";
+
 RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHandle &nh) :
       // m_pcTeam(nullptr), 
       m_unId(un_id), m_strName(str_name) 
 {
   explore_interface = new MoveBaseInterface(nh);
+  robot_name = ros::this_node::getNamespace();
+  robot_name.erase(robot_name.begin());
 
   curr_meet_x = -31;
   curr_meet_y = -6;
@@ -37,7 +42,7 @@ bool Idle::isDone()
 
 TEAM_STATES Idle::transition() 
 {
-  return GO_TO_EXPLORE;
+  return IDLE;
 }
 
 void Idle::step()
@@ -144,29 +149,38 @@ bool GoToMeet::entryPoint()
    ROS_INFO_STREAM("Going to meet at"<<getCurrentMeetingPoint());
    geometry_msgs::Point temp_point = getCurrentMeetingPoint();
    explore_interface->goToPoint(temp_point, false);
+   // Giving it some time to reflect
+   ros::Duration(1).sleep();
    return true;
 }
 
 bool GoToMeet::isDone()
 {
-   // Connection established
-   
-   // Temporary case
-   ros::Duration(20).sleep();
-   return true;
+   if(connected)
+   {
+     if(isConnDirectRelated())
+     {
+       ROS_INFO("Robot is connected to the party of interest");
+       return true;
+     }
+   }
+   return false;
 }
 
 
 TEAM_STATES GoToMeet::transition() 
 {
   if(isDone())
+  {
     return MEET;
-  else GO_TO_MEET;
+  }
+  else 
+    return GO_TO_MEET;
 }
 
 void GoToMeet::step()
 {
-  ROS_INFO("Step for GoToMeet");
+  ROS_INFO_THROTTLE(10,"Step for GoToMeet");
 }
 
 void GoToMeet::exitPoint() 
@@ -175,6 +189,19 @@ void GoToMeet::exitPoint()
 }
 
 
+void GoToMeet::connCB(const mdis_state_machine::Connection::ConstPtr msg)
+{
+  connected = false;
+  for(int i = 0; i<msg->connection_between.size(); i++)
+  {
+    if(robot_name == msg->connection_between.at(i).data)
+    {
+      int j = 1 ? i==0 : 0;
+      connected = true;
+      conn_robot = msg->connection_between.at(j).data;
+    }
+  }
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// M E E T   S T A T E   C L A S S ////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -205,6 +232,7 @@ void Meet::step()
 
 void Meet::exitPoint() 
 {
+  // Set this only if the meeting was successful
   setCurrAsNextMeeting();
 
   // get time estimate from move_base_interface

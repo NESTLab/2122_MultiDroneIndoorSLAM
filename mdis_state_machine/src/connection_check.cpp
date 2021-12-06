@@ -60,10 +60,10 @@ int main(int argc, char** argv)
   tf::TransformListener tf_listener;
   ros::Publisher conn_pub = nh.advertise<mdis_state_machine::Connection>("connection_check", 1000);
 
-  mdis_state_machine::Connection conn_msg;
-  conn_msg.connection_between.resize(2);
   while(ros::ok())
   {
+    mdis_state_machine::Connection conn_msg;
+    conn_msg.connection_between.resize(2);
     for (int i=0; i<number_of_robots; i++)
     {
       std::string robot_1 = "tb3_"+std::to_string(i);
@@ -71,16 +71,16 @@ int main(int argc, char** argv)
       {
         std::string robot_2 = "tb3_"+std::to_string(j);
         float dist = getDistanceOfPoints(getRobotCurrentPose(robot_1, tf_listener), getRobotCurrentPose(robot_2, tf_listener));
-        ROS_INFO_STREAM("Distance between "<<robot_1<<" and "<<robot_2<<":"<<dist);
+        // ROS_INFO_STREAM("Distance between "<<robot_1<<" and "<<robot_2<<":"<<dist);
         if(dist<DIST_THRESHOLD)
         {
           conn_msg.connection_between.at(0).data = robot_1;
           conn_msg.connection_between.at(1).data = robot_2;
           conn_msg.distance = dist;
-          conn_pub.publish(conn_msg);
         }
       }
     }
+    conn_pub.publish(conn_msg);
     ros::Duration(1).sleep();
   }
   return 0;

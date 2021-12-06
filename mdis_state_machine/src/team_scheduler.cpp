@@ -1,9 +1,11 @@
 #include <team_scheduler.h>
 
-TeamScheduler::TeamScheduler(ros::NodeHandle &nh)
+TeamScheduler::TeamScheduler(ros::NodeHandle &nh, const std::string& parent_name, const std::string& child_name)
 {
     addStates(nh);
-    setInitialState(IDLE);
+    setInitialState(GO_TO_EXPLORE);
+    current_state_ptr->setParent(parent_name);
+    current_state_ptr->setChild(child_name);
 }
 
 TeamScheduler::~TeamScheduler()
@@ -119,10 +121,18 @@ int main(int argc, char** argv)
 {
    ros::init(argc, argv, "state_machine");
    ros::NodeHandle nh;
+   
+  //  if (argc != 4 && argc != 2)
+  //  {
+  //    ROS_ERROR("This node must be launched with number of robots as argument");
+  //    return 0;
+  //  }
 
-   ROS_INFO("One");
-   TeamScheduler team(nh);
-   ROS_INFO("exec");
+   ROS_WARN("Argument checking is turned off. Please verify if the arguments are parent robot name and child robot name (if applicable)");
+   std::string parent_name = argv[1], child_name;
+  //  child_name = argv[2];
+   TeamScheduler team(nh, parent_name, child_name);
+   
    team.exec();
 
     return 0;

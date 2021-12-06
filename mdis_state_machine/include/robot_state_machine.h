@@ -2,6 +2,7 @@
 
 #include <move_base_interface.h>
 #include <std_msgs/Bool.h>
+#include <mdis_state_machine/Connection.h>
 
 enum TEAM_STATES{
    IDLE,
@@ -37,12 +38,23 @@ public:
 
    virtual TEAM_STATES transition() = 0;
 
+   void setParent(const std::string& name)
+   {
+     parent_robot_name = name;
+   }
+
+   void setChild(const std::string& name)
+   {
+     child_robot_name = name;
+   }
    
-   static float curr_meet_x, curr_meet_y, next_meet_x, next_meet_y;
 protected:
 
    uint64_t m_unId;
    std::string m_strName;
+   std::string robot_name;
+   static float curr_meet_x, curr_meet_y, next_meet_x, next_meet_y;
+   static std::string parent_robot_name, child_robot_name;
 
    bool is_explorer;
    bool meeting_started, go_for_exploration;
@@ -132,7 +144,9 @@ private:
 
 class GoToMeet: public RobotState{
 public:
-   GoToMeet(ros::NodeHandle &nh):RobotState(GO_TO_MEET, "GoToMeet", nh){}
+   GoToMeet(ros::NodeHandle &nh):RobotState(GO_TO_MEET, "GoToMeet", nh){
+     conn_sub = nh.subscribe("/connection_check", 1000, &GoToMeet::connCB, this);
+   }
    bool isDone() override ;
 
    TEAM_STATES transition() override;
@@ -140,6 +154,20 @@ public:
    bool entryPoint() override;
    void step() override;
    void exitPoint() override;
+
+private:
+   bool connected;
+   std::string conn_robot;
+   ros::Subscriber conn_sub;
+
+   inline bool isConnDirectRelated()
+   {
+     bool conn_parent = (conn_robot == parent_robot_name) && (conn_robot != "");
+     bool conn_child = (conn_robot == child_robot_name) && (conn_robot != "");
+     return ((conn_parent) || (conn_child));
+   }
+   
+   void connCB(const mdis_state_machine::Connection::ConstPtr msg);
 };
 
 
