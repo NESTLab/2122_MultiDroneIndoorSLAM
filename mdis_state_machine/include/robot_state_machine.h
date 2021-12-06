@@ -37,8 +37,8 @@ public:
 
    virtual TEAM_STATES transition() = 0;
 
-   geometry_msgs::Point current_meeting_location, next_meeting_location;
    
+   static float curr_meet_x, curr_meet_y, next_meet_x, next_meet_y;
 protected:
 
    uint64_t m_unId;
@@ -50,6 +50,37 @@ protected:
    MoveBaseInterface *explore_interface;
 
    ros::Duration time_until_next_meeting = ros::Duration(30.0);
+
+
+   void setCurrentMeetingLocation(const geometry_msgs::Point& meeting)
+   {
+     curr_meet_x = meeting.x;
+     curr_meet_y = meeting.y;
+   }
+   void setNextMeetingLocation(const geometry_msgs::Point& meeting)
+   {
+     next_meet_x = meeting.x;
+     next_meet_y = meeting.y;
+   }
+   geometry_msgs::Point getCurrentMeetingPoint()
+   {
+     geometry_msgs::Point point;
+     point.x = curr_meet_x;
+     point.y = curr_meet_y;
+     return point;
+   }
+   geometry_msgs::Point getNextMeetingPoint()
+   {
+     geometry_msgs::Point point;
+     point.x = next_meet_x;
+     point.y = next_meet_y;
+     return point;
+   }
+   void setCurrAsNextMeeting()
+   {
+     curr_meet_x = next_meet_x;
+     curr_meet_y = next_meet_y;
+   }
 };
 
 class Idle: public RobotState{

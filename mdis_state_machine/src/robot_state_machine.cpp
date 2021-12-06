@@ -1,15 +1,21 @@
 #include <robot_state_machine.h>
 
+float RobotState::curr_meet_x = 0.0;
+float RobotState::curr_meet_y = 0.0;
+float RobotState::next_meet_x = 0.0;
+float RobotState::next_meet_y = 0.0;
+
 RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHandle &nh) :
       // m_pcTeam(nullptr), 
       m_unId(un_id), m_strName(str_name) 
 {
   explore_interface = new MoveBaseInterface(nh);
 
-  current_meeting_location.x = -31;
-  current_meeting_location.y = -6;
-  next_meeting_location.x = -28;
-  next_meeting_location.y = -6;
+  curr_meet_x = -31;
+  curr_meet_y = -6;
+  next_meet_x = -28;
+  next_meet_y = -6;
+
 }
 
 
@@ -55,8 +61,9 @@ bool GoToExplore::entryPoint()
 
 bool GoToExplore::isDone()
 {
-   ROS_INFO_STREAM("Going to explore at"<<next_meeting_location);
-   explore_interface->goToPoint(next_meeting_location, true);
+   ROS_INFO_STREAM("Going to explore at"<<getNextMeetingPoint());
+   geometry_msgs::Point temp_point = getNextMeetingPoint();
+   explore_interface->goToPoint(temp_point, true);
    return true;
 }
 
@@ -120,9 +127,9 @@ void Explore::exitPoint()
   // BUG!!!!
   // Values are being changed only for the class Explore
   // Need to change values for all
-  next_meeting_location = explore_interface->getRobotCurrentPose().pose.position;
+  setNextMeetingLocation(explore_interface->getRobotCurrentPose().pose.position);
   
-  ROS_INFO_STREAM("Next meeting"<<next_meeting_location);
+  ROS_INFO_STREAM("Next meeting"<<getNextMeetingPoint());
 
   explore_interface->stopRobot();
 }
@@ -134,8 +141,9 @@ void Explore::exitPoint()
 
 bool GoToMeet::entryPoint()
 {
-   ROS_INFO_STREAM("Going to meet at"<<current_meeting_location);
-   explore_interface->goToPoint(current_meeting_location, false);
+   ROS_INFO_STREAM("Going to meet at"<<getCurrentMeetingPoint());
+   geometry_msgs::Point temp_point = getCurrentMeetingPoint();
+   explore_interface->goToPoint(temp_point, false);
    return true;
 }
 
@@ -197,7 +205,7 @@ void Meet::step()
 
 void Meet::exitPoint() 
 {
-  current_meeting_location = next_meeting_location;
+  setCurrAsNextMeeting();
 
   // get time estimate from move_base_interface
   // set exploration_duration accordingly
