@@ -17,6 +17,16 @@ find_package(catkin REQUIRED COMPONENTS
   tf
 )
 
+add_message_files(
+  FILES
+  Connection.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
 
 catkin_package(
   INCLUDE_DIRS include
@@ -69,6 +79,11 @@ target_link_libraries(move_base_test ${PROJECT_NAME} ${catkin_LIBRARIES})
 add_executable(team_scheduler src/team_scheduler.cpp)
 add_dependencies(team_scheduler ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(team_scheduler ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+## Test Move base
+add_executable(connection_check src/connection_check.cpp)
+add_dependencies(connection_check ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(connection_check ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 install(TARGETS move_base_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
