@@ -4,6 +4,12 @@
 #include <std_msgs/Bool.h>
 #include <mdis_state_machine/Connection.h>
 
+enum ROLE{
+  RELAY,
+  EXPLORER,
+  RELAY_BETN_ROBOTS,
+};
+
 enum TEAM_STATES{
    IDLE,
    GO_TO_EXPLORE,
@@ -48,6 +54,10 @@ public:
      child_robot_name = name;
    }
    
+   void setRobotRole(ROLE role)
+   {
+     robot_role = role;
+   }
 protected:
 
    uint64_t m_unId;
@@ -55,6 +65,9 @@ protected:
    std::string robot_name;
    static float curr_meet_x, curr_meet_y, next_meet_x, next_meet_y;
    static std::string parent_robot_name, child_robot_name;
+   static ROLE robot_role;
+
+   geometry_msgs::Point data_dump_location;
 
    bool is_explorer;
    bool meeting_started, go_for_exploration;
@@ -174,6 +187,32 @@ private:
 class Meet: public RobotState{
 public:
    Meet(ros::NodeHandle &nh):RobotState(MEET, "Meet", nh){}
+   bool isDone() override ;
+
+   TEAM_STATES transition() override;
+   
+   bool entryPoint() override;
+   void step() override;
+   void exitPoint() override;
+};
+
+
+class GoToDumpData: public RobotState{
+public:
+   GoToDumpData(ros::NodeHandle &nh):RobotState(GO_TO_DUMP_DATA, "GoToDumpData", nh){}
+   bool isDone() override ;
+
+   TEAM_STATES transition() override;
+   
+   bool entryPoint() override;
+   void step() override;
+   void exitPoint() override;
+};
+
+
+class DumpData: public RobotState{
+public:
+   DumpData(ros::NodeHandle &nh):RobotState(DUMP_DATA, "DumpData", nh){}
    bool isDone() override ;
 
    TEAM_STATES transition() override;

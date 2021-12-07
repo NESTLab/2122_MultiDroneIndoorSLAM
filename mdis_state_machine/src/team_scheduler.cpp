@@ -1,11 +1,15 @@
 #include <team_scheduler.h>
 
-TeamScheduler::TeamScheduler(ros::NodeHandle &nh, const std::string& parent_name, const std::string& child_name)
+TeamScheduler::TeamScheduler(ros::NodeHandle &nh, ROLE role, const std::string& parent_name, const std::string& child_name)
 {
     addStates(nh);
-    setInitialState(GO_TO_EXPLORE);
+    if (role == EXPLORER)
+      setInitialState(GO_TO_EXPLORE);
+    else if (role == RELAY)
+      setInitialState(GO_TO_MEET);
     current_state_ptr->setParent(parent_name);
     current_state_ptr->setChild(child_name);
+    current_state_ptr->setRobotRole(role);
 }
 
 TeamScheduler::~TeamScheduler()
@@ -25,6 +29,8 @@ void TeamScheduler::addStates(ros::NodeHandle &nh)
     addState(new Explore(nh));
     addState(new GoToMeet(nh));
     addState(new Meet(nh));
+    addState(new GoToDumpData(nh));
+    addState(new DumpData(nh));
 }
 
 void TeamScheduler::addState(RobotState* pc_state) {
@@ -128,12 +134,15 @@ int main(int argc, char** argv)
   //    return 0;
   //  }
 
-   ROS_WARN("Argument checking is turned off. Please verify if the arguments are parent robot name and child robot name (if applicable)");
-   std::string parent_name = argv[1], child_name;
-  //  child_name = argv[2];
-   TeamScheduler team(nh, parent_name, child_name);
+   ROS_WARN("Argument checking is turned off. Please verify if the arguments are: Role, parent_robot_name and child_robot_name (if applicable)");
+
+   ROLE role = (ROLE)(std::stoi(argv[1]));
+   std::string parent_name = argv[2], child_name;
+   if(role != EXPLORER)
+    child_name = argv[3];
+   TeamScheduler team(nh, role, parent_name, child_name);
    
    team.exec();
 
-    return 0;
+   return 0;
 }

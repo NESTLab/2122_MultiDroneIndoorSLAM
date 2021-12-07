@@ -8,6 +8,8 @@ float RobotState::next_meet_y = 0.0;
 std::string RobotState::parent_robot_name = "";
 std::string RobotState::child_robot_name = "";
 
+ROLE RobotState::robot_role;
+
 RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHandle &nh) :
       // m_pcTeam(nullptr), 
       m_unId(un_id), m_strName(str_name) 
@@ -21,6 +23,8 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   next_meet_x = -28;
   next_meet_y = -6;
 
+  data_dump_location.x = -31;
+  data_dump_location.y = -10;
 }
 
 
@@ -220,7 +224,14 @@ bool Meet::isDone()
 TEAM_STATES Meet::transition() 
 {
   if(isDone())
-    return GO_TO_EXPLORE;
+  {
+    if (robot_role == EXPLORER)
+      return GO_TO_EXPLORE;
+    else if(robot_role == RELAY)
+      return GO_TO_DUMP_DATA;
+    // else if(robot_role == RELAY_BETN_ROBOTS)
+    //   return GO_TO_MEET;
+  }
   else 
     return MEET;
 }
@@ -237,4 +248,70 @@ void Meet::exitPoint()
 
   // get time estimate from move_base_interface
   // set exploration_duration accordingly
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////// G O  T O  D U M P   S T A T E   C L A S S ////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool GoToDumpData::entryPoint()
+{
+   return true;
+}
+
+bool GoToDumpData::isDone()
+{
+   ROS_INFO_STREAM("Going to Dump Data at"<<data_dump_location);
+   explore_interface->goToPoint(data_dump_location, true);
+   return true;
+}
+
+TEAM_STATES GoToDumpData::transition() 
+{
+  if(isDone())
+    return DUMP_DATA;
+  else
+    return GO_TO_DUMP_DATA;
+}
+
+void GoToDumpData::step()
+{
+  ROS_INFO_THROTTLE(10, "Going to dump data");
+}
+
+void GoToDumpData::exitPoint() 
+{
+  explore_interface->stopRobot();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////// D U M P   S T A T E   C L A S S ////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool DumpData::entryPoint()
+{
+   return true;
+}
+
+bool DumpData::isDone()
+{
+   // Data sync done
+   return true;
+}
+
+TEAM_STATES DumpData::transition() 
+{
+  if(isDone())
+    return GO_TO_MEET;
+  else 
+    return DUMP_DATA;
+}
+
+void DumpData::step()
+{
+  ROS_INFO("Step for DumpData");
+}
+
+void DumpData::exitPoint() 
+{
 }
