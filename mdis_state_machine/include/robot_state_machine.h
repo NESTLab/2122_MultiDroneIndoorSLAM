@@ -3,7 +3,7 @@
 #include <move_base_interface.h>
 #include <std_msgs/Bool.h>
 #include <mdis_state_machine/Connection.h>
-
+#include <mdis_state_machine/DataCommunication.h>
 enum ROLE{
   RELAY,
   EXPLORER,
@@ -77,12 +77,12 @@ protected:
    ros::Duration time_until_next_meeting = ros::Duration(30.0);
 
 
-   void setCurrentMeetingLocation(const geometry_msgs::Point& meeting)
+   void setCurrentMeetingPoint(const geometry_msgs::Point& meeting)
    {
      curr_meet_x = meeting.x;
      curr_meet_y = meeting.y;
    }
-   void setNextMeetingLocation(const geometry_msgs::Point& meeting)
+   void setNextMeetingPoint(const geometry_msgs::Point& meeting)
    {
      next_meet_x = meeting.x;
      next_meet_y = meeting.y;
@@ -106,6 +106,13 @@ protected:
      curr_meet_x = next_meet_x;
      curr_meet_y = next_meet_y;
    }
+   inline bool isConnDirectRelated(const std::string& conn_robot)
+   {
+     bool conn_parent = (conn_robot == parent_robot_name) && (conn_robot != "");
+     bool conn_child = (conn_robot == child_robot_name) && (conn_robot != "");
+     return ((conn_parent) || (conn_child));
+   }
+   
 };
 
 class Idle: public RobotState{
@@ -173,20 +180,16 @@ private:
    std::string conn_robot;
    ros::Subscriber conn_sub;
 
-   inline bool isConnDirectRelated()
-   {
-     bool conn_parent = (conn_robot == parent_robot_name) && (conn_robot != "");
-     bool conn_child = (conn_robot == child_robot_name) && (conn_robot != "");
-     return ((conn_parent) || (conn_child));
-   }
-   
    void connCB(const mdis_state_machine::Connection::ConstPtr msg);
 };
 
 
 class Meet: public RobotState{
 public:
-   Meet(ros::NodeHandle &nh):RobotState(MEET, "Meet", nh){}
+   Meet(ros::NodeHandle &nh):RobotState(MEET, "Meet", nh){
+     meeting_data_pub = nh.advertise<mdis_state_machine::DataCommunication>("/data_communication", 1000);
+     meeting_data_sub = nh.subscribe("/data_communication", 1000, &Meet::nextMeetingLocationCB, this);
+   }
    bool isDone() override ;
 
    TEAM_STATES transition() override;
@@ -194,6 +197,17 @@ public:
    bool entryPoint() override;
    void step() override;
    void exitPoint() override;
+
+private:
+   ros::Publisher meeting_data_pub;
+   ros::Subscriber meeting_data_sub;
+
+   bool data_received;
+
+   void publishNextMeetingLocation();
+   void nextMeetingLocationCB(const mdis_state_machine::DataCommunication::ConstPtr msg);
+   void getNextMeetingLocationFromCallback();
+   geometry_msgs::Point buffer_next_location;
 };
 
 

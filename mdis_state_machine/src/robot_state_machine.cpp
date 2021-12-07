@@ -136,7 +136,7 @@ void Explore::exitPoint()
   // BUG!!!!
   // Values are being changed only for the class Explore
   // Need to change values for all
-  setNextMeetingLocation(explore_interface->getRobotCurrentPose().pose.position);
+  setNextMeetingPoint(explore_interface->getRobotCurrentPose().pose.position);
   
   ROS_INFO_STREAM("Next meeting"<<getNextMeetingPoint());
 
@@ -162,7 +162,7 @@ bool GoToMeet::isDone()
 {
    if(connected)
    {
-     if(isConnDirectRelated())
+     if(isConnDirectRelated(conn_robot))
      {
        ROS_INFO("Robot is connected to the party of interest");
        return true;
@@ -212,6 +212,7 @@ void GoToMeet::connCB(const mdis_state_machine::Connection::ConstPtr msg)
 
 bool Meet::entryPoint()
 {
+   data_received = false;
    return true;
 }
 
@@ -243,13 +244,69 @@ void Meet::step()
 
 void Meet::exitPoint() 
 {
+  ROS_INFO("Exiting");
   // Set this only if the meeting was successful
-  setCurrAsNextMeeting();
+  if(robot_role == EXPLORER)
+  {
+    publishNextMeetingLocation();
+    setCurrAsNextMeeting();
+  }
+  else
+    getNextMeetingLocationFromCallback();
+    
 
   // get time estimate from move_base_interface
   // set exploration_duration accordingly
 }
 
+void Meet::publishNextMeetingLocation()
+{
+  mdis_state_machine::DataCommunication data;
+  data.connection_between.resize(2);
+  data.connection_between.at(0).data = robot_name;
+  data.connection_between.at(1).data = parent_robot_name;
+  data.next_meeting_point = getNextMeetingPoint();
+  
+  meeting_data_pub.publish(data);
+  ros::Duration(0.2).sleep();
+  meeting_data_pub.publish(data);
+  ros::Duration(0.2).sleep();
+  meeting_data_pub.publish(data);
+  ros::Duration(0.2).sleep();
+}
+
+void Meet::getNextMeetingLocationFromCallback()
+{
+  // @to-do
+  // THIS NEEDS TO EXIT SOMETIME IF NO CONNECTION IS MADE
+  while(ros::ok() && !data_received)
+  {
+    ROS_INFO("Waiting for meeting data");
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+  }
+  ROS_INFO("Data received");
+  setCurrentMeetingPoint(buffer_next_location);
+}
+
+void Meet::nextMeetingLocationCB(const mdis_state_machine::DataCommunication::ConstPtr msg)
+{
+  ROS_INFO("Data Received");
+  std::string conn_robot;
+  for(int i = 0; i<msg->connection_between.size(); i++)
+  {
+    if(robot_name == msg->connection_between.at(i).data)
+    {
+      int j = 1 ? i==0 : 0;
+      conn_robot = msg->connection_between.at(j).data;
+    }
+  }
+  if(isConnDirectRelated(conn_robot))
+  {
+    buffer_next_location = msg->next_meeting_point;
+    data_received = true;
+  }
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// G O  T O  D U M P   S T A T E   C L A S S ////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////

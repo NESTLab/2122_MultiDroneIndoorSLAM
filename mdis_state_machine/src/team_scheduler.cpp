@@ -135,11 +135,13 @@ int main(int argc, char** argv)
   //  }
 
    ROS_WARN("Argument checking is turned off. Please verify if the arguments are: Role, parent_robot_name and child_robot_name (if applicable)");
-
    ROLE role = (ROLE)(std::stoi(argv[1]));
    std::string parent_name = argv[2], child_name;
    if(role != EXPLORER)
     child_name = argv[3];
+  
+   if(role == RELAY)
+      ros::Duration(20).sleep();
    TeamScheduler team(nh, role, parent_name, child_name);
    
    team.exec();
