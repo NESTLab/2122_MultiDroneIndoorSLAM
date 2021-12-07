@@ -5,7 +5,7 @@
 
 class TeamScheduler{
 public:
-   TeamScheduler(ros::NodeHandle &nh, const std::string& parent_name, const std::string& child_name);
+   TeamScheduler(ros::NodeHandle &nh, ROLE role, const std::string& parent_name, const std::string& child_name);
    ~TeamScheduler();
    
    void exec();
