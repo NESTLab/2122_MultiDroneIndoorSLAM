@@ -4,6 +4,7 @@ float RobotState::curr_meet_x = 0.0;
 float RobotState::curr_meet_y = 0.0;
 float RobotState::next_meet_x = 0.0;
 float RobotState::next_meet_y = 0.0;
+float RobotState::time_for_exploration = 30.0;
 
 std::string RobotState::parent_robot_name = "";
 std::string RobotState::child_robot_name = "";
@@ -101,12 +102,14 @@ void GoToExplore::exitPoint()
 bool Explore::entryPoint()
 {
    starting_time = ros::Time::now();
+   ROS_INFO_STREAM("Exploring for "<<time_for_exploration<<" Seconds");
    return true;
 }
 
 bool Explore::isDone()
 {
    ros::Duration time_since_start = ros::Time::now() - starting_time;
+   ros::Duration time_until_next_meeting = ros::Duration(time_for_exploration);
    return time_since_start > time_until_next_meeting;
 }
 
@@ -249,6 +252,7 @@ void Meet::exitPoint()
   if(robot_role == EXPLORER)
   {
     publishNextMeetingLocation();
+    setExplorationTime();
     setCurrAsNextMeeting();
   }
   else
@@ -257,6 +261,18 @@ void Meet::exitPoint()
 
   // get time estimate from move_base_interface
   // set exploration_duration accordingly
+}
+
+void Meet::setExplorationTime()
+{
+  geometry_msgs::Point curr_location = explore_interface->getRobotCurrentPose().pose.position;
+  geometry_msgs::Point temp_next_location = getNextMeetingPoint();
+  float time_to_dump = explore_interface->getTimePredictionForTravel(curr_location, data_dump_location);
+  float time_to_meet_after = explore_interface->getTimePredictionForTravel(data_dump_location, temp_next_location);
+  float time_to_exploration_site = explore_interface->getTimePredictionForTravel(curr_location, temp_next_location);
+  float total_time = time_to_dump+time_to_meet_after;
+  
+  time_for_exploration = (total_time-time_to_exploration_site)/2; 
 }
 
 void Meet::publishNextMeetingLocation()

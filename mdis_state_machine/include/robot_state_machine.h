@@ -64,6 +64,7 @@ protected:
    std::string m_strName;
    std::string robot_name;
    static float curr_meet_x, curr_meet_y, next_meet_x, next_meet_y;
+   static float time_for_exploration;
    static std::string parent_robot_name, child_robot_name;
    static ROLE robot_role;
 
@@ -74,7 +75,6 @@ protected:
 
    MoveBaseInterface *explore_interface;
 
-   ros::Duration time_until_next_meeting = ros::Duration(30.0);
 
 
    void setCurrentMeetingPoint(const geometry_msgs::Point& meeting)
@@ -207,6 +207,7 @@ private:
    void publishNextMeetingLocation();
    void nextMeetingLocationCB(const mdis_state_machine::DataCommunication::ConstPtr msg);
    void getNextMeetingLocationFromCallback();
+   void setExplorationTime();
    geometry_msgs::Point buffer_next_location;
 };
 

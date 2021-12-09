@@ -48,6 +48,22 @@ class MoveBaseInterface
     float getDistancePrediction(geometry_msgs::Point &goal);
 
     /**
+     * @brief Get the Time Prediction For Travel object
+     * 
+     * @param goal 
+     * @return float 
+     */
+    float getTimePredictionForTravel(geometry_msgs::Point &goal);
+
+    /**
+     * @brief Get the Time Prediction For Travel object
+     * 
+     * @param goal 
+     * @return float 
+     */
+    float getTimePredictionForTravel(geometry_msgs::Point &start_point, geometry_msgs::Point &end_point);
+
+    /**
      * @brief Starts navigation and takes the robot to the location
      * 
      * @param goal_pose 
@@ -111,6 +127,7 @@ class MoveBaseInterface
     std::string robot_frame;
 
     const int MAX_ATTEMPTS = 5;
+    const float ROBOT_SPEED = (14/68.4); // Experimentally derived
 
     float calculatePathLength(const nav_msgs::Path& path);
 
