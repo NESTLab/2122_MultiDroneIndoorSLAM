@@ -167,3 +167,17 @@ geometry_msgs::PoseStamped MoveBaseInterface::transformTf2msg(const tf::StampedT
 
   return msg;
 }
+
+float MoveBaseInterface::getTimePredictionForTravel(geometry_msgs::Point &goal)
+{
+  float distance = getDistancePrediction(goal);
+  float time = distance/ROBOT_SPEED;
+  return time;
+}
+
+float MoveBaseInterface::getTimePredictionForTravel(geometry_msgs::Point &start_point, geometry_msgs::Point &end_point)
+{
+  float distance = getDistancePrediction(start_point, end_point);
+  float time = distance/ROBOT_SPEED;
+  return time;
+}
