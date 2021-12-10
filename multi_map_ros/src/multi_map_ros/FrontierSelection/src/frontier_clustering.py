@@ -8,23 +8,28 @@ from scipy import signal as sig
 from std_msgs.msg import Header
 from nav_msgs.msg import OccupancyGrid, GridCells
 from geometry_msgs.msg import Point, PoseStamped
+from tf import TransformListener
 
 class find_frontier:
     def __init__(self):
         rospy.init_node('find_fontier')
-        self.mapSub = rospy.Subscriber('/tb3_0/map', OccupancyGrid, self.map_callback)
+        self.robot_namespace = '/tb3_0'
+        self.mapSub = rospy.Subscriber(self.robot_namespace+'/map', OccupancyGrid, self.map_callback)
         self.fringe = rospy.Publisher('/map_fringe', GridCells, queue_size=10)
         self.final_frontier_pub = rospy.Publisher('/selected_frontier', GridCells, queue_size=10)
         self.center_fringe_pub = rospy.Publisher('/selected_center', GridCells, queue_size=10)
-        self.move_pub = rospy.Publisher('/tb3_0/move_base_simple/goal', PoseStamped, queue_size=10)
+        self.move_pub = rospy.Publisher(self.robot_namespace+'/move_base_simple/goal', PoseStamped, queue_size=10)
         self.move_helper_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.helper)
-        self.move_helper_pub = rospy.Publisher('/tb3_0/move_base_simple/goal', PoseStamped, queue_size=10)
+        self.move_helper_pub = rospy.Publisher(self.robot_namespace+'/move_base_simple/goal', PoseStamped, queue_size=10)
         self.clusters = list()
 
         self.timer = rospy.Timer(rospy.Duration(5), self.frontier_callback)
 
         self.cell_threshold = 0
         self.threshold_multiplier = 2
+
+        self.tf_listener_ = TransformListener()
+        self.weight_output = .75
 
 
     def helper(self, msg):
@@ -37,7 +42,7 @@ class find_frontier:
         msg = self.map
         fringe_points = self.find_fringe(msg)
         all_frontier_clusters = self.cluster_cells(fringe_points)
-        best_frontier_key, best_frontier_cells = self.calculate_least_cost_frontier(all_frontier_clusters)
+        best_frontier_cells = self.calculate_least_cost_frontier(all_frontier_clusters)
         self.send_to_frontier(best_frontier_cells, msg)
 
 
@@ -87,6 +92,7 @@ class find_frontier:
             :param x: float of x position
             :param y: float of y position
             :return: tuple of converted point
+            @Author tberg1234 (from rbe3002)
         """
         resolution = my_map.info.resolution
 
@@ -153,8 +159,24 @@ class find_frontier:
 
 
     def calculate_least_cost_frontier(self, all_frontier_clusters):
-        max_key, max_value = max(all_frontier_clusters.items(), key=lambda x: len(set(x[1])))
-        return max_key, max_value
+        # max_key, max_value = max(all_frontier_clusters.items(), key=lambda x: len(set(x[1])))
+        # return max_key, max_value
+
+        cost_dict = dict()
+        length_dict = {key: len(value) for key, value in all_frontier_clusters.items()}
+        robot_position = self.get_current_position_in_map()
+
+        for key in all_frontier_clusters.keys():
+            cells = all_frontier_clusters.get(key)
+            size = length_dict.get(key)
+            center = np.average(cells, axis=0)
+            distance = np.linalg.norm(np.asarray(center) - np.asarray(robot_position))
+
+            cost = self.weight_output*distance + (1-self.weight_output)*(1-size)
+            cost_dict[key] = cost
+
+        sorted_costs = sorted(cost_dict, key=cost_dict.get, reverse=False)
+        return all_frontier_clusters.get(sorted_costs[0])
 
 
     def send_to_frontier(self, best_frontier_cells, msg):
@@ -200,6 +222,17 @@ class find_frontier:
         move_msg.pose.orientation.w = 1
 
         self.move_pub.publish(move_msg)
+
+
+    def get_current_position_in_map(self):
+        # Position of the robot base in the map
+
+        t = self.tf_listener_.getLatestCommonTime(self.robot_namespace+"/map", self.robot_namespace+"/base_link")
+        p1 = PoseStamped()
+        p1.header.frame_id = self.robot_namespace+"/base_link"
+        p1.pose.orientation.w = 1.0  # Neutral orientation
+        p_in_base = self.tf_listener_.transformPose(self.robot_namespace+"/map", p1)
+        return (p_in_base.pose.position.x, p_in_base.pose.position.y, p_in_base.pose.position.z)
 
 
 
