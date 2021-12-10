@@ -24,6 +24,7 @@ class find_frontier:
         self.timer = rospy.Timer(rospy.Duration(5), self.frontier_callback)
 
         self.cell_threshold = 0
+        self.threshold_multiplier = 2
 
 
     def helper(self, msg):
@@ -46,7 +47,7 @@ class find_frontier:
         gridCells.cell_width = res
         gridCells.cell_height = res
 
-        self.cell_threshold = 5*res
+        self.cell_threshold = self.threshold_multiplier*res
 
         header = Header()
         header.frame_id = msg.header.frame_id
@@ -96,59 +97,53 @@ class find_frontier:
         all_frontier_clusters = dict()  # keeps track of clusters and the parent
         remaining_cells = copy.deepcopy(gridCells)  # cells remaining to be assigned to a group
 
-        for a_cell in gridCells:
-            assigned = False
-            if all_frontier_clusters:
-                for key in all_frontier_clusters:
-                    cells_in_cluster = all_frontier_clusters.get(key)
-                    iterable_cells = copy.deepcopy(cells_in_cluster)
-                    for other_cell in iterable_cells:
-                        if np.linalg.norm(np.asarray(a_cell) - np.asarray(other_cell)) <= self.cell_threshold:
-                            if a_cell not in cells_in_cluster:
-                                assigned = True
-                                cells_in_cluster.append(a_cell)
-                                if a_cell in remaining_cells:
-                                    remaining_cells.remove(a_cell)
-                                # all_frontier_clusters[key] = cells_in_cluster
+        for a_cell in gridCells:  # in remaining_cells worked kinda but it was faster sooo
+            if remaining_cells:
+                assigned = False
+                if all_frontier_clusters:
+                    for key in all_frontier_clusters:
+                        cells_in_cluster = all_frontier_clusters.get(key)
+                        iterable_cells = copy.deepcopy(cells_in_cluster)
+                        for other_cell in iterable_cells:
+                            if np.linalg.norm(np.asarray(a_cell) - np.asarray(other_cell)) <= self.cell_threshold:
+                                if a_cell not in cells_in_cluster:
+                                    assigned = True
+                                    cells_in_cluster.append(a_cell)
+                                    if a_cell in remaining_cells:
+                                        remaining_cells.remove(a_cell)
+                                    # all_frontier_clusters[key] = cells_in_cluster
+                                else:
+                                    assigned = True
 
-                            else:
-                                assigned = True
+                                for potential_cell in remaining_cells:  # in gridCells
+                                    if np.linalg.norm(np.asarray(a_cell) - np.asarray(potential_cell)) <= self.cell_threshold:
+                                        if potential_cell not in cells_in_cluster:
+                                            cells_in_cluster.append(potential_cell)
+                                            if potential_cell in remaining_cells:
+                                                remaining_cells.remove(potential_cell)
+                                            # all_frontier_clusters[key] = cells_in_cluster
 
-                            for potential_cell in remaining_cells:  # in gridCells
-                                if np.linalg.norm(np.asarray(a_cell) - np.asarray(potential_cell)) <= self.cell_threshold:
-                                    if potential_cell not in cells_in_cluster:
-                                        cells_in_cluster.append(potential_cell)
-                                        if potential_cell in remaining_cells:
-                                            remaining_cells.remove(potential_cell)
-                                        # all_frontier_clusters[key] = cells_in_cluster
+                        all_frontier_clusters[key] = cells_in_cluster
 
-                    all_frontier_clusters[key] = cells_in_cluster
+                    if not assigned:
+                        first_list = list()
+                        first_list.append(a_cell)
+                        remaining_cells.remove(a_cell)
+                        all_frontier_clusters[a_cell] = first_list
 
-                if not assigned:
+
+                else:
                     first_list = list()
                     first_list.append(a_cell)
                     remaining_cells.remove(a_cell)
                     all_frontier_clusters[a_cell] = first_list
 
-
             else:
-                first_list = list()
-                first_list.append(a_cell)
-                remaining_cells.remove(a_cell)
-                all_frontier_clusters[a_cell] = first_list
-
-        # longest_length = 0
-        # longest_length_list = list()
-        # for key in all_frontier_clusters:
-        #     cell_list = all_frontier_clusters[key]
-        #     if len(cell_list) > longest_length:
-        #         longest_length_list = cell_list
-        #         longest_length = len(cell_list)
+                pass
 
         max_key, max_value = max(all_frontier_clusters.items(), key=lambda x: len(set(x[1])))
 
         final_frontier = list()
-        # if longest_length > 0:
         for cell in max_value:
             final_frontier.append(Point(cell[0], cell[1], cell[2]))
 
