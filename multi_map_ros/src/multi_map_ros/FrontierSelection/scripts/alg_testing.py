@@ -60,3 +60,12 @@ if __name__ == '__main__':
             all_frontier_clusters[a_cell] = first_list
 
     print(str(all_frontier_clusters))
+
+    all_values = all_frontier_clusters.values()
+
+    max_value = max(all_values)
+    print(max_value)
+
+    max_key, max_value = max(all_frontier_clusters.items(), key=lambda x: len(set(x[1])))
+    print(max_key)
+    print(max_value)

@@ -17,8 +17,8 @@ class find_frontier:
         self.final_frontier_pub = rospy.Publisher('/selected_frontier', GridCells, queue_size=10)
         self.center_fringe_pub = rospy.Publisher('/selected_center', GridCells, queue_size=10)
         self.move_pub = rospy.Publisher('/tb3_0/move_base_simple/goal', PoseStamped, queue_size=10)
-        # self.move_helper_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.helper)
-        # self.move_helper_pub = rospy.Publisher('/tb3_0/move_base_simple/goal', PoseStamped, queue_size=10)
+        self.move_helper_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.helper)
+        self.move_helper_pub = rospy.Publisher('/tb3_0/move_base_simple/goal', PoseStamped, queue_size=10)
         self.clusters = list()
 
         self.timer = rospy.Timer(rospy.Duration(5), self.frontier_callback)
@@ -26,8 +26,8 @@ class find_frontier:
         self.cell_threshold = 0
 
 
-    # def helper(self, msg):
-    #     self.move_helper_pub.publish(msg)
+    def helper(self, msg):
+        self.move_helper_pub.publish(msg)
 
     def map_callback(self, msg):
         self.map = msg
@@ -40,7 +40,6 @@ class find_frontier:
         height = msg.info.height
         data = np.asarray(msg.data).reshape((width,height), order='F')
         expl = (data > -1)
-        #print '{0}x{1} @ {2} m/cell: {3} cells'.format(width,height,res,len(data))
 
         # Takes in a list of (x,y) locations to paint as explored nodes
         gridCells = GridCells()
@@ -53,7 +52,6 @@ class find_frontier:
         header.frame_id = msg.header.frame_id
         gridCells.header = header
 
-        #find the actual locations of the cells we want to paint
         filter = np.asarray([-1,0,1,-2,0,2,-1,0,1]).reshape((3,3))
         edgeX = sig.convolve2d(expl, filter, mode='same', fillvalue=-1)
         edgeY = sig.convolve2d(expl, filter.T, mode='same', fillvalue=-1)
@@ -105,25 +103,26 @@ class find_frontier:
                     cells_in_cluster = all_frontier_clusters.get(key)
                     iterable_cells = copy.deepcopy(cells_in_cluster)
                     for other_cell in iterable_cells:
-                        # if True in (abs(np.subtract(a_cell, other_cell)) <= cell_threshold):
                         if np.linalg.norm(np.asarray(a_cell) - np.asarray(other_cell)) <= self.cell_threshold:
                             if a_cell not in cells_in_cluster:
                                 assigned = True
                                 cells_in_cluster.append(a_cell)
                                 if a_cell in remaining_cells:
                                     remaining_cells.remove(a_cell)
-                                all_frontier_clusters[key] = cells_in_cluster
+                                # all_frontier_clusters[key] = cells_in_cluster
 
                             else:
                                 assigned = True
 
                             for potential_cell in remaining_cells:  # in gridCells
-                                # if True in (abs(np.subtract(a_cell, potential_cell)) <= cell_threshold):
                                 if np.linalg.norm(np.asarray(a_cell) - np.asarray(potential_cell)) <= self.cell_threshold:
                                     if potential_cell not in cells_in_cluster:
                                         cells_in_cluster.append(potential_cell)
-                                        remaining_cells.remove(potential_cell)
-                                        all_frontier_clusters[key] = cells_in_cluster
+                                        if potential_cell in remaining_cells:
+                                            remaining_cells.remove(potential_cell)
+                                        # all_frontier_clusters[key] = cells_in_cluster
+
+                    all_frontier_clusters[key] = cells_in_cluster
 
                 if not assigned:
                     first_list = list()
@@ -138,18 +137,20 @@ class find_frontier:
                 remaining_cells.remove(a_cell)
                 all_frontier_clusters[a_cell] = first_list
 
-        longest_length = 0
-        longest_length_list = list()
-        for key in all_frontier_clusters:
-            cell_list = all_frontier_clusters[key]
-            if len(cell_list) > longest_length:
-                longest_length_list = cell_list
-                longest_length = len(cell_list)
+        # longest_length = 0
+        # longest_length_list = list()
+        # for key in all_frontier_clusters:
+        #     cell_list = all_frontier_clusters[key]
+        #     if len(cell_list) > longest_length:
+        #         longest_length_list = cell_list
+        #         longest_length = len(cell_list)
+
+        max_key, max_value = max(all_frontier_clusters.items(), key=lambda x: len(set(x[1])))
 
         final_frontier = list()
-        if longest_length > 0:
-            for cell in longest_length_list:
-                final_frontier.append(Point(cell[0], cell[1], cell[2]))
+        # if longest_length > 0:
+        for cell in max_value:
+            final_frontier.append(Point(cell[0], cell[1], cell[2]))
 
         res = msg.info.resolution
 
@@ -165,7 +166,7 @@ class find_frontier:
 
         self.final_frontier_pub.publish(gridCells)
 
-        center = np.average(longest_length_list, axis=0)
+        center = np.average(max_value, axis=0)
         center_lst = list()
         center_lst.append(Point(center[0], center[1], center[2]))
 
