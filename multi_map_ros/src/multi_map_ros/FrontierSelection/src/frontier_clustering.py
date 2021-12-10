@@ -35,6 +35,13 @@ class find_frontier:
 
     def frontier_callback(self, timer_var):
         msg = self.map
+        fringe_points = self.find_fringe(msg)
+        all_frontier_clusters = self.cluster_cells(fringe_points)
+        best_frontier_key, best_frontier_cells = self.calculate_least_cost_frontier(all_frontier_clusters)
+        self.send_to_frontier(best_frontier_cells, msg)
+
+
+    def find_fringe(self, msg):
 
         res = msg.info.resolution
         width = msg.info.width
@@ -72,7 +79,7 @@ class find_frontier:
 
         gridCells.cells = pts
         self.fringe.publish(gridCells)
-        self.cluster_cells(raw_pts, msg)
+        return raw_pts
 
     def map_to_world(self, x, y, my_map):
         """
@@ -92,7 +99,8 @@ class find_frontier:
 
         return (x, y)
 
-    def cluster_cells(self, gridCells, msg):
+
+    def cluster_cells(self, gridCells):
 
         all_frontier_clusters = dict()  # keeps track of clusters and the parent
         remaining_cells = copy.deepcopy(gridCells)  # cells remaining to be assigned to a group
@@ -141,10 +149,18 @@ class find_frontier:
             else:
                 pass
 
+        return all_frontier_clusters
+
+
+    def calculate_least_cost_frontier(self, all_frontier_clusters):
         max_key, max_value = max(all_frontier_clusters.items(), key=lambda x: len(set(x[1])))
+        return max_key, max_value
+
+
+    def send_to_frontier(self, best_frontier_cells, msg):
 
         final_frontier = list()
-        for cell in max_value:
+        for cell in best_frontier_cells:
             final_frontier.append(Point(cell[0], cell[1], cell[2]))
 
         res = msg.info.resolution
@@ -161,7 +177,7 @@ class find_frontier:
 
         self.final_frontier_pub.publish(gridCells)
 
-        center = np.average(max_value, axis=0)
+        center = np.average(best_frontier_cells, axis=0)
         center_lst = list()
         center_lst.append(Point(center[0], center[1], center[2]))
 
@@ -184,6 +200,7 @@ class find_frontier:
         move_msg.pose.orientation.w = 1
 
         self.move_pub.publish(move_msg)
+
 
 
 if __name__ == '__main__':
