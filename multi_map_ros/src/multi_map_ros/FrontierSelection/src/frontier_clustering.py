@@ -1,8 +1,8 @@
 #!/usr/bin/env python3.8
-import copy
 
 import rospy
 import numpy as np
+import copy
 from scipy import signal as sig
 
 from std_msgs.msg import Header
@@ -220,6 +220,8 @@ class find_frontier:
         move_msg.pose.orientation.y = 0
         move_msg.pose.orientation.z = 0
         move_msg.pose.orientation.w = 1
+
+        # TODO: this currently does not support obstacle avoidance
 
         self.move_pub.publish(move_msg)
 
