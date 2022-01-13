@@ -11,6 +11,8 @@ from nav_msgs.msg import OccupancyGrid, GridCells, Odometry
 from geometry_msgs.msg import Point, PoseStamped
 from tf import TransformListener
 
+import matplotlib.pyplot as plt
+
 class exploration_eval:
     def __init__(self):
         rospy.init_node('exploration_eval')
@@ -35,6 +37,8 @@ class exploration_eval:
 
         self.map = OccupancyGrid()
         self.odom = Odometry()
+
+        self.files_written = False
 
 
     def map_callback(self, msg):
@@ -90,13 +94,20 @@ class exploration_eval:
         values = [0, 101]
         freq = np.histogram(data, bins=[-np.inf] + values + [np.inf])[0] / data.size
 
-        total_percent_explored = freq[1]
+        # print(freq)
+        #
+        # uniques, counts = np.unique(data, return_counts=True)
+        # percentages = dict(zip(uniques, counts / len(data)))
+        # print(percentages)
+
+        total_percent_explored = freq[1]*100
 
         print("Total Percent explored: " + str(total_percent_explored))
 
         self.percent_of_map_covered_record.append(total_percent_explored)
 
         if (self.first_run):
+            self.start_time = rospy.get_time()
             self.previous_x = odom.pose.pose.position.x
             self.previous_y = odom.pose.pose.position.y
         x = odom.pose.pose.position.x
@@ -110,9 +121,38 @@ class exploration_eval:
 
         self.total_distance_travelled_record.append(self.total_distance)
 
-        self.time_record.append(rospy.get_time() - self.start_time)
+        time_diff = rospy.get_time() - self.start_time
+        print("Time: " + str(time_diff))
+        print("----------------------------------------------------------")
+        self.time_record.append(time_diff)
 
+        if time_diff > 1200 and not self.files_written:
+            rospy.loginfo("Writing Eval Graphs to Files")
+            plt.plot(self.time_record,self.total_distance_travelled_record)
+            plt.xlabel('Time (s)')
+            plt.ylabel('Total Distance Travelled (m)')
 
+            plt.savefig('Distance_vs_Time_For_%s.png' % self.robot_namespace.replace('/',''))
+
+            plt.clf()
+
+            plt.plot(self.time_record, self.percent_of_map_covered_record)
+            plt.xlabel('Time (s)')
+            plt.ylabel('Percent of Map Explored')
+
+            plt.savefig('Percent_Explored_vs_Time_For_%s.png' % self.robot_namespace.replace('/',''))
+
+            plt.clf()
+
+            plt.plot(self.total_distance_travelled_record, self.percent_of_map_covered_record)
+            plt.xlabel('Total Distance Travelled (m)')
+            plt.ylabel('Percent of Map Explored')
+
+            plt.savefig('Percent_Explored_vs_Distance_For_%s.png' % self.robot_namespace.replace('/',''))
+
+            self.files_written = True
+
+            rospy.signal_shutdown("Finished Evaluation")
 
 
 if __name__ == '__main__':
