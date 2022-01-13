@@ -214,7 +214,7 @@ class find_frontier:
         move_msg.pose.position.y = center[1]
         move_msg.pose.position.z = center[2]
 
-        print(center)
+        rospy.loginfo("SENDING TO FRONTIER: " + str(center))
 
         move_msg.pose.orientation.x = 0
         move_msg.pose.orientation.y = 0
