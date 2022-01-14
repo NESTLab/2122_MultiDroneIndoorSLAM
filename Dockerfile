@@ -37,7 +37,7 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
     apt-get update; \
     apt-get install ros-noetic-desktop-full -y; \
     echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc; \
-    apt-get install -y python3-rosdep python3-rosinstall ros-noetic-turtlebot3 ros-noetic-dwa-local-planner python3-rosinstall-generator python3-wstool build-essential python3-rosdep; 
+    apt-get install -y python3-rosdep python3-rosinstall ros-noetic-turtlebot3 ros-noetic-dwa-local-planner ros-noetic-gmapping ros-noetic-rviz python3-rosinstall-generator python3-wstool build-essential python3-rosdep;
 
 # Install Gazebo
 RUN sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'; \
@@ -61,6 +61,12 @@ RUN apt-get install -y cmake libfreeimage-dev libfreeimageplus-dev \
   echo '/usr/local/lib' >> /etc/ld.so.conf; \
   echo "sudo ldconfig" >> ~/.bashrc; \
   make install;
+
+# Install project dependencies
+RUN rosdep init; \
+  rosdep update; \
+  echo "rosdep install --from-paths /root/catkin_ws/src --rosdistro noetic -y" >> ~/.bashrc; \
+  echo "cd /root/catkin_ws" >> ~/.bashrc;
 
 EXPOSE 8080
 
