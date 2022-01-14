@@ -1,7 +1,28 @@
 # 2122_MultiDroneIndoorSLAM
 Code for 21/22 MQP and DRs on Multi Drone Indoor SLAM
 
-# Setup Instructions
+# Quick Start
+For rapid development, you can build this project in a container. This requires Docker Compose, which can be installed [here](https://docs.docker.com/compose/install/).
+
+> IMPORTANT: Running this project inside a container will significantly contrain performance. These images are designed for development and demo perposes only.
+
+
+```zsh
+# From within the project's root directory
+docker-compose up
+```
+This builds a custom image based on ubuntu LTS along with all the software required for this project, such as: ROS Noetic, ARGos, Gazebo etc.
+
+Interact with the container's Full Desktop Environment via browser at [http://localhost:8080/vnc.html](http://localhost:8080/vnc.html)
+
+![Docker dev container's desktop environment](desktop-env-screenshot.png)
+
+Or attach a shell session:
+```zsh
+docker exec -it 2122_multidroneindoorslam_novnc_1 /bin/bash
+```
+
+# Local Setup
 > NOTE: We are using Ubuntu 20.04 for this example
 1. Follow the instructions for installing [ROS Noetic](http://wiki.ros.org/noetic/Installation/Ubuntu) and [Gazebo](http://www.gazebosim.org/tutorials?tut=install_ubuntu)
 
