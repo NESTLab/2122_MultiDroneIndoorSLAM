@@ -10,6 +10,8 @@ from nav_msgs.msg import OccupancyGrid, GridCells
 from geometry_msgs.msg import Point, PoseStamped
 from tf import TransformListener
 
+SEND_TO_FRONTIERS = False
+
 class find_frontier:
     def __init__(self):
         rospy.init_node('find_fontier')
@@ -41,9 +43,10 @@ class find_frontier:
     def frontier_callback(self, timer_var):
         msg = self.map
         fringe_points = self.find_fringe(msg)
-        all_frontier_clusters = self.cluster_cells(fringe_points)
-        best_frontier_cells = self.calculate_least_cost_frontier(all_frontier_clusters)
-        self.send_to_frontier(best_frontier_cells, msg)
+        if SEND_TO_FRONTIERS:
+            all_frontier_clusters = self.cluster_cells(fringe_points)
+            best_frontier_cells = self.calculate_least_cost_frontier(all_frontier_clusters)
+            self.send_to_frontier(best_frontier_cells, msg)
 
 
     def find_fringe(self, msg):

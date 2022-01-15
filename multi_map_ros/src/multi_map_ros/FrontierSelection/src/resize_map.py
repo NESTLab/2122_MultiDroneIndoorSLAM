@@ -15,7 +15,7 @@ from tf import TransformListener
 class resize_map:
 
     def __init__(self):
-        rospy.init_node('find_fontier')
+        rospy.init_node('resize_map')
         self.robot_namespace = '/tb3_0'
         self.mapSub = rospy.Subscriber(self.robot_namespace+'/map', OccupancyGrid, self.map_callback)
         self.mapPub = rospy.Publisher(self.robot_namespace+'/resized_map', OccupancyGrid, queue_size=10)
