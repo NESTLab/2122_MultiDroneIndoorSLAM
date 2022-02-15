@@ -28,7 +28,8 @@ RUN set -ex; \
       supervisor \
       x11vnc \
       xterm \
-      xvfb; \
+      xvfb \
+      python3-pip; \
     git clone https://github.com/theasp/docker-novnc.git /app;
 
 # Install ROS
@@ -40,34 +41,33 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
     apt-get install -y python3-rosdep python3-rosinstall ros-noetic-turtlebot3 ros-noetic-dwa-local-planner ros-noetic-gmapping ros-noetic-rviz python3-rosinstall-generator python3-wstool build-essential python3-rosdep;
 
 # Install Gazebo
-RUN sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'; \
-    wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -; \
-    apt-get update; \
-    apt-get install -y gazebo11 libgazebo11-dev; \
-    echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc; \
+RUN wget -O /tmp/gazebo5_install.sh http://osrf-distributions.s3.amazonaws.com/gazebo/gazebo5_install.sh; sudo sh /tmp/gazebo5_install.sh; \
     echo "export TURTLEBOT3_MODEL=burger" >> ~/.bashrc;
 
 # Build ARGos3 from source
-RUN apt-get install -y cmake libfreeimage-dev libfreeimageplus-dev \
-  qt5-default freeglut3-dev libxi-dev libxmu-dev liblua5.3-dev \
-  lua5.3 doxygen graphviz libgraphviz-dev asciidoc; \
-  git clone https://github.com/ilpincy/argos3.git; \
-  cd argos3; \
-  mkdir build_simulator; \
-  cd build_simulator; \
-  cmake ../src; \
-  make; \
-  make doc; \
-  echo '/usr/local/lib' >> /etc/ld.so.conf; \
-  echo "sudo ldconfig" >> ~/.bashrc; \
-  make install;
+# RUN apt-get install -y cmake libfreeimage-dev libfreeimageplus-dev \
+#   qt5-default freeglut3-dev libxi-dev libxmu-dev liblua5.3-dev \
+#   lua5.3 doxygen graphviz libgraphviz-dev asciidoc; \
+#   git clone https://github.com/ilpincy/argos3.git; \
+#   cd argos3; \
+#   mkdir build_simulator; \
+#   cd build_simulator; \
+#   cmake ../src; \
+#   make; \
+#   make doc; \
+#   echo '/usr/local/lib' >> /etc/ld.so.conf; \
+#   echo "sudo ldconfig" >> ~/.bashrc; \
+#   make install;
 
-# Install project dependencies
-RUN rosdep init; \
+# Install extra dependencies
+RUN pip3 install pyquaternion scikit-image; \
+  sudo apt-get install -y iproute2 ros-noetic-catkin python3-catkin-tools; \
+  rosdep init; \
   rosdep update; \
-  echo "rosdep install --from-paths /root/catkin_ws/src --rosdistro noetic -y" >> ~/.bashrc; \
-  echo "cd /root/catkin_ws" >> ~/.bashrc;
+  mkdir -p /root/catkin_ws/src; \
+  echo "cd /root/catkin_ws;" >> ~/.bashrc; \
+  echo "source /root/catkin_ws/devel/setup.bash;" >> ~/.bashrc;
 
 EXPOSE 8080
 
-CMD ["/app/entrypoint.sh"]
+CMD ["/root/catkin_ws/src/entrypoint.sh"]
