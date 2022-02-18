@@ -1,8 +1,8 @@
 #include <team_scheduler.h>
 
-TeamScheduler::TeamScheduler(ros::NodeHandle &nh, ROLE role, const std::string& parent_name, const std::string& child_name)
+TeamScheduler::TeamScheduler(ros::NodeHandle &nh, ROLE role, const std::string& parent_name, const std::string& child_name, bool testing)
 {
-    addStates(nh);
+    addStates(nh, testing);
     if (role == EXPLORER)
       setInitialState(GO_TO_EXPLORE);
     else if (role == RELAY)
@@ -22,15 +22,15 @@ TeamScheduler::~TeamScheduler()
       });
 }
 
-void TeamScheduler::addStates(ros::NodeHandle &nh)
+void TeamScheduler::addStates(ros::NodeHandle &nh, bool testing_mode)
 {
-    addState(new Idle(nh));
-    addState(new GoToExplore(nh));
-    addState(new Explore(nh));
-    addState(new GoToMeet(nh));
-    addState(new Meet(nh));
-    addState(new GoToDumpData(nh));
-    addState(new DumpData(nh));
+    addState(new Idle(nh, testing_mode));
+    addState(new GoToExplore(nh, testing_mode));
+    addState(new Explore(nh, testing_mode));
+    addState(new GoToMeet(nh, testing_mode));
+    addState(new Meet(nh, testing_mode));
+    addState(new GoToDumpData(nh, testing_mode));
+    addState(new DumpData(nh, testing_mode));
 }
 
 void TeamScheduler::addState(RobotState* pc_state) {
@@ -134,15 +134,30 @@ int main(int argc, char** argv)
   //    return 0;
   //  }
 
-   ROS_WARN("Argument checking is turned off. Please verify if the arguments are: Role, parent_robot_name and child_robot_name (if applicable)");
-   ROLE role = (ROLE)(std::stoi(argv[1]));
-   std::string parent_name = argv[2], child_name;
+   bool testing = false;
+   ROLE role;
+   std::string parent_name, child_name;
+
+   if (std::stoi(argv[1]) < 5)
+   {
+      ROS_WARN("Argument checking is turned off. Please verify if the arguments are: Role, parent_robot_name and child_robot_name (if applicable)");
+      role = (ROLE)(std::stoi(argv[1]));
+   }
+   else
+   {
+     ROS_WARN("TESTING MODE ACTIVE!");
+     testing = true;
+     role = std::stoi(argv[1]) == 5 ? EXPLORER : RELAY;
+   }
+   
+   parent_name = argv[2];
    if(role != EXPLORER)
-    child_name = argv[3];
-  
-   if(role == RELAY)
-      ros::Duration(20).sleep();
-   TeamScheduler team(nh, role, parent_name, child_name);
+     child_name = argv[3];
+   
+   if(role == RELAY && !testing)
+       ros::Duration(20).sleep();
+
+   TeamScheduler team(nh, role, parent_name, child_name, testing);
    
    team.exec();
 

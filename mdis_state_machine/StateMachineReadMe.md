@@ -38,6 +38,9 @@ ___
 * In test cases, the tester will have to emulate the connection by publishing the requied message over rostopic
   * Currently, topic is `<ns>/connection_check`
   * Message type is: `mdis_state_machine::Connection`
+* For the testing, use the connection between follows:
+  * `test_robot_1`or `test_robot_2` for depending on the robot type Explorer or Relay respectively
+  * Parent `dummy_parent`
 * When the line of sight is implemented, this can be changed to listen to whatever the new topic and new message type is
 
 > MEET(4) ---> GO_TO_EXPLORE (1)

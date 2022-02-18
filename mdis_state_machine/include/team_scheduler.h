@@ -5,7 +5,7 @@
 
 class TeamScheduler{
 public:
-   TeamScheduler(ros::NodeHandle &nh, ROLE role, const std::string& parent_name, const std::string& child_name);
+   TeamScheduler(ros::NodeHandle &nh, ROLE role, const std::string& parent_name, const std::string& child_name, bool testing);
    ~TeamScheduler();
    
    void exec();
@@ -16,7 +16,7 @@ public:
          robot_state = state;}
 
 private:
-   void addStates(ros::NodeHandle &nh);
+   void addStates(ros::NodeHandle &nh, bool testing_mode);
    void addState(RobotState* RobotStatePtr);
    TEAM_STATES robot_state;
    bool new_state_request;
