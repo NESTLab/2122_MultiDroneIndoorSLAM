@@ -4,5 +4,3 @@
 [submodule "coms"]
 	path = coms
 	url = https://github.com/tylerferrara/coms.git
-[submodule "./turtlebot3_simulations"]
-	url = https://github.com/AshayAswale/turtlebot3_simulations.git
