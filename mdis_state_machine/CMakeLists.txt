@@ -21,6 +21,7 @@ add_message_files(
   FILES
   Connection.msg
   DataCommunication.msg
+  RobotsState.msg
 )
 
 generate_messages(
