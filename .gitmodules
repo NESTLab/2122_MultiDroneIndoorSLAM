@@ -1,6 +1,6 @@
 [submodule "turtlebot3_simulations"]
 	path = turtlebot3_simulations
-	url = git@github.com:AshayAswale/turtlebot3_simulations.git
+	url = https://github.com/AshayAswale/turtlebot3_simulations.git
 [submodule "coms"]
 	path = coms
 	url = https://github.com/tylerferrara/coms.git
