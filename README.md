@@ -1,3 +1,5 @@
+[![Build Status](https://app.travis-ci.com/NESTLab/2122_MultiDroneIndoorSLAM.svg?branch=main)](https://app.travis-ci.com/NESTLab/2122_MultiDroneIndoorSLAM)
+
 # 2122_MultiDroneIndoorSLAM
 Code for 21/22 MQP and DRs on Multi Drone Indoor SLAM
 
