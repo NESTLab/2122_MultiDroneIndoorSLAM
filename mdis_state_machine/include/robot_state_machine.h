@@ -6,6 +6,8 @@
 #include <mdis_state_machine/RobotsState.h>
 #include <mdis_state_machine/Connection.h>
 #include <mdis_state_machine/DataCommunication.h>
+#include <coms/TriggerMerge.h>
+
 enum ROLE{
   RELAY,
   EXPLORER,
@@ -208,9 +210,9 @@ public:
      meeting_data_sub = nh.subscribe("/data_communication", 1000, &Meet::nextMeetingLocationCB, this);
      robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("robots_state", 1000);
 
-     stringstream srv_name;
+     std::stringstream srv_name;
      srv_name << "/" << robot_name << "/merge";
-     merge_req_srv = nh.serviceClient<coms::TriggerMerge>(srv_name);
+     mergeRequestClient = nh.serviceClient<coms::TriggerMerge>(srv_name.str());
    }
    bool isDone() override ;
 
@@ -225,10 +227,11 @@ private:
    ros::Publisher robot_state_pub;
    mdis_state_machine::RobotsState state_pub_data;
    ros::Subscriber meeting_data_sub;
+   ros::ServiceClient mergeRequestClient;
 
    bool data_received;
 
-   bool requestMerge();
+   void requestMerge(std::string conn_robot);
    void publishNextMeetingLocation();
    void nextMeetingLocationCB(const mdis_state_machine::DataCommunication::ConstPtr msg);
    void getNextMeetingLocationFromCallback();

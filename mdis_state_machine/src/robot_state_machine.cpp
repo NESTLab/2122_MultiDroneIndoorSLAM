@@ -8,6 +8,7 @@ float RobotState::time_for_exploration = 30.0;
 
 std::string RobotState::parent_robot_name = "";
 std::string RobotState::child_robot_name = "";
+std::string connected_robot_name = "";
 
 bool RobotState::testing_mode = false;
 ROLE RobotState::robot_role;
@@ -234,6 +235,7 @@ TEAM_STATES GoToMeet::transition()
 {
   if(isDone())
   {
+    connected_robot_name = conn_robot;
     return MEET;
   }
   else 
@@ -276,7 +278,7 @@ void GoToMeet::connCB(const mdis_state_machine::Connection::ConstPtr msg)
 
 bool Meet::entryPoint()
 {
-  ROS_INFO("Entering the state MEET");
+   ROS_INFO("Entering the state MEET");
    data_received = false;
    return true;
 }
@@ -311,8 +313,7 @@ TEAM_STATES Meet::transition()
     // else if(robot_role == RELAY_BETN_ROBOTS)
     //   return GO_TO_MEET;
   }
-  else 
-    return MEET;
+  return MEET;
 }
 
 void Meet::step()
@@ -322,6 +323,7 @@ void Meet::step()
   robot_state_pub.publish(state_pub_data);
   
   ROS_INFO("Executing the step for MEET");
+  requestMerge(connected_robot_name);
 }
 
 void Meet::exitPoint() 
@@ -343,7 +345,7 @@ void Meet::exitPoint()
   // set exploration_duration accordingly
 }
 
-bool Meet::requestMerge()
+void Meet::requestMerge(std::string conn_robot)
 {
   coms::TriggerMerge mergeRequest;
   mergeRequest.request.robot_id = conn_robot;
@@ -354,20 +356,17 @@ bool Meet::requestMerge()
     success = mergeRequest.response.success;
     if(success)
     {
-      ROS_INFO("Successful merge with: %s\n".conn_robot);
+      ROS_INFO_STREAM("Successful merge with: " << conn_robot);
     }
     else
     {
-      ROS_INFO("Failed merge with: %s\n".conn_robot);
+      ROS_INFO_STREAM("Failed merge with: " << conn_robot);
     }
   }
   else
   {
     ROS_ERROR("Failed to call merge service");
-    success = false
   }
-
-  return success;
 }
 
 void Meet::setExplorationTime()
