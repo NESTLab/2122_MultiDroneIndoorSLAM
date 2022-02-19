@@ -9,12 +9,24 @@ from std_msgs.msg import Header
 from nav_msgs.msg import OccupancyGrid, GridCells
 from geometry_msgs.msg import Point, PoseStamped
 from tf import TransformListener
+from rospy.exceptions import ROSTimeMovedBackwardsException, ROSInterruptException
 
 SEND_TO_FRONTIERS = False
 
 class find_frontier:
     def __init__(self):
         rospy.init_node('find_fontier')
+
+        self.cell_threshold = 0
+        self.threshold_multiplier = 2
+
+        # self.tf_listener_ = TransformListener()
+        self.weight_output = .75
+        self.clusters = list()
+
+        self.max_msg_count_before_start = 10
+        self.curr_msg_count = 0
+
         self.robot_namespace = '/tb3_0'
         self.mapSub = rospy.Subscriber(self.robot_namespace+'/map', OccupancyGrid, self.map_callback)
         self.fringe = rospy.Publisher('/map_fringe', GridCells, queue_size=10)
@@ -23,15 +35,9 @@ class find_frontier:
         self.move_pub = rospy.Publisher(self.robot_namespace+'/move_base_simple/goal', PoseStamped, queue_size=10)
         self.move_helper_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.helper)
         self.move_helper_pub = rospy.Publisher(self.robot_namespace+'/move_base_simple/goal', PoseStamped, queue_size=10)
-        self.clusters = list()
 
-        self.timer = rospy.Timer(rospy.Duration(5), self.frontier_callback)
+        # self.timer = rospy.Timer(rospy.Duration(5), self.frontier_callback)
 
-        self.cell_threshold = 0
-        self.threshold_multiplier = 2
-
-        self.tf_listener_ = TransformListener()
-        self.weight_output = .75
 
 
     def helper(self, msg):
@@ -39,6 +45,12 @@ class find_frontier:
 
     def map_callback(self, msg):
         self.map = msg
+        # if self.curr_msg_count > self.max_msg_count_before_start:
+        #     self.frontier_callback(0)
+        #     self.curr_msg_count = 0
+        # self.curr_msg_count += 1
+        # rospy.loginfo("curr message count is: " + str(self.curr_msg_count))
+        self.frontier_callback(0)
 
     def frontier_callback(self, timer_var):
         msg = self.map
@@ -232,11 +244,17 @@ class find_frontier:
     def get_current_position_in_map(self):
         # Position of the robot base in the map
 
-        t = self.tf_listener_.getLatestCommonTime(self.robot_namespace+"/map", self.robot_namespace+"/base_link")
         p1 = PoseStamped()
         p1.header.frame_id = self.robot_namespace+"/base_link"
         p1.pose.orientation.w = 1.0  # Neutral orientation
-        p_in_base = self.tf_listener_.transformPose(self.robot_namespace+"/map", p1)
+        # try:
+        #     tf_listener_ = TransformListener()
+        #     p_in_base = tf_listener_.transformPose(self.robot_namespace + "/map", p1)
+        # except ROSTimeMovedBackwardsException:
+        #     p_in_base = PoseStamped()
+        #     print("ROS Interrupt Exception! Just ignore the exception!")
+        p_in_base = PoseStamped()
+        # p_in_base = self.tf_listener_.transformPose(self.robot_namespace+"/map", p1)
         return (p_in_base.pose.position.x, p_in_base.pose.position.y, p_in_base.pose.position.z)
 
 

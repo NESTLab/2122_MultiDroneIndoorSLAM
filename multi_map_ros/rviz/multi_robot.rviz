@@ -9,6 +9,7 @@ Panels:
         - /Map1
         - /GridCells1
         - /GridCells2
+        - /Marker1
       Splitter Ratio: 0.594406008720398
     Tree Height: 719
   - Class: rviz/Selection
@@ -186,6 +187,14 @@ Visualization Manager:
       Queue Size: 10
       Topic: /selected_center
       Unreliable: false
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /visualization_marker
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
