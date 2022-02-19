@@ -205,8 +205,12 @@ class Meet: public RobotState{
 public:
    Meet(ros::NodeHandle &nh, bool testing):RobotState(MEET, "Meet", nh, testing){
      meeting_data_pub = nh.advertise<mdis_state_machine::DataCommunication>("/data_communication", 1000);
-     meeting_data_sub = nh.subscribe("/data_communication", 1000, &Meet::nextMeetingLocationCB, this);     
-     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("robots_state", 1000);     
+     meeting_data_sub = nh.subscribe("/data_communication", 1000, &Meet::nextMeetingLocationCB, this);
+     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("robots_state", 1000);
+
+     stringstream srv_name;
+     srv_name << "/" << robot_name << "/merge";
+     merge_req_srv = nh.serviceClient<coms::TriggerMerge>(srv_name);
    }
    bool isDone() override ;
 
@@ -224,6 +228,7 @@ private:
 
    bool data_received;
 
+   bool requestMerge();
    void publishNextMeetingLocation();
    void nextMeetingLocationCB(const mdis_state_machine::DataCommunication::ConstPtr msg);
    void getNextMeetingLocationFromCallback();

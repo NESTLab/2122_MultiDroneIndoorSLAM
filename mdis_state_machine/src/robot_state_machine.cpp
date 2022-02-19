@@ -343,6 +343,33 @@ void Meet::exitPoint()
   // set exploration_duration accordingly
 }
 
+bool Meet::requestMerge()
+{
+  coms::TriggerMerge mergeRequest;
+  mergeRequest.request.robot_id = conn_robot;
+  bool success = false;
+
+  if(mergeRequestClient.call(mergeRequest))
+  {
+    success = mergeRequest.response.success;
+    if(success)
+    {
+      ROS_INFO("Successful merge with: %s\n".conn_robot);
+    }
+    else
+    {
+      ROS_INFO("Failed merge with: %s\n".conn_robot);
+    }
+  }
+  else
+  {
+    ROS_ERROR("Failed to call merge service");
+    success = false
+  }
+
+  return success;
+}
+
 void Meet::setExplorationTime()
 {
   geometry_msgs::Point curr_location = explore_interface->getRobotCurrentPose().pose.position;
