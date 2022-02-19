@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="multi_map_ros" name="find_fontier" type="frontier_clustering.py" output="screen"/>
+</launch>
