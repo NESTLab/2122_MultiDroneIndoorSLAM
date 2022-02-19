@@ -280,6 +280,7 @@ bool Meet::entryPoint()
 {
    ROS_INFO("Entering the state MEET");
    data_received = false;
+   is_merge_complete = false;
    return true;
 }
 
@@ -299,7 +300,7 @@ bool Meet::isDone()
         robot_state_pub.publish(state_pub_data);
       }
    }
-   return true;
+   return is_merge_complete;
 }
 
 TEAM_STATES Meet::transition() 
@@ -351,6 +352,7 @@ void Meet::requestMerge(std::string conn_robot)
   mergeRequest.request.robot_id = conn_robot;
   bool success = false;
 
+  ROS_INFO("Attemping merge...");
   if(mergeRequestClient.call(mergeRequest))
   {
     success = mergeRequest.response.success;
@@ -367,6 +369,7 @@ void Meet::requestMerge(std::string conn_robot)
   {
     ROS_ERROR("Failed to call merge service");
   }
+  is_merge_complete = success;
 }
 
 void Meet::setExplorationTime()

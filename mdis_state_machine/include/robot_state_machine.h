@@ -237,6 +237,7 @@ private:
    void getNextMeetingLocationFromCallback();
    void setExplorationTime();
    geometry_msgs::Point buffer_next_location;
+   bool is_merge_complete;
 };
 
 
