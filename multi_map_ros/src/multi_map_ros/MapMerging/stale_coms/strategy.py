@@ -1,6 +1,6 @@
 from __future__ import annotations # Allows classes to type hint their own class.
 import time, threading
-from Communications.map import Map
+from stale_coms.map import Map
 from merge_utils import load_mercer_map
 from experiments import paper_benchmark
 

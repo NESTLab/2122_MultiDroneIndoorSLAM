@@ -1,0 +1,2 @@
+recursive-include src/mapmerge/Data/Mercer *.txt
+recursive-include src/mapmerge/Data/PGM *.pgm

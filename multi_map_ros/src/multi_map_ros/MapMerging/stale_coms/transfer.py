@@ -1,4 +1,4 @@
-from Communications.strategy import Evaluation, Scinario
+from stale_coms.strategy import Evaluation, Scinario
 from Robots.full import Full_Robot
 from Robots.merkle_dag import DAG_Robot
 from constants import TRAIN_FILENAMES
