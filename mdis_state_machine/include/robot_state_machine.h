@@ -71,7 +71,7 @@ protected:
    static bool testing_mode;
    static ROLE robot_role;
 
-   int testing_waiting_time = 1;
+   int testing_waiting_time = 5;
 
    geometry_msgs::Point data_dump_location;
 
@@ -138,7 +138,7 @@ private:
 class GoToExplore: public RobotState{
 public:
    GoToExplore(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_EXPLORE, "GoToExplore", nh, testing){
-   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("robots_state", 1000);     
+   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);     
    }
    bool isDone() override ;
 
@@ -158,7 +158,7 @@ class Explore: public RobotState{
 public:
    Explore(ros::NodeHandle &nh, bool testing):RobotState(EXPLORE, "Explore", nh, testing){
      pause_exploration_pub = nh.advertise<std_msgs::Bool>("explore/pause_exploration", 1000);     
-     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("robots_state", 1000);     
+     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);     
    }
    bool isDone() override ;
 
@@ -180,7 +180,7 @@ class GoToMeet: public RobotState{
 public:
    GoToMeet(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_MEET, "GoToMeet", nh, testing){
      conn_sub = nh.subscribe("/connection_check", 1000, &GoToMeet::connCB, this);     
-   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("robots_state", 1000);     
+   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);     
    }
    bool isDone() override ;
 
@@ -206,7 +206,7 @@ public:
    Meet(ros::NodeHandle &nh, bool testing):RobotState(MEET, "Meet", nh, testing){
      meeting_data_pub = nh.advertise<mdis_state_machine::DataCommunication>("/data_communication", 1000);
      meeting_data_sub = nh.subscribe("/data_communication", 1000, &Meet::nextMeetingLocationCB, this);     
-     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("robots_state", 1000);     
+     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);     
    }
    bool isDone() override ;
 
@@ -235,7 +235,7 @@ private:
 class GoToDumpData: public RobotState{
 public:
    GoToDumpData(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_DUMP_DATA, "GoToDumpData", nh, testing){
-   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("robots_state", 1000);     
+   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);     
    }
    bool isDone() override ;
 
@@ -254,7 +254,7 @@ private:
 class DumpData: public RobotState{
 public:
    DumpData(ros::NodeHandle &nh, bool testing):RobotState(DUMP_DATA, "DumpData", nh, testing){
-   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("robots_state", 1000);     
+   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);     
    }
    bool isDone() override ;
 

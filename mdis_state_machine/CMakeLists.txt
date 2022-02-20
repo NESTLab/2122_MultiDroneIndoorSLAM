@@ -93,3 +93,6 @@ install(TARGETS move_base_test
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
+catkin_install_python(PROGRAMS tests/test_state_shift.py
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+      )
