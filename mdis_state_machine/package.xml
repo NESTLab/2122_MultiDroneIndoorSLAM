@@ -10,7 +10,12 @@
   <!-- <url type="website">http://wiki.ros.org/tough_controller_interface</url> -->
 
 
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
   <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>octomap</depend>
+  <depend>octomap_msgs</depend>
 
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>

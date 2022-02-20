@@ -4,3 +4,28 @@ __pycache__/
 **/*.egg-info
 dist/
 build/
+*.egg-info/
+.installed.cfg
+*.egg
+*.py[cod]
+
+
+*~
+
+# Emacs
+.#*
+
+# Catkin custom files
+CATKIN_IGNORE
+
+# VSCode
+.vscode
+
+# Pycharm
+.idea/
+
+# macOS cache
+.DS_Store
+
+# Coveralls
+.coverage
