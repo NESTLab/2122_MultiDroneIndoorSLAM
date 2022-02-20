@@ -1,0 +1,2 @@
+std_msgs/String[] connection_between
+geometry_msgs/Point next_meeting_point
