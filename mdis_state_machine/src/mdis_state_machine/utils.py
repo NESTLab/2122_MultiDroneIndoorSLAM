@@ -1,4 +1,5 @@
 import rospy
+from subprocess import Popen, DEVNULL
 from mdis_state_machine.msg import RobotsState
 from mdis_state_machine.msg import Connection
 from std_msgs.msg import String
@@ -77,3 +78,7 @@ def start_state_machine(launch_file: str) -> ROSLaunchParent:
 
 def stop_state_machine(parent: ROSLaunchParent) -> None:
 	parent.shutdown()
+	while True:
+		proc = Popen(["rostopic", "list"], stdout=DEVNULL, stderr=DEVNULL)
+		if proc.wait() != 0:
+			break

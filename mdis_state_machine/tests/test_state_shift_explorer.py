@@ -32,9 +32,8 @@ class TestStateShiftExplorer(unittest.TestCase):
 		self.assertEqual(verifyTimedStateChange(GO_TO_EXPLORE, EXPLORE, ROBOT_NAME), True, "Second state shift check for explorer state 1-2 failed")
 		self.assertEqual(verifyTimedStateChange(EXPLORE, GO_TO_MEET, ROBOT_NAME), True, "Second state shift check for explorer state 2-3 failed")
 		self.assertEqual(verifyConnStateChange(GO_TO_MEET, MEET, ROBOT_NAME), True, "Second state shift check for explorer state 3-4 failed")
-
 		stop_state_machine(proc)
 
 
 if __name__ == '__main__':
-    unittest.main()
+	unittest.main()

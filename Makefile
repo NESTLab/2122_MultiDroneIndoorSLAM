@@ -6,9 +6,7 @@ WORKDIR=$(shell dirname $(PATH_TO_MAKEFILE))
 install-state-machine:
 	pip install -e $(WORKDIR)/mdis_state_machine
 
-test-state-machine: install-state-machine
-	$(SETUP); \
-	python3 -m unittest discover $(WORKDIR)/mdis_state_machine/tests
+test-state-machine: test-state-machine-explorer test-state-machine-relay
 
 test-state-machine-explorer: install-state-machine
 	$(SETUP); \

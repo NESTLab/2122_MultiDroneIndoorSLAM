@@ -16,6 +16,7 @@ class TestStateShiftRelay(unittest.TestCase):
 
 	def test_init_state(self: unittest.TestCase) -> None:
 		proc = start_state_machine(RELAY_LAUNCH_FILE)
+
 		rospy.init_node("test_node")
 
 		self.assertEqual(verifyInitState(GO_TO_MEET, ROBOT_NAME), True, "Initial state check for relay failed")
