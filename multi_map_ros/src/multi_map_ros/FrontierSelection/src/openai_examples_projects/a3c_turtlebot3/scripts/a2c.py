@@ -25,6 +25,8 @@ from collections import deque
 import time
 import random
 
+os.environ['CUDA_VISIBLE_DEVICES'] = "0"
+
 # An episode a full game
 train_episodes = 2
 
@@ -76,7 +78,7 @@ def main():
 
     last_time_steps = np.ndarray(0)
 
-    RANDOM_SEED = 7
+    RANDOM_SEED = 6
     tf.random.set_seed(RANDOM_SEED)
 
     # env = gym.make('MountainCar-v0')
@@ -130,7 +132,9 @@ def main():
         observation = env.env.env._get_obs()
         print("resetting gmapping")
         env.env.env.reset_gmapping()
-        print("   ")
+        print("setting start time of episode")
+        env.env.env.set_start_time()
+        print("resetting enviornment")
         env.reset()
 
         done = False
@@ -157,7 +161,8 @@ def main():
             action_probs = actor.predict(observation_reshaped).flatten()
             print("*****PROBABILITY: " + str(action_probs))
             # Note we're sampling from the prob distribution instead of using argmax
-            action = np.random.choice(env.action_space.n, 1, p=action_probs)[0]
+            # action = np.random.choice(env.action_space.n, 1, p=action_probs)[0]
+            action = np.argmax(action_probs)
 
             # testing_action = np.argmax(action_probs)
             # print("TESTING ACTION IS: " + str(testing_action))

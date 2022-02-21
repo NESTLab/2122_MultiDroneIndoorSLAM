@@ -109,6 +109,9 @@ class TurtleBot3WorldEnv(turtlebot3_env_custom_a2c.TurtleBot3Env):
 
         self.first_ep = True
 
+        self.start_time = rospy.get_time()
+        self.sim_time = 10
+
 
     def _set_init_pose(self):
         """Sets the Robot in its init pose
@@ -230,6 +233,8 @@ class TurtleBot3WorldEnv(turtlebot3_env_custom_a2c.TurtleBot3Env):
 
             return full_obs
 
+    def set_start_time(self):
+        self.start_time = rospy.get_time()
 
     def _is_done(self, observations):
 
@@ -252,6 +257,12 @@ class TurtleBot3WorldEnv(turtlebot3_env_custom_a2c.TurtleBot3Env):
             if 0 not in fringe_data:
                 rospy.logerr("Turtlebot has no frontiers left ====>")
                 self._episode_done = True
+
+        if rospy.get_time() - self.start_time > self.sim_time:
+            rospy.logerr("EPISODE TIMED OUT!!!!")
+            self._episode_done = True
+        else:
+            print("TIME LEFT: " + str(self.sim_time - (rospy.get_time() - self.start_time)))
 
         return self._episode_done
 
