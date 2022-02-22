@@ -19,14 +19,14 @@ esac
 # Upgrade pip
 python -m pip install -U pip
 
-# Install coms
-make -f /root/catkin_ws/src/coms/Makefile install-coms
+# Install python packages
+make -f /root/catkin_ws/src/coms/Makefile install
 
 # Obtain ROS environment variables
 source /opt/ros/noetic/setup.bash
 cd /root/catkin_ws
 # Install ROS Packages
-rosdep install -i --from-path /root/catkin_ws/src --rosdistro $ROS_DISTRO -y
+rosdep install -i --from-path /root/catkin_ws/src --rosdistro "$ROS_DISTRO" -y
 # Enforce C++ language standard
 catkin config --cmake-args -DCMAKE_CXX_STANDARD=17 -DPYTHON_EXECUTABLE=/usr/bin/python3
 # Make the project
