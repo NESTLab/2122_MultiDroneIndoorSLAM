@@ -28,3 +28,7 @@ sim-gazebo:
 
 check-health:
 	source $(WORKDIR)/health-check.sh
+
+argos-demo:
+	$(SETUP); \
+	$(MAKE) -C $(WORKDIR)/coms argos-demo
