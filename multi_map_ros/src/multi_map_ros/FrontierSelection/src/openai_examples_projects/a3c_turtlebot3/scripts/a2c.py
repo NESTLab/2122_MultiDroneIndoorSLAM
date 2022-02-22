@@ -10,6 +10,7 @@ import gym
 import tensorflow as tf
 import numpy as np
 import os
+import sys
 
 from gym.vector.utils import spaces
 from tensorflow import keras
@@ -19,11 +20,38 @@ from gym import wrappers
 # ROS packages required
 import rospy
 import rospkg
-from openai_ros.openai_ros_common import StartOpenAI_ROS_Environment
+from setuptools import find_packages, setup
+
+
+# a_file = open('/home/taylor/multidrone_slam/src/2122_MultiDroneIndoorSLAM/multi_map_ros/src/multi_map_ros/FrontierSelection/src/openai_ros/openai_ros/src/openai_ros/openai_ros_common.py')
+
+# file_contents = a_file.read()
+
+
+# print(file_contents)
+
+# setup(py_modules=["home/taylor/multidrone_slam/src/2122_MultiDroneIndoorSLAM/multi_map_ros/src/multi_map_ros/FrontierSelection/src/openai_ros/openai_ros/src/openai_ros/openai_ros_common.py"])
+# #
+# from openai_ros_common import StartOpenAI_ROS_Environment
+#from openai_ros.openai_ros_common import StartOpenAI_ROS_Environment
+
+
+f = open("all_modules.txt", "a")
+f.write(str(help("modules")))
+f.close()
 
 from collections import deque
 import time
 import random
+
+# myDir = os.getcwd()
+# sys.path.append(myDir)
+#
+# from pathlib import Path
+# path = Path(myDir)
+# a=str(path.parent.absolute())
+#
+# sys.path.append(a)
 
 os.environ['CUDA_VISIBLE_DEVICES'] = "0"
 
@@ -57,6 +85,8 @@ def one_hot_encode_action(action, n_actions):
     return encoded
 
 def main():
+
+    print("PACKAGES: " + str(find_packages()))
 
     rospy.init_node('turtlebot3_a2c', anonymous=True, log_level=rospy.WARN)
 
@@ -161,8 +191,8 @@ def main():
             action_probs = actor.predict(observation_reshaped).flatten()
             print("*****PROBABILITY: " + str(action_probs))
             # Note we're sampling from the prob distribution instead of using argmax
-            # action = np.random.choice(env.action_space.n, 1, p=action_probs)[0]
-            action = np.argmax(action_probs)
+            action = np.random.choice(env.action_space.n, 1, p=action_probs)[0]
+            # action = np.argmax(action_probs)
 
             # testing_action = np.argmax(action_probs)
             # print("TESTING ACTION IS: " + str(testing_action))
