@@ -1,3 +1,9 @@
 [submodule "turtlebot3_simulations"]
 	path = turtlebot3_simulations
 	url = git@github.com:AshayAswale/turtlebot3_simulations.git
+[submodule "slam_gmapping"]
+	path = slam_gmapping
+	url = git@github.com:tberg1234/slam_gmapping.git
+[submodule "frontier_rl"]
+	path = frontier_rl
+	url = git@github.com:tberg1234/Frontier_ML.git

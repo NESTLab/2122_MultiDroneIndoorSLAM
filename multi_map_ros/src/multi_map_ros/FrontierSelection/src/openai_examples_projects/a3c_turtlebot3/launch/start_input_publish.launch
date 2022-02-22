@@ -1,3 +1,0 @@
-<launch>
-    <node pkg="multi_map_ros" name="publish_inputs_rl" type="publish_inputs_for_learning.py" output="screen"/>
-</launch>
