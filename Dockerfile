@@ -76,7 +76,8 @@ RUN sudo apt-get update; \
     iproute2 \
     ros-noetic-catkin \
     python3-catkin-tools \
-    libtf2-ros-dev
+    libtf2-ros-dev \
+    ros-noetic-global-planner
 
 # Add ROS dependent scripts
 RUN rosdep init; \
