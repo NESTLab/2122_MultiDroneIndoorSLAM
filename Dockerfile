@@ -77,7 +77,9 @@ RUN sudo apt-get update; \
     ros-noetic-catkin \
     python3-catkin-tools \
     libtf2-ros-dev \
-    ros-noetic-global-planner
+    ros-noetic-global-planner ;
+
+RUN pip install gym tensorflow ;
 
 # Add ROS dependent scripts
 RUN rosdep init; \
