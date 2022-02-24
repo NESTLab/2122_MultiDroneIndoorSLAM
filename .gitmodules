@@ -1,8 +1,16 @@
 [submodule "turtlebot3_simulations"]
 	path = turtlebot3_simulations
 	url = https://github.com/NESTLab/turtlebot3_simulations.git
-	branch = noetic-devel
+	branch = changesForRLTesting
 [submodule "coms"]
 	path = coms
 	url = https://github.com/NESTLab/coms.git
 	branch = main
+[submodule "slam_gmapping"]
+	path = slam_gmapping
+	url = git@github.com:tberg1234/slam_gmapping.git
+	branch = melodic-devel
+[submodule "frontier_rl"]
+	path = frontier_rl
+	url = git@github.com:tberg1234/Frontier_ML.git
+	branch = fullObs

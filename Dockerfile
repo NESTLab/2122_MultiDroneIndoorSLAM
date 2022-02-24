@@ -70,13 +70,17 @@ RUN git clone https://github.com/ilpincy/argos3-kheperaiv.git; \
 RUN sudo apt-get update; \
   sudo apt-get upgrade -y; \
   sudo apt-get install -y \
+    apt-utils \
     python-is-python3 \
     ros-noetic-octomap \
     ros-noetic-octomap-msgs \
     iproute2 \
     ros-noetic-catkin \
     python3-catkin-tools \
-    libtf2-ros-dev
+    libtf2-ros-dev \
+    ros-noetic-global-planner ;
+
+RUN pip install gym tensorflow ;
 
 # Add ROS dependent scripts
 RUN rosdep init; \
