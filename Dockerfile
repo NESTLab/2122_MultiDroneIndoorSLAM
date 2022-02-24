@@ -70,6 +70,7 @@ RUN git clone https://github.com/ilpincy/argos3-kheperaiv.git; \
 RUN sudo apt-get update; \
   sudo apt-get upgrade -y; \
   sudo apt-get install -y \
+    apt-utils \
     python-is-python3 \
     ros-noetic-octomap \
     ros-noetic-octomap-msgs \
