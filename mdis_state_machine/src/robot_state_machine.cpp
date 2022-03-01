@@ -24,7 +24,11 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   data_dump_location.y = -10;
 }
 
-
+// void RobotState::interestCB(const mdis_state_machine::Interest::ConstPtr msg){
+//   ROS_INFO_STREAM("Setting interested as true");
+//   interested = true;
+//   ros::spinOnce();
+// }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// I D L E   S T A T E   C L A S S ////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +75,7 @@ bool GoToExplore::isDone()
    ROS_INFO_STREAM("Going to explore at"<<getNextMeetingPoint());
    geometry_msgs::Point temp_point = getNextMeetingPoint();
    explore_interface->goToPoint(temp_point, true);
+   ros::Duration(1).sleep(); 
    return true;
 }
 
@@ -155,6 +160,7 @@ bool GoToMeet::entryPoint()
    ROS_INFO_STREAM("Going to meet at"<<getCurrentMeetingPoint());
    geometry_msgs::Point temp_point = getCurrentMeetingPoint();
    explore_interface->goToPoint(temp_point, false);
+  //  interested = false;
    ros::Duration(1).sleep();  // Giving it some time to reflect
    return true;
 }
@@ -165,8 +171,17 @@ bool GoToMeet::isDone()
    {
      if(isConnDirectRelated(conn_robot))
      {
-       ROS_INFO("Robot is connected to the party of interest");
-       return true;
+       mdis_state_machine::Interest data;
+       data.req.resize(2);
+       data.req.at(0).data = "Request for connection. Interested?";
+       data.req.at(1).data = robot_name;
+       interest_pub.publish(data);
+       ros::Duration(1).sleep();
+       if(interested){
+        ROS_INFO("Robot is connected to the party of interest");
+        return true;
+       }
+
      }
    }
    return false;
@@ -207,6 +222,20 @@ void GoToMeet::connCB(const mdis_state_machine::Connection::ConstPtr msg)
     }
   }
 }
+
+void GoToMeet::interestCB(const mdis_state_machine::Interest::ConstPtr msg){
+  std::string r_name = msg->req.at(1).data;
+  ROS_INFO_STREAM("CONNN_ROBOT"<<r_name);
+  ROS_INFO_STREAM("ROBOT_NAME"<<robot_name);
+  if (robot_name!=r_name){
+  
+    ROS_INFO_STREAM("Setting interested as true");
+    interested = true;
+    ros::spinOnce();
+  }
+  
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// M E E T   S T A T E   C L A S S ////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -218,6 +247,7 @@ bool Meet::entryPoint()
    frontier_data_received = false;
    location_data_received = false;
    location_data_ack = false;
+
    return true;
 }
 
@@ -272,8 +302,8 @@ void Meet::exitPoint()
     data.ack.at(0).data = "Received";
     // std::string temp_msg = "Received";
     location_data_ack_pub.publish(data);
-    ros::Duration(0.1).sleep();
-    location_data_ack_pub.publish(data);
+    // ros::Duration(0.1).sleep();
+    // location_data_ack_pub.publish(data);
   }
   ROS_INFO("Exiting");
   geometry_msgs::Point temp_location = explore_interface->getRobotCurrentPose().pose.position;

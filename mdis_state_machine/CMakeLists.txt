@@ -23,6 +23,7 @@ add_message_files(
   DataCommunication.msg
   Location.msg
   LocationAck.msg
+  Interest.msg
 )
 
 generate_messages(

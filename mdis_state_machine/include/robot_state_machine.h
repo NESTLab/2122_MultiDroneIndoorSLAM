@@ -6,6 +6,7 @@
 #include <mdis_state_machine/DataCommunication.h>
 #include <mdis_state_machine/Location.h>
 #include <mdis_state_machine/LocationAck.h>
+#include <mdis_state_machine/Interest.h>
 #include <cmath>
 #include <explore_lite/FrontiersArray.h>
 
@@ -30,7 +31,10 @@ class RobotState {
 public:
 
    RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHandle &nh);
-   ~RobotState() {}
+   ~RobotState() {
+      // ros::NodeHandle nh;
+      // interest_sub = nh.subscribe("/interest_check", 1000, &RobotState::interestCB, this);
+      }
    uint64_t getId() const { return m_unId; }
    const std::string& getName() const { return m_strName; }
    virtual bool entryPoint() = 0;
@@ -47,6 +51,7 @@ public:
 protected:
 
    uint64_t m_unId;
+   // ros::Subscriber interest_sub;
    std::string m_strName;
    std::string robot_name;
    static float curr_meet_x, curr_meet_y, next_meet_x, next_meet_y;
@@ -55,8 +60,10 @@ protected:
    static ROLE robot_role;
    geometry_msgs::Point data_dump_location;
    bool is_explorer;
+   bool interested;
    bool meeting_started, go_for_exploration;
    MoveBaseInterface *explore_interface;
+   // void interestCB(const mdis_state_machine::Interest::ConstPtr msg);
 
    
 
@@ -189,6 +196,9 @@ class GoToMeet: public RobotState{
 public:
    GoToMeet(ros::NodeHandle &nh):RobotState(GO_TO_MEET, "GoToMeet", nh){
      conn_sub = nh.subscribe("/connection_check", 1000, &GoToMeet::connCB, this);
+     interest_sub = nh.subscribe("/interest_check", 1000, &GoToMeet::interestCB, this);
+     interest_pub = nh.advertise<mdis_state_machine::Interest>("/interest_check", 1000);
+     
    }
    bool isDone() override ;
    TEAM_STATES transition() override;
@@ -199,8 +209,11 @@ public:
 private:
    bool connected;
    std::string conn_robot;
+   ros::Publisher interest_pub;
+   ros::Subscriber interest_sub;
    ros::Subscriber conn_sub;
    void connCB(const mdis_state_machine::Connection::ConstPtr msg);
+   void interestCB(const mdis_state_machine::Interest::ConstPtr msg);
 };
 class Meet: public RobotState{
 public:
