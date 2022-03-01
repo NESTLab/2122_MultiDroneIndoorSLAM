@@ -104,7 +104,6 @@ protected:
             point.x=frontier.x;
             point.y=frontier.y;
             setNextMeetingPoint(point);
-            // ROS_INFO_STREAM("SEEEEEEEEEEEEEEEEEEEEETTTTTTTTTTTTTTTTTTTTTTTTTTTIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIINNNNNNNNNNNNNNNNNNNNNNNNNNNNNGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG"<<getNextMeetingPoint());
             
          }
 
@@ -246,7 +245,7 @@ private:
    geometry_msgs::Point buffer_next_location;
    std::vector<geometry_msgs::Point> frontier_msg;
    geometry_msgs::Point location_msg;
-   
+
 };
 class GoToDumpData: public RobotState{
 public:

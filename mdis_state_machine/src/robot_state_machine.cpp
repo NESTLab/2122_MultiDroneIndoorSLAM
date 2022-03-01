@@ -276,13 +276,9 @@ void Meet::exitPoint()
     location_data_ack_pub.publish(data);
   }
   ROS_INFO("Exiting");
-  ROS_INFO("MEETING STARTED MEETING STARTED MEETING STARTED MEETING STARTED MEETING STARTED");
   geometry_msgs::Point temp_location = explore_interface->getRobotCurrentPose().pose.position;
   robot_locations_during_meeting.push_back(temp_location);
   robot_locations_during_meeting.push_back(location_msg);
-  ROS_INFO_STREAM("LOCATIONLOCATIONLOCATIONLOCATIONLOCATION"<<location_msg);
-  // std::cout<<robot_locations_during_meeting.size();
-  ROS_INFO_STREAM("LOCATIONLOCATIONSLOCATIONLOCATIONS"<<robot_locations_during_meeting.size());
 
   // Set this only if the meeting was successful
   if(robot_role == EXPLORER)
@@ -331,8 +327,6 @@ void Meet::getLocationCB(const mdis_state_machine::Location::ConstPtr msg){
 }
 
 void Meet::getLocationAckCB(const mdis_state_machine::LocationAck::ConstPtr msg){
-  // location_ack_msg=msg->ack.at(0);
-  ROS_INFO_STREAM("SETTTINGSETTINGSETTINGSETTINGSETTING");
   location_data_ack = true;
 }
 
@@ -345,18 +339,11 @@ void Meet::publishNextMeetingLocation()
     ros::Duration(0.1).sleep();
   }
   mdis_state_machine::DataCommunication data;
-  // geometry_msgs::Point curr_location_for_frontier = explore_interface->getRobotCurrentPose().pose.position;
-  // ROS_INFO_STREAM("DATADTATDTADTTADTATDATDATADATDATDTADTATDATDATDTAATDATDTATDATA"<<frontier_msg.size());
   data.connection_between.resize(2);
   data.connection_between.at(0).data = robot_name;
   data.connection_between.at(1).data = parent_robot_name;
-  ROS_INFO_STREAM("DATADTATDTADTTADTATDATDATADATDATDTADTATDATDATDTAATDATDTATDATA"<<robot_locations_during_meeting.size());
+  // ROS_INFO_STREAM("DATADTATDTADTTADTATDATDATADATDATDTADTATDATDATDTAATDATDTATDATA"<<robot_locations_during_meeting.size());
   data.next_meeting_point = getNextFurthestMeetingPoint(frontier_msg, robot_locations_during_meeting);
-
-  // ROS_INFO_STREAM("DATADTATDTADTTADTATDATDATADATDATDTADTATDATDATDTAATDATDTATDATA"<<frontier_msg);
-  // data.next_meeting_point = getNextFurthestMeetingPoint(frontier_msg, curr_location_for_frontier);
-
-  ROS_INFO_STREAM("DATADTATDTADTTADTATDATDATADATDATDTADTATDATDATDTAATDATDTATDATA"<<data);
   
   meeting_data_pub.publish(data);
   ros::Duration(0.2).sleep();
