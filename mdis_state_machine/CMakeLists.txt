@@ -21,6 +21,8 @@ add_message_files(
   FILES
   Connection.msg
   DataCommunication.msg
+  Location.msg
+  LocationAck.msg
 )
 
 generate_messages(

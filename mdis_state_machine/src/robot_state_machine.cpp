@@ -4,11 +4,9 @@ float RobotState::curr_meet_x = 0.0;
 float RobotState::curr_meet_y = 0.0;
 float RobotState::next_meet_x = 0.0;
 float RobotState::next_meet_y = 0.0;
-float RobotState::time_for_exploration = 30.0;
-
+float RobotState::time_for_exploration = 20.0;
 std::string RobotState::parent_robot_name = "";
 std::string RobotState::child_robot_name = "";
-
 ROLE RobotState::robot_role;
 
 RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHandle &nh) :
@@ -18,12 +16,10 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   explore_interface = new MoveBaseInterface(nh);
   robot_name = ros::this_node::getNamespace();
   robot_name.erase(robot_name.begin());
-
   curr_meet_x = -31;
   curr_meet_y = -6;
   next_meet_x = -28;
   next_meet_y = -6;
-
   data_dump_location.x = -31;
   data_dump_location.y = -10;
 }
@@ -36,6 +32,7 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
 bool Idle::entryPoint()
 {
    explore_interface->stopRobot();
+  //  ROS_INFO("IDLING IDLING IDLING IDLING");
    return true;
 }
 
@@ -43,7 +40,6 @@ bool Idle::isDone()
 {
    return true;
 }
-
 
 TEAM_STATES Idle::transition() 
 {
@@ -66,6 +62,7 @@ void Idle::exitPoint()
 
 bool GoToExplore::entryPoint()
 {
+  ROS_INFO("GOING TO EXPLORE!!!!!!!!!!!!!!!!!!!!!");
    return true;
 }
 
@@ -101,6 +98,7 @@ void GoToExplore::exitPoint()
 
 bool Explore::entryPoint()
 {
+  ROS_INFO("EXPLORE!!!!!!!!!!!!!!!!!!!!!");
    starting_time = ros::Time::now();
    ROS_INFO_STREAM("Exploring for "<<time_for_exploration<<" Seconds");
    return true;
@@ -139,9 +137,10 @@ void Explore::exitPoint()
   // BUG!!!!
   // Values are being changed only for the class Explore
   // Need to change values for all
-  setNextMeetingPoint(explore_interface->getRobotCurrentPose().pose.position);
+  // setNextMeetingPoint(explore_interface->getRobotCurrentPose().pose.position); //remove, meeting decided during meeting now
   
   ROS_INFO_STREAM("Next meeting"<<getNextMeetingPoint());
+  // ROS_INFO_STREAM("Next meeting"<<getCurrentMeetingPoint());
 
   explore_interface->stopRobot();
 }
@@ -156,8 +155,7 @@ bool GoToMeet::entryPoint()
    ROS_INFO_STREAM("Going to meet at"<<getCurrentMeetingPoint());
    geometry_msgs::Point temp_point = getCurrentMeetingPoint();
    explore_interface->goToPoint(temp_point, false);
-   // Giving it some time to reflect
-   ros::Duration(1).sleep();
+   ros::Duration(1).sleep();  // Giving it some time to reflect
    return true;
 }
 
@@ -215,7 +213,11 @@ void GoToMeet::connCB(const mdis_state_machine::Connection::ConstPtr msg)
 
 bool Meet::entryPoint()
 {
+  // ros::Duration(5).sleep();
    data_received = false;
+   frontier_data_received = false;
+   location_data_received = false;
+   location_data_ack = false;
    return true;
 }
 
@@ -247,7 +249,41 @@ void Meet::step()
 
 void Meet::exitPoint() 
 {
+  if (robot_role == RELAY){
+    while(ros::ok() && !location_data_ack){
+      ROS_INFO("sending location data");
+      ros::spinOnce();
+      ROS_INFO_STREAM("bool"<<location_data_ack);
+      geometry_msgs::Point temp_location = explore_interface->getRobotCurrentPose().pose.position;
+      location_data_pub.publish(temp_location);
+      ros::Duration(0.5).sleep();
+    }
+    
+  }
+  if (robot_role == EXPLORER){
+    while(ros::ok() && !location_data_received)
+  {
+    ROS_INFO("Waiting for location data");
+    ros::spinOnce();
+    ros::Duration(0.5).sleep();
+  }
+    mdis_state_machine::LocationAck data;
+    data.ack.resize(1);
+    data.ack.at(0).data = "Received";
+    // std::string temp_msg = "Received";
+    location_data_ack_pub.publish(data);
+    ros::Duration(0.1).sleep();
+    location_data_ack_pub.publish(data);
+  }
   ROS_INFO("Exiting");
+  ROS_INFO("MEETING STARTED MEETING STARTED MEETING STARTED MEETING STARTED MEETING STARTED");
+  geometry_msgs::Point temp_location = explore_interface->getRobotCurrentPose().pose.position;
+  robot_locations_during_meeting.push_back(temp_location);
+  robot_locations_during_meeting.push_back(location_msg);
+  ROS_INFO_STREAM("LOCATIONLOCATIONLOCATIONLOCATIONLOCATION"<<location_msg);
+  // std::cout<<robot_locations_during_meeting.size();
+  ROS_INFO_STREAM("LOCATIONLOCATIONSLOCATIONLOCATIONS"<<robot_locations_during_meeting.size());
+
   // Set this only if the meeting was successful
   if(robot_role == EXPLORER)
   {
@@ -257,6 +293,12 @@ void Meet::exitPoint()
   }
   else
     getNextMeetingLocationFromCallback();
+  
+  robot_locations_during_meeting.clear();
+  
+
+
+  
     
 
   // get time estimate from move_base_interface
@@ -271,17 +313,50 @@ void Meet::setExplorationTime()
   float time_to_meet_after = explore_interface->getTimePredictionForTravel(data_dump_location, temp_next_location);
   float time_to_exploration_site = explore_interface->getTimePredictionForTravel(curr_location, temp_next_location);
   float total_time = time_to_dump+time_to_meet_after;
-  
   time_for_exploration = (total_time-time_to_exploration_site)/2; 
+}
+
+void Meet::getFrontiersCB(const explore_lite::FrontiersArray::ConstPtr msg)
+{
+   for (int i=0;i<msg->frontiers.size();i++){
+     frontier_msg.push_back(msg->frontiers.at(i));
+  }
+  frontier_data_received = true;
+}
+
+void Meet::getLocationCB(const mdis_state_machine::Location::ConstPtr msg){
+  // geometry_msgs::Point location_msg;
+  location_msg=msg->robot_location;
+  location_data_received = true;
+}
+
+void Meet::getLocationAckCB(const mdis_state_machine::LocationAck::ConstPtr msg){
+  // location_ack_msg=msg->ack.at(0);
+  ROS_INFO_STREAM("SETTTINGSETTINGSETTINGSETTINGSETTING");
+  location_data_ack = true;
 }
 
 void Meet::publishNextMeetingLocation()
 {
+    while(ros::ok() && !frontier_data_received)
+  {
+    ROS_INFO("Waiting for frontier data");
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+  }
   mdis_state_machine::DataCommunication data;
+  // geometry_msgs::Point curr_location_for_frontier = explore_interface->getRobotCurrentPose().pose.position;
+  // ROS_INFO_STREAM("DATADTATDTADTTADTATDATDATADATDATDTADTATDATDATDTAATDATDTATDATA"<<frontier_msg.size());
   data.connection_between.resize(2);
   data.connection_between.at(0).data = robot_name;
   data.connection_between.at(1).data = parent_robot_name;
-  data.next_meeting_point = getNextMeetingPoint();
+  ROS_INFO_STREAM("DATADTATDTADTTADTATDATDATADATDATDTADTATDATDATDTAATDATDTATDATA"<<robot_locations_during_meeting.size());
+  data.next_meeting_point = getNextFurthestMeetingPoint(frontier_msg, robot_locations_during_meeting);
+
+  // ROS_INFO_STREAM("DATADTATDTADTTADTATDATDATADATDATDTADTATDATDATDTAATDATDTATDATA"<<frontier_msg);
+  // data.next_meeting_point = getNextFurthestMeetingPoint(frontier_msg, curr_location_for_frontier);
+
+  ROS_INFO_STREAM("DATADTATDTADTTADTATDATDATADATDATDTADTATDATDATDTAATDATDTATDATA"<<data);
   
   meeting_data_pub.publish(data);
   ros::Duration(0.2).sleep();
