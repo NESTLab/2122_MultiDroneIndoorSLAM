@@ -13,9 +13,13 @@ find_package(catkin REQUIRED COMPONENTS
   genmsg
   sensor_msgs
   geometry_msgs
+  message_generation
+  octomap_msgs
   nav_msgs
   tf
 )
+
+catkin_python_setup()
 
 add_message_files(
   FILES
@@ -24,6 +28,7 @@ add_message_files(
   Location.msg
   LocationAck.msg
   Interest.msg
+  RobotsState.msg
 )
 
 generate_messages(
@@ -36,17 +41,20 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS 	roscpp
-                        rospy
-                        std_msgs
-                        actionlib_msgs
-                        actionlib
-                        move_base_msgs
-                        genmsg
-                        sensor_msgs
-                        geometry_msgs
-                        nav_msgs
-                        tf
+  CATKIN_DEPENDS
+    roscpp
+    rospy
+    std_msgs
+    actionlib_msgs
+    message_runtime
+    actionlib
+    move_base_msgs
+    genmsg
+    sensor_msgs
+    geometry_msgs
+    octomap_msgs
+    nav_msgs
+    tf
 #  DEPENDS system_lib
 )
 
@@ -59,6 +67,7 @@ catkin_package(
 include_directories(
  include
   ${catkin_INCLUDE_DIRS}
+  ${OCTOMAP_INCLUDE_DIRS}
 )
 
 ###############
@@ -94,4 +103,3 @@ install(TARGETS move_base_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-

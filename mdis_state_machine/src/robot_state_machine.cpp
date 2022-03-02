@@ -5,30 +5,40 @@ float RobotState::curr_meet_y = 0.0;
 float RobotState::next_meet_x = 0.0;
 float RobotState::next_meet_y = 0.0;
 float RobotState::time_for_exploration = 20.0;
+
 std::string RobotState::parent_robot_name = "";
 std::string RobotState::child_robot_name = "";
+
+bool RobotState::testing_mode = false;
 ROLE RobotState::robot_role;
 
-RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHandle &nh) :
-      // m_pcTeam(nullptr), 
-      m_unId(un_id), m_strName(str_name) 
+RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHandle &nh, bool testing) :
+      // m_pcTeam(nullptr),
+      m_unId(un_id), m_strName(str_name)
 {
-  explore_interface = new MoveBaseInterface(nh);
+  if(!testing)
+  {
+    explore_interface = new MoveBaseInterface(nh);
+  }
+  else
+  {
+    ROS_INFO("Testing mode, skipping initializations");
+    RobotState::testing_mode = true;
+  }
+
   robot_name = ros::this_node::getNamespace();
   robot_name.erase(robot_name.begin());
+
   curr_meet_x = -31;
   curr_meet_y = -6;
   next_meet_x = -28;
   next_meet_y = -6;
+
   data_dump_location.x = -31;
   data_dump_location.y = -10;
 }
 
-// void RobotState::interestCB(const mdis_state_machine::Interest::ConstPtr msg){
-//   ROS_INFO_STREAM("Setting interested as true");
-//   interested = true;
-//   ros::spinOnce();
-// }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// I D L E   S T A T E   C L A S S ////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -36,7 +46,6 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
 bool Idle::entryPoint()
 {
    explore_interface->stopRobot();
-  //  ROS_INFO("IDLING IDLING IDLING IDLING");
    return true;
 }
 
@@ -45,7 +54,8 @@ bool Idle::isDone()
    return true;
 }
 
-TEAM_STATES Idle::transition() 
+
+TEAM_STATES Idle::transition()
 {
   return IDLE;
 }
@@ -55,7 +65,7 @@ void Idle::step()
   ROS_INFO("Step for Idle");
 }
 
-void Idle::exitPoint() 
+void Idle::exitPoint()
 {
 }
 
@@ -66,21 +76,38 @@ void Idle::exitPoint()
 
 bool GoToExplore::entryPoint()
 {
-  ROS_INFO("GOING TO EXPLORE!!!!!!!!!!!!!!!!!!!!!");
+   ROS_INFO("Entering the state GO_TO_EXPLORE");
    return true;
 }
 
 bool GoToExplore::isDone()
 {
-   ROS_INFO_STREAM("Going to explore at"<<getNextMeetingPoint());
+   ROS_INFO_STREAM("Going to explore at "<<getNextMeetingPoint());
    geometry_msgs::Point temp_point = getNextMeetingPoint();
+
+   state_pub_data.robot_name.data = robot_name;
+   state_pub_data.robot_state = (int)GO_TO_EXPLORE;
+
+   if(RobotState::testing_mode)
+   {
+      int i = 0;
+      int rate = 5;
+
+      // Hardcoded publish for 5 seconds
+      while(i++ < testing_waiting_time*rate)
+      {
+        ros::Rate(rate).sleep();
+        robot_state_pub.publish(state_pub_data);
+      }
+
+      return true;
+   }
+
    explore_interface->goToPoint(temp_point, true);
-   ros::Duration(2).sleep();
-  
    return true;
 }
 
-TEAM_STATES GoToExplore::transition() 
+TEAM_STATES GoToExplore::transition()
 {
   if(isDone())
     return EXPLORE;
@@ -90,11 +117,12 @@ TEAM_STATES GoToExplore::transition()
 
 void GoToExplore::step()
 {
-  ROS_INFO("Step for GoToExplore");
+  ROS_INFO("Executing step for GO_TO_EXPLORE");
 }
 
-void GoToExplore::exitPoint() 
+void GoToExplore::exitPoint()
 {
+   ROS_INFO("Exiting the state GO_TO_EXPLORE");
 }
 
 
@@ -104,20 +132,37 @@ void GoToExplore::exitPoint()
 
 bool Explore::entryPoint()
 {
-  ROS_INFO("EXPLORE!!!!!!!!!!!!!!!!!!!!!");
    starting_time = ros::Time::now();
+   ROS_INFO("Entering the state EXPLORE");
    ROS_INFO_STREAM("Exploring for "<<time_for_exploration<<" Seconds");
    return true;
 }
 
 bool Explore::isDone()
 {
+   state_pub_data.robot_name.data = robot_name;
+   state_pub_data.robot_state = (int)EXPLORE;
+
+   if(RobotState::testing_mode)
+   {
+      int i = 0;
+      int rate = 5;
+
+      // Hardcoded publish for 5 seconds
+      while(i++ < testing_waiting_time*rate)
+      {
+        ros::Rate(rate).sleep();
+        robot_state_pub.publish(state_pub_data);
+      }
+      return true;
+   }
+
    ros::Duration time_since_start = ros::Time::now() - starting_time;
    ros::Duration time_until_next_meeting = ros::Duration(time_for_exploration);
    return time_since_start > time_until_next_meeting;
 }
 
-TEAM_STATES Explore::transition() 
+TEAM_STATES Explore::transition()
 {
   if(isDone())
     return GO_TO_MEET;
@@ -130,10 +175,10 @@ void Explore::step()
   std_msgs::Bool msg;
   msg.data = false;
   pause_exploration_pub.publish(msg);
-  ROS_INFO_THROTTLE(10,"Step for Explore");
+  ROS_INFO_THROTTLE(10,"Executing step for EXPLORE");
 }
 
-void Explore::exitPoint() 
+void Explore::exitPoint()
 {
   std_msgs::Bool msg;
   msg.data = true;
@@ -143,12 +188,14 @@ void Explore::exitPoint()
   // BUG!!!!
   // Values are being changed only for the class Explore
   // Need to change values for all
-  // setNextMeetingPoint(explore_interface->getRobotCurrentPose().pose.position); //remove, meeting decided during meeting now
-  
-  ROS_INFO_STREAM("Next meeting"<<getNextMeetingPoint());
-  // ROS_INFO_STREAM("Next meeting"<<getCurrentMeetingPoint());
+  if(!RobotState::testing_mode)
+  {
+     setNextMeetingPoint(explore_interface->getRobotCurrentPose().pose.position);
+     explore_interface->stopRobot();
+  }
 
-  explore_interface->stopRobot();
+  ROS_INFO_STREAM("Exiting the state EXPLORE\nNext meeting "<<getNextMeetingPoint());
+
 }
 
 
@@ -158,12 +205,16 @@ void Explore::exitPoint()
 
 bool GoToMeet::entryPoint()
 {
+   ROS_INFO("Entering the state GO_TO_MEET");
    ROS_INFO_STREAM("Going to meet at"<<getCurrentMeetingPoint());
    geometry_msgs::Point temp_point = getCurrentMeetingPoint();
-   explore_interface->goToPoint(temp_point, false);
+   // explore_interface->goToPoint(temp_point, false);
    interested = false;
+   connected = false;
+   if(!RobotState::testing_mode)
+     explore_interface->goToPoint(temp_point, false);
+   // explore_interface->goToPoint(temp_point, false);
    ros::Duration(1).sleep();  // Giving it some time to reflect
-   explore_interface->goToPoint(temp_point, false);
    return true;
 }
 
@@ -190,24 +241,30 @@ bool GoToMeet::isDone()
 }
 
 
-TEAM_STATES GoToMeet::transition() 
+TEAM_STATES GoToMeet::transition()
 {
   if(isDone())
   {
     return MEET;
   }
-  else 
+  else
     return GO_TO_MEET;
 }
 
 void GoToMeet::step()
 {
-  ROS_INFO_THROTTLE(10,"Step for GoToMeet");
+  state_pub_data.robot_name.data = robot_name;
+  state_pub_data.robot_state = (int)GO_TO_MEET;
+  robot_state_pub.publish(state_pub_data);
+
+  ROS_INFO_THROTTLE(10,"Executing the step for GO_TO_MEET");
 }
 
-void GoToMeet::exitPoint() 
+void GoToMeet::exitPoint()
 {
-  explore_interface->stopRobot();
+  ROS_INFO("Exiting the state GO_TO_MEET");
+  if(!RobotState::testing_mode)
+    explore_interface->stopRobot();
 }
 
 
@@ -230,12 +287,12 @@ void GoToMeet::interestCB(const mdis_state_machine::Interest::ConstPtr msg){
   ROS_INFO_STREAM("CONNN_ROBOT"<<r_name);
   ROS_INFO_STREAM("ROBOT_NAME"<<robot_name);
   if (robot_name!=r_name){
-  
+
     ROS_INFO_STREAM("Setting interested as true");
     interested = true;
     ros::spinOnce();
   }
-  
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -245,6 +302,7 @@ void GoToMeet::interestCB(const mdis_state_machine::Interest::ConstPtr msg){
 bool Meet::entryPoint()
 {
   // ros::Duration(5).sleep();
+   ROS_INFO("Entering the state MEET");
    data_received = false;
    frontier_data_received = false;
    location_data_received = false;
@@ -256,10 +314,23 @@ bool Meet::entryPoint()
 bool Meet::isDone()
 {
    // Data sync done
+
+   if(RobotState::testing_mode)
+   {
+      int i = 0;
+      int rate = 5;
+
+      // Hardcoded publish for 5 seconds
+      while(i++ < testing_waiting_time*rate)
+      {
+        ros::Rate(rate).sleep();
+        robot_state_pub.publish(state_pub_data);
+      }
+   }
    return true;
 }
 
-TEAM_STATES Meet::transition() 
+TEAM_STATES Meet::transition()
 {
   if(isDone())
   {
@@ -270,16 +341,20 @@ TEAM_STATES Meet::transition()
     // else if(robot_role == RELAY_BETN_ROBOTS)
     //   return GO_TO_MEET;
   }
-  else 
+  else
     return MEET;
 }
 
 void Meet::step()
 {
-  ROS_INFO("Step for Meet");
+  state_pub_data.robot_name.data = robot_name;
+  state_pub_data.robot_state = (int)MEET;
+  robot_state_pub.publish(state_pub_data);
+
+  ROS_INFO("Executing the step for MEET");
 }
 
-void Meet::exitPoint() 
+void Meet::exitPoint()
 {
   if (robot_role == RELAY){
     while(ros::ok() && !location_data_ack){
@@ -290,7 +365,7 @@ void Meet::exitPoint()
       location_data_pub.publish(temp_location);
       ros::Duration(0.5).sleep();
     }
-    
+
   }
   if (robot_role == EXPLORER){
     while(ros::ok() && !location_data_received)
@@ -307,7 +382,7 @@ void Meet::exitPoint()
     // ros::Duration(0.1).sleep();
     // location_data_ack_pub.publish(data);
   }
-  ROS_INFO("Exiting");
+  ROS_INFO("Exiting the state MEET");
   geometry_msgs::Point temp_location = explore_interface->getRobotCurrentPose().pose.position;
   robot_locations_during_meeting.push_back(temp_location);
   robot_locations_during_meeting.push_back(location_msg);
@@ -316,18 +391,14 @@ void Meet::exitPoint()
   if(robot_role == EXPLORER)
   {
     publishNextMeetingLocation();
-    setExplorationTime();
+    if(!RobotState::testing_mode)
+      setExplorationTime();
     setCurrAsNextMeeting();
   }
   else
     getNextMeetingLocationFromCallback();
-  
+
   robot_locations_during_meeting.clear();
-  
-
-
-  
-    
 
   // get time estimate from move_base_interface
   // set exploration_duration accordingly
@@ -341,7 +412,8 @@ void Meet::setExplorationTime()
   float time_to_meet_after = explore_interface->getTimePredictionForTravel(data_dump_location, temp_next_location);
   float time_to_exploration_site = explore_interface->getTimePredictionForTravel(curr_location, temp_next_location);
   float total_time = time_to_dump+time_to_meet_after;
-  time_for_exploration = (total_time-time_to_exploration_site)/2; 
+
+  time_for_exploration = (total_time-time_to_exploration_site)/2;
 }
 
 void Meet::getFrontiersCB(const explore_lite::FrontiersArray::ConstPtr msg)
@@ -370,6 +442,7 @@ void Meet::publishNextMeetingLocation()
     ros::spinOnce();
     ros::Duration(0.1).sleep();
   }
+
   mdis_state_machine::DataCommunication data;
   data.connection_between.resize(2);
   data.connection_between.at(0).data = robot_name;
@@ -389,7 +462,7 @@ void Meet::getNextMeetingLocationFromCallback()
 {
   // @to-do
   // THIS NEEDS TO EXIT SOMETIME IF NO CONNECTION IS MADE
-  while(ros::ok() && !data_received)
+  while(ros::ok() && (!testing_mode && !data_received))
   {
     ROS_INFO("Waiting for meeting data");
     ros::spinOnce();
@@ -425,17 +498,37 @@ void Meet::nextMeetingLocationCB(const mdis_state_machine::DataCommunication::Co
 
 bool GoToDumpData::entryPoint()
 {
+   ROS_INFO("Entering the state GO_TO_DUMP");
    return true;
 }
 
 bool GoToDumpData::isDone()
 {
    ROS_INFO_STREAM("Going to Dump Data at"<<data_dump_location);
+
+   state_pub_data.robot_name.data = robot_name;
+   state_pub_data.robot_state = (int)GO_TO_DUMP_DATA;
+
+   if(RobotState::testing_mode)
+   {
+      int i = 0;
+      int rate = 5;
+
+      // Hardcoded publish for 5 seconds
+      while(i++ < testing_waiting_time*rate)
+      {
+        ros::Rate(rate).sleep();
+        robot_state_pub.publish(state_pub_data);
+      }
+
+      return true;
+   }
+
    explore_interface->goToPoint(data_dump_location, true);
    return true;
 }
 
-TEAM_STATES GoToDumpData::transition() 
+TEAM_STATES GoToDumpData::transition()
 {
   if(isDone())
     return DUMP_DATA;
@@ -448,9 +541,11 @@ void GoToDumpData::step()
   ROS_INFO_THROTTLE(10, "Going to dump data");
 }
 
-void GoToDumpData::exitPoint() 
+void GoToDumpData::exitPoint()
 {
-  explore_interface->stopRobot();
+  ROS_INFO("Exiting the state GO_TO_DUMP");
+  if(!RobotState::testing_mode)
+    explore_interface->stopRobot();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -459,20 +554,40 @@ void GoToDumpData::exitPoint()
 
 bool DumpData::entryPoint()
 {
+   ROS_INFO("Entering the state DUMP_DATA");
    return true;
 }
 
 bool DumpData::isDone()
 {
    // Data sync done
+
+   state_pub_data.robot_name.data = robot_name;
+   state_pub_data.robot_state = (int)DUMP_DATA;
+
+   if(RobotState::testing_mode)
+   {
+      int i = 0;
+      int rate = 5;
+
+      // Hardcoded publish for 5 seconds
+      while(i++ < testing_waiting_time*rate)
+      {
+        ros::Rate(rate).sleep();
+        robot_state_pub.publish(state_pub_data);
+      }
+
+      return true;
+   }
+
    return true;
 }
 
-TEAM_STATES DumpData::transition() 
+TEAM_STATES DumpData::transition()
 {
   if(isDone())
     return GO_TO_MEET;
-  else 
+  else
     return DUMP_DATA;
 }
 
@@ -481,6 +596,7 @@ void DumpData::step()
   ROS_INFO("Step for DumpData");
 }
 
-void DumpData::exitPoint() 
+void DumpData::exitPoint()
 {
+    ROS_INFO("Exiting the state DUMP_DATA");
 }

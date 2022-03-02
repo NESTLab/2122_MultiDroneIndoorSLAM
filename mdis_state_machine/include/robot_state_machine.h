@@ -10,6 +10,8 @@
 #include <cmath>
 #include <explore_lite/FrontiersArray.h>
 
+#include <std_msgs/Int8.h>
+#include <mdis_state_machine/RobotsState.h>
 enum ROLE{
   RELAY,
   EXPLORER,
@@ -30,10 +32,8 @@ class RobotState {
    
 public:
 
-   RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHandle &nh);
+   RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHandle &nh, bool testing);
    ~RobotState() {
-      // ros::NodeHandle nh;
-      // interest_sub = nh.subscribe("/interest_check", 1000, &RobotState::interestCB, this);
       }
    uint64_t getId() const { return m_unId; }
    const std::string& getName() const { return m_strName; }
@@ -57,15 +57,19 @@ protected:
    static float curr_meet_x, curr_meet_y, next_meet_x, next_meet_y;
    static float time_for_exploration;
    static std::string parent_robot_name, child_robot_name;
+   static bool testing_mode;
    static ROLE robot_role;
-   geometry_msgs::Point data_dump_location;
-   bool is_explorer;
-   bool interested;
-   bool meeting_started, go_for_exploration;
-   MoveBaseInterface *explore_interface;
-   // void interestCB(const mdis_state_machine::Interest::ConstPtr msg);
 
-   
+   int testing_waiting_time = 5;
+
+   geometry_msgs::Point data_dump_location;
+   bool interested;
+   bool is_explorer;
+   bool meeting_started, go_for_exploration;
+
+   MoveBaseInterface *explore_interface;
+
+
 
    void setCurrentMeetingPoint(const geometry_msgs::Point& meeting)
    {
@@ -158,8 +162,9 @@ protected:
 
 class Idle: public RobotState{
 public:
-   Idle(ros::NodeHandle &nh):RobotState(IDLE, "Idle", nh){}
+   Idle(ros::NodeHandle &nh, bool testing):RobotState(IDLE, "Idle", nh, testing){}
    bool isDone() override ;
+
    TEAM_STATES transition() override;
    bool entryPoint() override;
    void step() override;
@@ -168,40 +173,61 @@ public:
 private:
    ros::Publisher chatter_pub;
 };
+
+
 class GoToExplore: public RobotState{
 public:
-   GoToExplore(ros::NodeHandle &nh):RobotState(GO_TO_EXPLORE, "GoToExplore", nh){}
+   GoToExplore(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_EXPLORE, "GoToExplore", nh, testing){
+   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);     
+   }
    bool isDone() override ;
+
    TEAM_STATES transition() override;
+   
    bool entryPoint() override;
    void step() override;
    void exitPoint() override;
+
+private:
+   ros::Publisher robot_state_pub;
+   mdis_state_machine::RobotsState state_pub_data;
 };
+
+
 class Explore: public RobotState{
 public:
-   Explore(ros::NodeHandle &nh):RobotState(EXPLORE, "Explore", nh){
-     pause_exploration_pub = nh.advertise<std_msgs::Bool>("explore/pause_exploration", 1000);
+   Explore(ros::NodeHandle &nh, bool testing):RobotState(EXPLORE, "Explore", nh, testing){
+     pause_exploration_pub = nh.advertise<std_msgs::Bool>("explore/pause_exploration", 1000);     
+     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);     
    }
    bool isDone() override ;
+
    TEAM_STATES transition() override;
+   
    bool entryPoint() override;
    void step() override;
    void exitPoint() override;
 
 private:
    ros::Publisher pause_exploration_pub;
+   ros::Publisher robot_state_pub;
+   mdis_state_machine::RobotsState state_pub_data;
    ros::Time starting_time;
 };
+
+
 class GoToMeet: public RobotState{
 public:
-   GoToMeet(ros::NodeHandle &nh):RobotState(GO_TO_MEET, "GoToMeet", nh){
-     conn_sub = nh.subscribe("/connection_check", 1000, &GoToMeet::connCB, this);
+   GoToMeet(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_MEET, "GoToMeet", nh, testing){
+     conn_sub = nh.subscribe("/connection_check", 1000, &GoToMeet::connCB, this);     
+   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);
      interest_sub = nh.subscribe("/interest_check", 1000, &GoToMeet::interestCB, this);
-     interest_pub = nh.advertise<mdis_state_machine::Interest>("/interest_check", 1000);
-     
+     interest_pub = nh.advertise<mdis_state_machine::Interest>("/interest_check", 1000);     
    }
    bool isDone() override ;
+
    TEAM_STATES transition() override;
+   
    bool entryPoint() override;
    void step() override;
    void exitPoint() override;
@@ -211,13 +237,15 @@ private:
    std::string conn_robot;
    ros::Publisher interest_pub;
    ros::Subscriber interest_sub;
+   ros::Publisher robot_state_pub;
    ros::Subscriber conn_sub;
+   mdis_state_machine::RobotsState state_pub_data;
    void connCB(const mdis_state_machine::Connection::ConstPtr msg);
    void interestCB(const mdis_state_machine::Interest::ConstPtr msg);
 };
 class Meet: public RobotState{
 public:
-   Meet(ros::NodeHandle &nh):RobotState(MEET, "Meet", nh){
+   Meet(ros::NodeHandle &nh, bool testing):RobotState(MEET, "Meet", nh, testing){
      meeting_data_pub = nh.advertise<mdis_state_machine::DataCommunication>("/data_communication", 1000);
      meeting_data_sub = nh.subscribe("/data_communication", 1000, &Meet::nextMeetingLocationCB, this);
      frontier_data_sub = nh.subscribe("/frontier_list", 1000, &Meet::getFrontiersCB, this);
@@ -225,6 +253,7 @@ public:
      location_data_sub = nh.subscribe("/robot_location", 1000, &Meet::getLocationCB, this);
      location_data_ack_pub = nh.advertise<mdis_state_machine::LocationAck>("/robot_location_ack", 1000);
      location_data_ack_sub = nh.subscribe("/robot_location_ack", 1000, &Meet::getLocationAckCB, this);
+     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);   
    }
    bool isDone() override ;
    TEAM_STATES transition() override;
@@ -241,6 +270,8 @@ private:
    ros::Subscriber location_data_sub;
    ros::Publisher location_data_ack_pub;
    ros::Subscriber location_data_ack_sub;
+   ros::Publisher robot_state_pub;
+   mdis_state_machine::RobotsState state_pub_data;
 
 
    bool data_received;
@@ -262,21 +293,29 @@ private:
 };
 class GoToDumpData: public RobotState{
 public:
-   GoToDumpData(ros::NodeHandle &nh):RobotState(GO_TO_DUMP_DATA, "GoToDumpData", nh){}
+   GoToDumpData(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_DUMP_DATA, "GoToDumpData", nh, testing){}
    bool isDone() override ;
    TEAM_STATES transition() override;
    bool entryPoint() override;
    void step() override;
    void exitPoint() override;
+private:
+   ros::Publisher robot_state_pub;
+   mdis_state_machine::RobotsState state_pub_data;
 };
 class DumpData: public RobotState{
 public:
-   DumpData(ros::NodeHandle &nh):RobotState(DUMP_DATA, "DumpData", nh){}
+   DumpData(ros::NodeHandle &nh, bool testing):RobotState(DUMP_DATA, "DumpData", nh, testing){
+      robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);
+   }
    bool isDone() override ;
    TEAM_STATES transition() override;
    bool entryPoint() override;
    void step() override;
    void exitPoint() override;
+private:
+   ros::Publisher robot_state_pub;
+   mdis_state_machine::RobotsState state_pub_data;
 };
 
 
