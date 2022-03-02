@@ -75,7 +75,8 @@ bool GoToExplore::isDone()
    ROS_INFO_STREAM("Going to explore at"<<getNextMeetingPoint());
    geometry_msgs::Point temp_point = getNextMeetingPoint();
    explore_interface->goToPoint(temp_point, true);
-   ros::Duration(1).sleep(); 
+   ros::Duration(2).sleep();
+  
    return true;
 }
 
@@ -160,8 +161,9 @@ bool GoToMeet::entryPoint()
    ROS_INFO_STREAM("Going to meet at"<<getCurrentMeetingPoint());
    geometry_msgs::Point temp_point = getCurrentMeetingPoint();
    explore_interface->goToPoint(temp_point, false);
-  //  interested = false;
+   interested = false;
    ros::Duration(1).sleep();  // Giving it some time to reflect
+   explore_interface->goToPoint(temp_point, false);
    return true;
 }
 
@@ -374,7 +376,7 @@ void Meet::publishNextMeetingLocation()
   data.connection_between.at(1).data = parent_robot_name;
   // ROS_INFO_STREAM("DATADTATDTADTTADTATDATDATADATDATDTADTATDATDATDTAATDATDTATDATA"<<robot_locations_during_meeting.size());
   data.next_meeting_point = getNextFurthestMeetingPoint(frontier_msg, robot_locations_during_meeting);
-  
+  ROS_INFO_STREAM("NEXT MEETING POINT"<<data.next_meeting_point);
   meeting_data_pub.publish(data);
   ros::Duration(0.2).sleep();
   meeting_data_pub.publish(data);
@@ -394,6 +396,8 @@ void Meet::getNextMeetingLocationFromCallback()
     ros::Duration(0.1).sleep();
   }
   ROS_INFO("Data received");
+  setCurrentMeetingPoint(buffer_next_location);
+  ros::Duration(0.1).sleep();
   setCurrentMeetingPoint(buffer_next_location);
 }
 
