@@ -235,16 +235,14 @@ class find_frontier:
                 break
 
             move_msg = Pose()
-            move_msg.header.frame_id = self.robot_namespace + '/map'
+            move_msg.position.x = c[0]
+            move_msg.position.y = c[1]
+            move_msg.position.z = c[2]
 
-            move_msg.pose.position.x = c[0]
-            move_msg.pose.position.y = c[1]
-            move_msg.pose.position.z = c[2]
-
-            move_msg.pose.orientation.x = 0
-            move_msg.pose.orientation.y = 0
-            move_msg.pose.orientation.z = 0
-            move_msg.pose.orientation.w = 1
+            move_msg.orientation.x = 0
+            move_msg.orientation.y = 0
+            move_msg.orientation.z = 0
+            move_msg.orientation.w = 1
 
             centers_for_pub.append(move_msg)
             counter += 1
