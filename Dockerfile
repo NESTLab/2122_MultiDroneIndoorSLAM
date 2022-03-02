@@ -91,6 +91,11 @@ RUN rosdep init; \
   echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/argos3:/opt/ros/noetic/lib" >> ~/.bashrc; \
   echo "export ARGOS_PLUGIN_PATH=$HOME/catkin_ws/src/argos_bridge/ros_lib_links" >> ~/.bashrc; \
   echo "export ARGOS_PLUGIN_PATH=$ARGOS_PLUGIN_PATH:$HOME/catkin_ws/devel/lib" >> ~/.bashrc
+
+COPY . /root/catkin_ws/src
+
 EXPOSE 8080
+
+CMD ["chmod a+rwx /root -R"]
 
 CMD ["/root/catkin_ws/src/entrypoint.sh"]
