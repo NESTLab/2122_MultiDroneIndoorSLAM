@@ -7,11 +7,13 @@ from scipy import signal as sig
 
 from std_msgs.msg import Header
 from nav_msgs.msg import OccupancyGrid, GridCells
-from geometry_msgs.msg import Point, PoseStamped
+from geometry_msgs.msg import Point, PoseStamped, Pose, PoseArray
 from tf import TransformListener
 from rospy.exceptions import ROSTimeMovedBackwardsException, ROSInterruptException
 
 SEND_TO_FRONTIERS = False
+SEND_STATE_MACHINE_FRONTIERS = True
+SM_LIMIT = 10
 
 class find_frontier:
     def __init__(self):
@@ -35,9 +37,9 @@ class find_frontier:
         self.move_pub = rospy.Publisher(self.robot_namespace+'/move_base_simple/goal', PoseStamped, queue_size=10)
         self.move_helper_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.helper)
         self.move_helper_pub = rospy.Publisher(self.robot_namespace+'/move_base_simple/goal', PoseStamped, queue_size=10)
+        self.frontier_center_pub = rospy.Publisher(self.robot_namespace+'/frontier_list', PoseArray, queue_size=10)
 
         # self.timer = rospy.Timer(rospy.Duration(5), self.frontier_callback)
-
 
 
     def helper(self, msg):
@@ -59,6 +61,10 @@ class find_frontier:
             all_frontier_clusters = self.cluster_cells(fringe_points)
             best_frontier_cells = self.calculate_least_cost_frontier(all_frontier_clusters)
             self.send_to_frontier(best_frontier_cells, msg)
+        elif SEND_STATE_MACHINE_FRONTIERS:
+            all_frontier_clusters = self.cluster_cells(fringe_points)
+            centers = self.get_centers(all_frontier_clusters)
+            self.send_centers_to_pub(centers)
 
 
     def find_fringe(self, msg):
@@ -194,6 +200,62 @@ class find_frontier:
         return all_frontier_clusters.get(sorted_costs[0])
 
 
+    def get_centers(self, all_frontier_clusters):
+
+        cost_dict = dict()
+        length_dict = {key: len(value) for key, value in all_frontier_clusters.items()}
+        robot_position = self.get_current_position_in_map()
+
+        for key in all_frontier_clusters.keys():
+            cells = all_frontier_clusters.get(key)
+            size = length_dict.get(key)
+            center = np.average(cells, axis=0)
+            distance = np.linalg.norm(np.asarray(center) - np.asarray(robot_position))
+
+            cost = self.weight_output * distance + (1 - self.weight_output) * (1 - size)
+            cost_dict[key] = cost
+
+        sorted_costs = sorted(cost_dict, key=cost_dict.get, reverse=False)
+
+        centers = list()
+        for cost in sorted_costs:
+            fr = all_frontier_clusters.get(cost)
+            c = np.average(fr, axis=0)
+            centers.append(c)
+
+        return centers
+
+
+    def send_centers_to_pub(self, centers):
+        centers_for_pub = []
+        counter = 0
+        for c in centers:
+
+            if counter > SM_LIMIT:
+                break
+
+            move_msg = Pose()
+            move_msg.header.frame_id = self.robot_namespace + '/map'
+
+            move_msg.pose.position.x = c[0]
+            move_msg.pose.position.y = c[1]
+            move_msg.pose.position.z = c[2]
+
+            move_msg.pose.orientation.x = 0
+            move_msg.pose.orientation.y = 0
+            move_msg.pose.orientation.z = 0
+            move_msg.pose.orientation.w = 1
+
+            centers_for_pub.append(move_msg)
+            counter += 1
+
+        full_msg = PoseArray()
+        full_msg.poses = centers_for_pub
+        full_msg.header.frame_id = self.robot_namespace + '/map'
+
+        self.frontier_center_pub.publish(full_msg)
+
+
     def send_to_frontier(self, best_frontier_cells, msg):
 
         final_frontier = list()
@@ -235,8 +297,6 @@ class find_frontier:
         move_msg.pose.orientation.y = 0
         move_msg.pose.orientation.z = 0
         move_msg.pose.orientation.w = 1
-
-        # TODO: this currently does not support obstacle avoidance
 
         self.move_pub.publish(move_msg)
 
