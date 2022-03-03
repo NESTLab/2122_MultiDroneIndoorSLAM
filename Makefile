@@ -6,6 +6,10 @@ WORKDIR=$(shell dirname $(PATH_TO_MAKEFILE))
 install-state-machine:
 	pip install -e $(WORKDIR)/mdis_state_machine
 
+install: install-state-machine
+	$(SETUP); \
+	$(MAKE) -C $(WORKDIR)/coms install
+
 test-state-machine: test-state-machine-explorer test-state-machine-relay
 
 test-state-machine-explorer: install-state-machine
@@ -28,3 +32,24 @@ sim-gazebo:
 
 check-health:
 	source $(WORKDIR)/health-check.sh
+
+argos-demo:
+	$(SETUP); \
+	argos3 -c $(WORKDIR)/coms/argos_bridge/argos_worlds/multi_robot_dan_maze.argos
+
+
+gazebo-net-sim:
+	$(SETUP); \
+	roslaunch example gazebo.launch
+
+argos-net-sim:
+	$(SETUP); \
+	roslaunch example argos.launch
+
+coms-net:
+	$(SETUP); \
+	roslaunch coms net.launch
+
+teleop-0:
+	$(SETUP); \
+	roslaunch turtlebot3_teleop demo.launch

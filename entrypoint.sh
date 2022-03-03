@@ -20,7 +20,7 @@ esac
 python -m pip install -U pip
 
 # Install coms
-make -f /root/catkin_ws/src/coms/Makefile install-coms
+make -f /root/catkin_ws/src/Makefile install
 
 # Obtain ROS environment variables
 source /opt/ros/noetic/setup.bash
