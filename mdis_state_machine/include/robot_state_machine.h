@@ -2,6 +2,7 @@
 
 #include <move_base_interface.h>
 #include <std_msgs/Bool.h>
+#include <geometry_msgs/PoseArray.h>
 #include <mdis_state_machine/Connection.h>
 #include <mdis_state_machine/DataCommunication.h>
 #include <mdis_state_machine/Location.h>
@@ -250,7 +251,7 @@ public:
      meeting_data_pub = nh.advertise<mdis_state_machine::DataCommunication>("/data_communication", 1000);
      meeting_data_sub = nh.subscribe("/data_communication", 1000, &Meet::nextMeetingLocationCB, this);
    //   frontier_data_sub = nh.subscribe("/frontier_list", 1000, &Meet::getFrontiersCB, this);
-     frontier_data_sub = nh.subscribe("/frontier_list", 1000, &Meet::getFrontiersCB, this);
+     frontier_data_sub = nh.subscribe("/tb3_0/frontier_list", 1000, &Meet::getBestFrontiersCB, this);
      location_data_pub = nh.advertise<mdis_state_machine::Location>("/robot_location", 1000);
      location_data_sub = nh.subscribe("/robot_location", 1000, &Meet::getLocationCB, this);
      location_data_ack_pub = nh.advertise<mdis_state_machine::LocationAck>("/robot_location_ack", 1000);
@@ -283,6 +284,7 @@ private:
    bool location_data_received;
    bool location_data_ack;
    void getFrontiersCB(const explore_lite::FrontiersArray::ConstPtr msg);
+   void getBestFrontiersCB(const geometry_msgs::PoseArray::ConstPtr msg);
    void publishNextMeetingLocation();
    void nextMeetingLocationCB(const mdis_state_machine::DataCommunication::ConstPtr msg);
    void getLocationCB(const mdis_state_machine::Location::ConstPtr msg);

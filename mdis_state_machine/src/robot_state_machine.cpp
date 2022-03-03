@@ -424,6 +424,14 @@ void Meet::getFrontiersCB(const explore_lite::FrontiersArray::ConstPtr msg)
   frontier_data_received = true;
 }
 
+void Meet::getBestFrontiersCB(const geometry_msgs::PoseArray::ConstPtr msg)
+{
+   for (int i=0;i<msg->poses.size();i++){
+     frontier_msg.push_back(msg->poses.at(i).position);
+  }
+  frontier_data_received = true;
+}
+
 void Meet::getLocationCB(const mdis_state_machine::Location::ConstPtr msg){
   // geometry_msgs::Point location_msg;
   location_msg=msg->robot_location;
