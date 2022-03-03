@@ -5,7 +5,7 @@ import numpy as np
 import copy
 from scipy import signal as sig
 
-from std_msgs.msg import Header
+from std_msgs.msg import Header, String
 from nav_msgs.msg import OccupancyGrid, GridCells
 from geometry_msgs.msg import Point, PoseStamped, Pose, PoseArray
 from tf import TransformListener
@@ -30,16 +30,37 @@ class find_frontier:
         self.curr_msg_count = 0
 
         self.robot_namespace = '/tb3_0'
-        self.mapSub = rospy.Subscriber(self.robot_namespace+'/map', OccupancyGrid, self.map_callback)
+
+        self.publish_next_frontier = False
+
+        # self.timer = rospy.Timer(rospy.Duration(5), self.frontier_callback)
+
+        self.init_subscribers_and_publishers(self.robot_namespace)
+
+        rospy.loginfo("FINISHED INIT")
+
+
+    def init_subscribers_and_publishers(self, ns):
+
+        self.mapSub = rospy.Subscriber(ns + '/map', OccupancyGrid, self.map_callback)
         self.fringe = rospy.Publisher('/map_fringe', GridCells, queue_size=10)
         self.final_frontier_pub = rospy.Publisher('/selected_frontier', GridCells, queue_size=10)
         self.center_fringe_pub = rospy.Publisher('/selected_center', GridCells, queue_size=10)
-        self.move_pub = rospy.Publisher(self.robot_namespace+'/move_base_simple/goal', PoseStamped, queue_size=10)
+        self.move_pub = rospy.Publisher(ns + '/move_base_simple/goal', PoseStamped, queue_size=10)
         self.move_helper_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.helper)
-        self.move_helper_pub = rospy.Publisher(self.robot_namespace+'/move_base_simple/goal', PoseStamped, queue_size=10)
-        self.frontier_center_pub = rospy.Publisher(self.robot_namespace+'/frontier_list', PoseArray, queue_size=10)
+        self.move_helper_pub = rospy.Publisher(ns + '/move_base_simple/goal', PoseStamped,
+                                               queue_size=10)
+        self.frontier_center_pub = rospy.Publisher(ns + '/frontier_list', PoseArray, queue_size=10)
+        self.frontier_center_request = rospy.Subscriber('/frontier_request', String, self.request_callback)
 
-        # self.timer = rospy.Timer(rospy.Duration(5), self.frontier_callback)
+    def request_callback(self, msg):
+        ns = str(msg.data).replace("\"","")
+
+        if self.robot_namespace != ns:
+            self.robot_namespace = ns
+            self.init_subscribers_and_publishers(ns)
+
+        self.publish_next_frontier = True
 
 
     def helper(self, msg):
@@ -52,7 +73,13 @@ class find_frontier:
         #     self.curr_msg_count = 0
         # self.curr_msg_count += 1
         # rospy.loginfo("curr message count is: " + str(self.curr_msg_count))
-        self.frontier_callback(0)
+
+        if SEND_STATE_MACHINE_FRONTIERS:
+            if self.publish_next_frontier and self.robot_namespace in str(msg.header.frame_id):
+                self.frontier_callback(0)
+            self.publish_next_frontier = False
+        else:
+            self.frontier_callback(0)
 
     def frontier_callback(self, timer_var):
         msg = self.map
@@ -62,6 +89,7 @@ class find_frontier:
             best_frontier_cells = self.calculate_least_cost_frontier(all_frontier_clusters)
             self.send_to_frontier(best_frontier_cells, msg)
         elif SEND_STATE_MACHINE_FRONTIERS:
+            print("sending sm frontiers")
             all_frontier_clusters = self.cluster_cells(fringe_points)
             centers = self.get_centers(all_frontier_clusters)
             self.send_centers_to_pub(centers)
@@ -227,8 +255,13 @@ class find_frontier:
 
 
     def send_centers_to_pub(self, centers):
+
+        print("sending centers pub")
+
         centers_for_pub = []
         counter = 0
+        
+        print("CENTERS: " + str(centers))
         for c in centers:
 
             if counter > SM_LIMIT:
