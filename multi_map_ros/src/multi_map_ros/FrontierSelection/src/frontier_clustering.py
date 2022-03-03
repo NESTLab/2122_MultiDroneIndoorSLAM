@@ -32,6 +32,7 @@ class find_frontier:
         self.robot_namespace = '/tb3_0'
 
         self.publish_next_frontier = False
+        self.publish_ns = ""
 
         # self.timer = rospy.Timer(rospy.Duration(5), self.frontier_callback)
 
@@ -60,6 +61,7 @@ class find_frontier:
             self.robot_namespace = ns
             self.init_subscribers_and_publishers(ns)
 
+        self.publish_ns = ns
         self.publish_next_frontier = True
 
 
@@ -75,7 +77,7 @@ class find_frontier:
         # rospy.loginfo("curr message count is: " + str(self.curr_msg_count))
 
         if SEND_STATE_MACHINE_FRONTIERS:
-            if self.publish_next_frontier and self.robot_namespace in str(msg.header.frame_id):
+            if self.publish_next_frontier and self.publish_ns in str(msg.header.frame_id):
                 self.frontier_callback(0)
             self.publish_next_frontier = False
         else:
@@ -89,7 +91,6 @@ class find_frontier:
             best_frontier_cells = self.calculate_least_cost_frontier(all_frontier_clusters)
             self.send_to_frontier(best_frontier_cells, msg)
         elif SEND_STATE_MACHINE_FRONTIERS:
-            print("sending sm frontiers")
             all_frontier_clusters = self.cluster_cells(fringe_points)
             centers = self.get_centers(all_frontier_clusters)
             self.send_centers_to_pub(centers)
@@ -256,12 +257,9 @@ class find_frontier:
 
     def send_centers_to_pub(self, centers):
 
-        print("sending centers pub")
-
         centers_for_pub = []
         counter = 0
-        
-        print("CENTERS: " + str(centers))
+
         for c in centers:
 
             if counter > SM_LIMIT:
@@ -285,6 +283,8 @@ class find_frontier:
         full_msg.header.frame_id = self.robot_namespace + '/map'
 
         self.frontier_center_pub.publish(full_msg)
+
+        rospy.loginfo("sent frontier list")
 
 
     def send_to_frontier(self, best_frontier_cells, msg):
