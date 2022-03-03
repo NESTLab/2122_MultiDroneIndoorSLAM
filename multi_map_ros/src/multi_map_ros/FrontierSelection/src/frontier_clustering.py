@@ -54,6 +54,7 @@ class find_frontier:
         self.frontier_center_pub = rospy.Publisher(ns + '/frontier_list', PoseArray, queue_size=10)
         self.frontier_center_request = rospy.Subscriber('/frontier_request', String, self.request_callback)
 
+
     def request_callback(self, msg):
         ns = str(msg.data).replace("\"","")
 
@@ -78,6 +79,7 @@ class find_frontier:
 
         if SEND_STATE_MACHINE_FRONTIERS:
             if self.publish_next_frontier and self.publish_ns in str(msg.header.frame_id):
+                rospy.loginfo("Publishing frontiers for: " + str(self.publish_ns))
                 self.frontier_callback(0)
             self.publish_next_frontier = False
         else:
