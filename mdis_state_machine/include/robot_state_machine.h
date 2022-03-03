@@ -9,6 +9,7 @@
 #include <mdis_state_machine/Interest.h>
 #include <cmath>
 #include <explore_lite/FrontiersArray.h>
+#include <std_msgs/String.h>
 
 #include <std_msgs/Int8.h>
 #include <mdis_state_machine/RobotsState.h>
@@ -248,12 +249,14 @@ public:
    Meet(ros::NodeHandle &nh, bool testing):RobotState(MEET, "Meet", nh, testing){
      meeting_data_pub = nh.advertise<mdis_state_machine::DataCommunication>("/data_communication", 1000);
      meeting_data_sub = nh.subscribe("/data_communication", 1000, &Meet::nextMeetingLocationCB, this);
+   //   frontier_data_sub = nh.subscribe("/frontier_list", 1000, &Meet::getFrontiersCB, this);
      frontier_data_sub = nh.subscribe("/frontier_list", 1000, &Meet::getFrontiersCB, this);
      location_data_pub = nh.advertise<mdis_state_machine::Location>("/robot_location", 1000);
      location_data_sub = nh.subscribe("/robot_location", 1000, &Meet::getLocationCB, this);
      location_data_ack_pub = nh.advertise<mdis_state_machine::LocationAck>("/robot_location_ack", 1000);
      location_data_ack_sub = nh.subscribe("/robot_location_ack", 1000, &Meet::getLocationAckCB, this);
-     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);   
+     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);
+     frontier_req_pub = nh.advertise<std_msgs::String>("/frontier_request", 1000);   
    }
    bool isDone() override ;
    TEAM_STATES transition() override;
@@ -263,6 +266,7 @@ public:
 
 private:
    ros::Publisher meeting_data_pub;
+   ros::Publisher frontier_req_pub;
    ros::Subscriber meeting_data_sub;
    ros::Subscriber frontier_data_sub;
    // frontier_exploration::FrontierSearch search_;

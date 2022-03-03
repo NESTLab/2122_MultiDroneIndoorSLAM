@@ -439,6 +439,10 @@ void Meet::publishNextMeetingLocation()
     while(ros::ok() && !frontier_data_received)
   {
     ROS_INFO("Waiting for frontier data");
+    std_msgs::String data;
+    data.data = robot_name;
+    // ROS_INFO_STREAM("ROBOT NAME IS"<<robot_name);
+    frontier_req_pub.publish(data);
     ros::spinOnce();
     ros::Duration(0.1).sleep();
   }
