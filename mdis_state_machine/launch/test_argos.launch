@@ -1,15 +1,16 @@
 <launch>
+  <param name="/use_sim_time" value="true" />
   <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
   <arg name="slam_methods" default="gmapping" doc="slam type [gmapping, cartographer, hector, karto, frontier_exploration]"/>
   <arg name="configuration_basename" default="turtlebot3_lds_2d.lua"/>
   <arg name="open_rviz" default="true"/>
-  <include file="$(find turtlebot3_gazebo)/launch/empty_world.launch"/>
+<!--   <include file="$(find turtlebot3_gazebo)/launch/empty_world.launch"/> -->
 
 <!--   replace with LOS  -->
 <!--   <node pkg="mdis_state_machine" type="connection_check" name="connection_check" args="2"/> -->
 
   <arg name="ns_0" value="robot_0"/>
-  <arg name="ns_1" value="robot_1"/>
+  <arg name="ns_1" value="robot_0"/>
   <arg name="ns_2" value="robot_2"/>
   <arg name="ns_3" value="robot_3"/>
 
@@ -40,7 +41,7 @@
     </include>
   </group>
   <node pkg="tf" type="static_transform_publisher" name="world_to_bot_1_tf_broadcaster"  args="0 0 0 0 0 0 /map /$(arg ns_1)/map 100"/>
-  <node pkg="tf" type="static_transform_publisher" name="world_to_bot_1_merged_tf_broadcaster"  args="0 0 0 0 0 0 /merged_map /$(arg ns_1)/merged_map 100"/>
+<!--   <node pkg="tf" type="static_transform_publisher" name="world_to_bot_1_merged_tf_broadcaster"  args="0 0 0 0 0 0 /merged_map /$(arg ns_1)/merged_map 100"/> -->
   <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">
     <arg name="ns" value="$(arg ns_1)"/>
     <arg name="tb3_x_pos" value="-31"/>
