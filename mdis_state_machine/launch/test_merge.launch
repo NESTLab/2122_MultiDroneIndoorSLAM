@@ -1,0 +1,22 @@
+<launch>
+  <arg name="ns_0" value="robot_0"/>
+  <arg name="ns_1" value="robot_1"/>
+  <arg name="ns_2" value="robot_2"/>
+  <arg name="ns_3" value="robot_3"/>
+
+<!--   <group ns = "$(arg ns_0)"> -->
+<!--     <node pkg="mdis_state_machine" type="team_scheduler" name="team_scheduler" args="5 dummy_parent dummy_child" output="screen"/> -->
+<!--     <include file="$(find coms)/launch/map_merger.launch"> -->
+<!--         <arg name="ns" value="$(arg ns_0)" /> -->
+<!--         <arg name="starting_map" value="$(find coms)/tests/test_data/full_map.pgm"/> -->
+<!--     </include> -->
+<!--   </group> -->
+
+  <group ns = "$(arg ns_1)">
+<!--     <node pkg="mdis_state_machine" type="team_scheduler" name="team_scheduler" args="6 dummy_parent dummy_child" output="screen"/> -->
+    <include file="$(find coms)/launch/map_merger.launch">
+        <arg name="ns" value="$(arg ns_1)" />
+<!--         <arg name="starting_map" value="$(find coms)/tests/test_data/full_map.pgm"/> -->
+    </include>
+  </group>
+</launch>

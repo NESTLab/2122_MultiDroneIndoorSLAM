@@ -158,7 +158,7 @@ int main(int argc, char** argv)
        ros::Duration(20).sleep();
 
    TeamScheduler team(nh, role, parent_name, child_name, testing);
-
+   
    team.exec();
 
    return 0;

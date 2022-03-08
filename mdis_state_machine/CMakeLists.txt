@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   octomap_msgs
   nav_msgs
+  coms
   tf
 )
 

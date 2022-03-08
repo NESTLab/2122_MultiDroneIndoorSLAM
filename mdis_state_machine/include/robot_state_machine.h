@@ -14,6 +14,8 @@
 
 #include <std_msgs/Int8.h>
 #include <mdis_state_machine/RobotsState.h>
+#include <coms/TriggerMerge.h>
+
 enum ROLE{
   RELAY,
   EXPLORER,
@@ -35,8 +37,11 @@ class RobotState {
 public:
 
    RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHandle &nh, bool testing);
-   ~RobotState() {
-      }
+
+   ~RobotState() 
+   {
+   }
+
    uint64_t getId() const { return m_unId; }
    const std::string& getName() const { return m_strName; }
    virtual bool entryPoint() = 0;
@@ -62,7 +67,9 @@ protected:
    static bool testing_mode;
    static ROLE robot_role;
 
-   int testing_waiting_time = 5;
+   int testing_waiting_time = 1;
+
+   geometry_msgs::Point data_dump_location;
 
    geometry_msgs::Point data_dump_location;
    bool interested;
@@ -258,6 +265,10 @@ public:
      location_data_ack_sub = nh.subscribe("/robot_location_ack", 1000, &Meet::getLocationAckCB, this);
      robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);
      frontier_req_pub = nh.advertise<std_msgs::String>("/frontier_request", 1000);   
+
+     std::stringstream srv_name;
+     srv_name << "/" << robot_name << "/merge";
+     mergeRequestClient = nh.serviceClient<coms::TriggerMerge>(srv_name.str());
    }
    bool isDone() override ;
    TEAM_STATES transition() override;
@@ -276,6 +287,7 @@ private:
    ros::Publisher location_data_ack_pub;
    ros::Subscriber location_data_ack_sub;
    ros::Publisher robot_state_pub;
+   ros::ServiceClient mergeRequestClient;
    mdis_state_machine::RobotsState state_pub_data;
 
 
@@ -285,6 +297,7 @@ private:
    bool location_data_ack;
    void getFrontiersCB(const explore_lite::FrontiersArray::ConstPtr msg);
    void getBestFrontiersCB(const geometry_msgs::PoseArray::ConstPtr msg);
+   void requestMerge(std::string conn_robot);
    void publishNextMeetingLocation();
    void nextMeetingLocationCB(const mdis_state_machine::DataCommunication::ConstPtr msg);
    void getLocationCB(const mdis_state_machine::Location::ConstPtr msg);
@@ -295,11 +308,14 @@ private:
    geometry_msgs::Point buffer_next_location;
    std::vector<geometry_msgs::Point> frontier_msg;
    geometry_msgs::Point location_msg;
+   bool is_merge_complete;
 
 };
 class GoToDumpData: public RobotState{
 public:
-   GoToDumpData(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_DUMP_DATA, "GoToDumpData", nh, testing){}
+   GoToDumpData(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_DUMP_DATA, "GoToDumpData", nh, testing){
+   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);     
+   }
    bool isDone() override ;
    TEAM_STATES transition() override;
    bool entryPoint() override;

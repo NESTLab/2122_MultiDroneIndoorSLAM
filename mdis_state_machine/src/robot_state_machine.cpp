@@ -8,6 +8,7 @@ float RobotState::time_for_exploration = 20.0;
 
 std::string RobotState::parent_robot_name = "";
 std::string RobotState::child_robot_name = "";
+std::string connected_robot_name = "";
 
 bool RobotState::testing_mode = false;
 ROLE RobotState::robot_role;
@@ -25,7 +26,6 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
     ROS_INFO("Testing mode, skipping initializations");
     RobotState::testing_mode = true;
   }
-
   robot_name = ros::this_node::getNamespace();
   robot_name.erase(robot_name.begin());
 
@@ -92,7 +92,7 @@ bool GoToExplore::isDone()
    {
       int i = 0;
       int rate = 5;
-
+      
       // Hardcoded publish for 5 seconds
       while(i++ < testing_waiting_time*rate)
       {
@@ -102,7 +102,7 @@ bool GoToExplore::isDone()
 
       return true;
    }
-
+  
    explore_interface->goToPoint(temp_point, true);
    return true;
 }
@@ -147,7 +147,7 @@ bool Explore::isDone()
    {
       int i = 0;
       int rate = 5;
-
+      
       // Hardcoded publish for 5 seconds
       while(i++ < testing_waiting_time*rate)
       {
@@ -156,7 +156,7 @@ bool Explore::isDone()
       }
       return true;
    }
-
+  
    ros::Duration time_since_start = ros::Time::now() - starting_time;
    ros::Duration time_until_next_meeting = ros::Duration(time_for_exploration);
    return time_since_start > time_until_next_meeting;
@@ -193,7 +193,7 @@ void Explore::exitPoint()
      setNextMeetingPoint(explore_interface->getRobotCurrentPose().pose.position);
      explore_interface->stopRobot();
   }
-
+  
   ROS_INFO_STREAM("Exiting the state EXPLORE\nNext meeting "<<getNextMeetingPoint());
 
 }
@@ -245,6 +245,7 @@ TEAM_STATES GoToMeet::transition()
 {
   if(isDone())
   {
+    connected_robot_name = conn_robot;
     return MEET;
   }
   else
@@ -307,6 +308,7 @@ bool Meet::entryPoint()
    frontier_data_received = false;
    location_data_received = false;
    location_data_ack = false;
+   is_merge_complete = false;
 
    return true;
 }
@@ -319,7 +321,7 @@ bool Meet::isDone()
    {
       int i = 0;
       int rate = 5;
-
+      
       // Hardcoded publish for 5 seconds
       while(i++ < testing_waiting_time*rate)
       {
@@ -327,7 +329,7 @@ bool Meet::isDone()
         robot_state_pub.publish(state_pub_data);
       }
    }
-   return true;
+   return is_merge_complete;
 }
 
 TEAM_STATES Meet::transition()
@@ -341,8 +343,7 @@ TEAM_STATES Meet::transition()
     // else if(robot_role == RELAY_BETN_ROBOTS)
     //   return GO_TO_MEET;
   }
-  else
-    return MEET;
+  return MEET;
 }
 
 void Meet::step()
@@ -350,8 +351,9 @@ void Meet::step()
   state_pub_data.robot_name.data = robot_name;
   state_pub_data.robot_state = (int)MEET;
   robot_state_pub.publish(state_pub_data);
-
+  
   ROS_INFO("Executing the step for MEET");
+  requestMerge(connected_robot_name);
 }
 
 void Meet::exitPoint()
@@ -402,6 +404,32 @@ void Meet::exitPoint()
 
   // get time estimate from move_base_interface
   // set exploration_duration accordingly
+}
+
+void Meet::requestMerge(std::string conn_robot)
+{
+  coms::TriggerMerge mergeRequest;
+  mergeRequest.request.robot_id = conn_robot;
+  bool success = false;
+
+  ROS_INFO("Attemping merge...");
+  if(mergeRequestClient.call(mergeRequest))
+  {
+    success = mergeRequest.response.success;
+    if(success)
+    {
+      ROS_INFO_STREAM("Successful merge with: " << conn_robot);
+    }
+    else
+    {
+      ROS_INFO_STREAM("Failed merge with: " << conn_robot);
+    }
+  }
+  else
+  {
+    ROS_ERROR("Failed to call merge service");
+  }
+  is_merge_complete = success;
 }
 
 void Meet::setExplorationTime()
@@ -517,7 +545,7 @@ bool GoToDumpData::entryPoint()
 bool GoToDumpData::isDone()
 {
    ROS_INFO_STREAM("Going to Dump Data at"<<data_dump_location);
-
+ 
    state_pub_data.robot_name.data = robot_name;
    state_pub_data.robot_state = (int)GO_TO_DUMP_DATA;
 
@@ -525,7 +553,7 @@ bool GoToDumpData::isDone()
    {
       int i = 0;
       int rate = 5;
-
+      
       // Hardcoded publish for 5 seconds
       while(i++ < testing_waiting_time*rate)
       {
@@ -535,7 +563,7 @@ bool GoToDumpData::isDone()
 
       return true;
    }
-
+  
    explore_interface->goToPoint(data_dump_location, true);
    return true;
 }
@@ -581,7 +609,7 @@ bool DumpData::isDone()
    {
       int i = 0;
       int rate = 5;
-
+      
       // Hardcoded publish for 5 seconds
       while(i++ < testing_waiting_time*rate)
       {
@@ -591,7 +619,7 @@ bool DumpData::isDone()
 
       return true;
    }
-
+  
    return true;
 }
 
