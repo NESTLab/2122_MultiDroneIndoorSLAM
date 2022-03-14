@@ -21,8 +21,12 @@ class publish_inputs_for_learning:
         # self.desired_dimension_y = 640
         # self.desired_dimension_x = 288
         # self.desired_dimension_y = 160
-        self.desired_dimension_x = 352
-        self.desired_dimension_y = 224
+        # self.desired_dimension_x = 352
+        # self.desired_dimension_y = 224
+        # self.desired_dimension_x = 160
+        # self.desired_dimension_y = 96
+        self.desired_dimension_x = 192
+        self.desired_dimension_y = 64
         self.map = OccupancyGrid()
         self.map_cells = np.array([])
         self.fringe = GridCells()
@@ -50,10 +54,21 @@ class publish_inputs_for_learning:
         self.map = msg
         map_height = self.map.info.height
         map_width = self.map.info.width
+        # if map_width<self.desired_dimension_x or map_height<self.desired_dimension_y:
         self.map_cells = np.array(self.map.data)
         resized_map = np.reshape(self.map_cells, (map_height, map_width))
         resized_map = np.pad(resized_map, [(0, self.desired_dimension_y-map_height), (0, self.desired_dimension_x-map_width)], mode='constant', constant_values=-1)
         final_resized_map = resized_map.reshape(-1)
+
+
+        # else:
+        #     self.map_cells = np.array(self.map.data)
+        #     resized_map = np.reshape(self.map_cells, (map_height, map_width))
+        #     diff_height = map_height - self.desired_dimension_y
+        #     diff_width = map_width - self.desired_dimension_x
+        #     resized_map = resized_map[diff_height:self.desired_dimension_y, diff_width:self.desired_dimension_x]
+        #     final_resized_map = resized_map.flatten()
+
 
         self.pub_msg = OccupancyGrid()
         pub_msg_info = MapMetaData()

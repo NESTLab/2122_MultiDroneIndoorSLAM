@@ -5,15 +5,13 @@ import numpy as np
 import copy
 from scipy import signal as sig
 
-from std_msgs.msg import Header, String
+from std_msgs.msg import Header
 from nav_msgs.msg import OccupancyGrid, GridCells
-from geometry_msgs.msg import Point, PoseStamped, Pose, PoseArray
+from geometry_msgs.msg import Point, PoseStamped
 from tf import TransformListener
 from rospy.exceptions import ROSTimeMovedBackwardsException, ROSInterruptException
 
-SEND_TO_FRONTIERS = False
-SEND_STATE_MACHINE_FRONTIERS = True
-SM_LIMIT = 10
+SEND_TO_FRONTIERS = True
 
 class find_frontier:
     def __init__(self):
@@ -30,40 +28,16 @@ class find_frontier:
         self.curr_msg_count = 0
 
         self.robot_namespace = '/tb3_0'
-
-        self.publish_next_frontier = False
-        self.publish_ns = ""
-
-        # self.timer = rospy.Timer(rospy.Duration(5), self.frontier_callback)
-
-        self.init_subscribers_and_publishers(self.robot_namespace)
-
-        rospy.loginfo("FINISHED INIT")
-
-
-    def init_subscribers_and_publishers(self, ns):
-
-        self.mapSub = rospy.Subscriber(ns + '/map', OccupancyGrid, self.map_callback)
+        self.mapSub = rospy.Subscriber(self.robot_namespace+'/map', OccupancyGrid, self.map_callback)
         self.fringe = rospy.Publisher('/map_fringe', GridCells, queue_size=10)
         self.final_frontier_pub = rospy.Publisher('/selected_frontier', GridCells, queue_size=10)
         self.center_fringe_pub = rospy.Publisher('/selected_center', GridCells, queue_size=10)
-        self.move_pub = rospy.Publisher(ns + '/move_base_simple/goal', PoseStamped, queue_size=10)
+        self.move_pub = rospy.Publisher(self.robot_namespace+'/move_base_simple/goal', PoseStamped, queue_size=10)
         self.move_helper_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.helper)
-        self.move_helper_pub = rospy.Publisher(ns + '/move_base_simple/goal', PoseStamped,
-                                               queue_size=10)
-        self.frontier_center_pub = rospy.Publisher(ns + '/frontier_list', PoseArray, queue_size=10)
-        self.frontier_center_request = rospy.Subscriber('/frontier_request', String, self.request_callback)
+        self.move_helper_pub = rospy.Publisher(self.robot_namespace+'/move_base_simple/goal', PoseStamped, queue_size=10)
 
+        # self.timer = rospy.Timer(rospy.Duration(5), self.frontier_callback)
 
-    def request_callback(self, msg):
-        ns = str(msg.data).replace("\"","")
-
-        if self.robot_namespace != ns:
-            self.robot_namespace = ns
-            self.init_subscribers_and_publishers(ns)
-
-        self.publish_ns = ns
-        self.publish_next_frontier = True
 
 
     def helper(self, msg):
@@ -76,14 +50,7 @@ class find_frontier:
         #     self.curr_msg_count = 0
         # self.curr_msg_count += 1
         # rospy.loginfo("curr message count is: " + str(self.curr_msg_count))
-
-        if SEND_STATE_MACHINE_FRONTIERS:
-            if self.publish_next_frontier and self.publish_ns in str(msg.header.frame_id):
-                rospy.loginfo("Publishing frontiers for: " + str(self.publish_ns))
-                self.frontier_callback(0)
-            self.publish_next_frontier = False
-        else:
-            self.frontier_callback(0)
+        self.frontier_callback(0)
 
     def frontier_callback(self, timer_var):
         msg = self.map
@@ -92,10 +59,6 @@ class find_frontier:
             all_frontier_clusters = self.cluster_cells(fringe_points)
             best_frontier_cells = self.calculate_least_cost_frontier(all_frontier_clusters)
             self.send_to_frontier(best_frontier_cells, msg)
-        elif SEND_STATE_MACHINE_FRONTIERS:
-            all_frontier_clusters = self.cluster_cells(fringe_points)
-            centers = self.get_centers(all_frontier_clusters)
-            self.send_centers_to_pub(centers)
 
 
     def find_fringe(self, msg):
@@ -231,64 +194,6 @@ class find_frontier:
         return all_frontier_clusters.get(sorted_costs[0])
 
 
-    def get_centers(self, all_frontier_clusters):
-
-        cost_dict = dict()
-        length_dict = {key: len(value) for key, value in all_frontier_clusters.items()}
-        robot_position = self.get_current_position_in_map()
-
-        for key in all_frontier_clusters.keys():
-            cells = all_frontier_clusters.get(key)
-            size = length_dict.get(key)
-            center = np.average(cells, axis=0)
-            distance = np.linalg.norm(np.asarray(center) - np.asarray(robot_position))
-
-            cost = self.weight_output * distance + (1 - self.weight_output) * (1 - size)
-            cost_dict[key] = cost
-
-        sorted_costs = sorted(cost_dict, key=cost_dict.get, reverse=False)
-
-        centers = list()
-        for cost in sorted_costs:
-            fr = all_frontier_clusters.get(cost)
-            c = np.average(fr, axis=0)
-            centers.append(c)
-
-        return centers
-
-
-    def send_centers_to_pub(self, centers):
-
-        centers_for_pub = []
-        counter = 0
-
-        for c in centers:
-
-            if counter > SM_LIMIT:
-                break
-
-            move_msg = Pose()
-            move_msg.position.x = c[0]
-            move_msg.position.y = c[1]
-            move_msg.position.z = c[2]
-
-            move_msg.orientation.x = 0
-            move_msg.orientation.y = 0
-            move_msg.orientation.z = 0
-            move_msg.orientation.w = 1
-
-            centers_for_pub.append(move_msg)
-            counter += 1
-
-        full_msg = PoseArray()
-        full_msg.poses = centers_for_pub
-        full_msg.header.frame_id = self.robot_namespace + '/map'
-
-        self.frontier_center_pub.publish(full_msg)
-
-        rospy.loginfo("sent frontier list")
-
-
     def send_to_frontier(self, best_frontier_cells, msg):
 
         final_frontier = list()
@@ -330,6 +235,8 @@ class find_frontier:
         move_msg.pose.orientation.y = 0
         move_msg.pose.orientation.z = 0
         move_msg.pose.orientation.w = 1
+
+        # TODO: this currently does not support obstacle avoidance
 
         self.move_pub.publish(move_msg)
 
