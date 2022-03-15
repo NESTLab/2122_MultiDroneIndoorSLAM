@@ -71,7 +71,6 @@ protected:
 
    geometry_msgs::Point data_dump_location;
 
-   geometry_msgs::Point data_dump_location;
    bool interested;
    bool is_explorer;
    bool meeting_started, go_for_exploration;
@@ -266,10 +265,10 @@ public:
      robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);
      frontier_req_pub = nh.advertise<std_msgs::String>("/frontier_request", 1000);   
 
-     std::stringstream srv_name;
-     srv_name << "/" << robot_name << "/merge";
-     mergeRequestClient = nh.serviceClient<coms::TriggerMerge>(srv_name.str());
+     mergeRequestClient = nh.serviceClient<coms::TriggerMerge>(srv_name);
    }
+
+  std::string srv_name = "trigger_merge";
    bool isDone() override ;
    TEAM_STATES transition() override;
    bool entryPoint() override;
