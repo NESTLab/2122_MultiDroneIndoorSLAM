@@ -7,7 +7,7 @@
 #include <mdis_state_machine/Connection.h>
 
 const int MAX_ATTEMPTS=5;
-const float DIST_THRESHOLD=3.0;
+const float DIST_THRESHOLD=1.414;
 
 geometry_msgs::Point getRobotCurrentPose(const std::string& robot_name, tf::TransformListener& tf_listener)
 {

@@ -29,13 +29,13 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   robot_name = ros::this_node::getNamespace();
   robot_name.erase(robot_name.begin());
 
-  curr_meet_x = -31;
-  curr_meet_y = -6;
-  next_meet_x = -28;
-  next_meet_y = -6;
+  curr_meet_x = 0;
+  curr_meet_y = 0;
+  next_meet_x = 2;
+  next_meet_y = 0;
 
-  data_dump_location.x = -31;
-  data_dump_location.y = -10;
+  data_dump_location.x = 0;
+  data_dump_location.y = 0;
 }
 
 
