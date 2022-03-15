@@ -82,6 +82,9 @@ RUN sudo apt-get update; \
 
 RUN pip install gym tensorflow ;
 
+RUN apt install wget
+RUN wget https://raw.githubusercontent.com/NESTLab/turtlebot3_simulations/local_costmap_fix/turtlebot3_gazebo/costmap_common_params_burger_local.yaml -P /opt/ros/noetic/share/turtlebot3_navigation/param/
+
 # Add ROS dependent scripts
 RUN rosdep init; \
   rosdep update; \
