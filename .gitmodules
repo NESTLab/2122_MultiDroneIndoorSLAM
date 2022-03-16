@@ -1,7 +1,3 @@
-[submodule "turtlebot3_simulations"]
-	path = turtlebot3_simulations
-	url = https://github.com/NESTLab/turtlebot3_simulations.git
-	branch = changesForRLTesting
 [submodule "coms"]
 	path = coms
 	url = https://github.com/NESTLab/coms.git
