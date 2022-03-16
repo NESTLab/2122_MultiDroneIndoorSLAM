@@ -3,6 +3,7 @@ from subprocess import Popen, DEVNULL
 from mdis_state_machine.msg import RobotsState
 from mdis_state_machine.msg import Connection
 from std_msgs.msg import String
+from typing import List
 from roslaunch.parent import ROSLaunchParent
 
 # State enums from robot_state_machine.h
@@ -20,11 +21,19 @@ headstart_to_check = 3
 max_time_to_wait_to_change_state = 6
 message_wait_timeout = 30
 robot_state_topic = "/robots_state"
+connection_check_topic = "/connection_check"
+
+def gen_topic_name(lst: List[str]) -> str:
+	result = ""
+	for n in lst:
+		result += "/" + n.replace("/", "")
+	return result
 
 
 def verifyInitState(init_state, robot_name):
+	topic_name = gen_topic_name([robot_name, robot_state_topic])
 	for i in range(max_attempts_for_robot_message):
-		msg = rospy.wait_for_message(robot_state_topic, RobotsState, timeout=message_wait_timeout)
+		msg = rospy.wait_for_message(topic_name, RobotsState, timeout=message_wait_timeout)
 		if msg.robot_name.data == robot_name:
 			return msg.robot_state == init_state
 	return False
@@ -34,8 +43,9 @@ def verifyTimedStateChange(init_state, change_state, robot_name):
 	rospy.sleep(ideal_state_change_duration - headstart_to_check)
 	time_start = rospy.get_rostime().secs
 	init_state_sucs = False
+	topic_name = gen_topic_name([robot_name, robot_state_topic])
 	while rospy.get_rostime().secs < time_start + max_time_to_wait_to_change_state:
-		msg = rospy.wait_for_message(robot_state_topic, RobotsState, timeout=message_wait_timeout)
+		msg = rospy.wait_for_message(topic_name, RobotsState, timeout=message_wait_timeout)
 		if msg.robot_name.data == robot_name:
 			if msg.robot_state == init_state:
 				init_state_sucs = True
@@ -48,7 +58,8 @@ def verifyConnStateChange(init_state, change_state, robot_name):
 	rospy.sleep(ideal_state_change_duration - headstart_to_check)
 	init_state_sucs = False
 	# while rospy.get_rostime().secs < time_start+max_time_to_wait_to_change_state:
-	msg = rospy.wait_for_message(robot_state_topic, RobotsState, timeout=message_wait_timeout)
+	state_topic_name = gen_topic_name([robot_name, robot_state_topic])
+	msg = rospy.wait_for_message(state_topic_name, RobotsState, timeout=message_wait_timeout)
 	if msg.robot_name.data == robot_name:
 		if msg.robot_state == init_state:
 			init_state_sucs = True
@@ -58,12 +69,13 @@ def verifyConnStateChange(init_state, change_state, robot_name):
 	robot_conn_msg.connection_between.append(String(data=robot_name))
 	robot_conn_msg.connection_between.append(String(data="dummy_parent"))
 
-	pub = rospy.Publisher('/connection_check', Connection, queue_size=10)
+	connection_topic_name = gen_topic_name([robot_name, connection_check_topic])
+	pub = rospy.Publisher(connection_topic_name, Connection, queue_size=10)
 	time_start = rospy.get_rostime().secs
 	while rospy.get_rostime().secs < time_start + max_time_to_wait_to_change_state:
 		pub.publish(robot_conn_msg)
 		rospy.sleep(0.5)
-		msg = rospy.wait_for_message(robot_state_topic, RobotsState, timeout=message_wait_timeout)
+		msg = rospy.wait_for_message(state_topic_name, RobotsState, timeout=message_wait_timeout)
 		if msg.robot_name.data == robot_name:
 			if msg.robot_state == change_state:
 				return True and init_state_sucs
