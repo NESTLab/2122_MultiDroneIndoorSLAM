@@ -2,11 +2,3 @@
 	path = coms
 	url = https://github.com/NESTLab/coms.git
 	branch = main
-[submodule "slam_gmapping"]
-	path = slam_gmapping
-	url = https://github.com/tberg1234/slam_gmapping.git
-	branch = melodic-devel
-[submodule "frontier_rl"]
-	path = frontier_rl
-	url = https://github.com/tberg1234/Frontier_ML.git
-	branch = fullObs
