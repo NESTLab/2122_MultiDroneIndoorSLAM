@@ -1,0 +1,8 @@
+<launch>
+
+    <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_all.launch"/>
+    <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_slam.launch"/>
+    <node pkg="multi_map_ros" name="find_fontier" type="frontier_clustering.py" output="screen"/>
+    <node pkg="multi_map_ros" name="publish_inputs_rl" type="publish_inputs_for_learning.py" output="screen"/>
+
+</launch>
