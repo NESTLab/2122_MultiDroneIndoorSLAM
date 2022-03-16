@@ -4,8 +4,9 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int8.h>
 #include <mdis_state_machine/RobotsState.h>
-#include <mdis_state_machine/Connection.h>
 #include <mdis_state_machine/DataCommunication.h>
+#include <coms/nearby.h>
+#include <vector>
 enum ROLE{
   RELAY,
   EXPLORER,
@@ -179,7 +180,7 @@ private:
 class GoToMeet: public RobotState{
 public:
    GoToMeet(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_MEET, "GoToMeet", nh, testing){
-      conn_sub = nh.subscribe(nh.getNamespace() + "/connection_check", 1000, &GoToMeet::connCB, this);     
+      conn_sub = nh.subscribe(nh.getNamespace() + "/nearby", 1000, &GoToMeet::connCB, this);     
       robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);
    }
    bool isDone() override ;
@@ -192,12 +193,12 @@ public:
 
 private:
    bool connected;
-   std::string conn_robot;
+   std::vector<std::string> conn_robots;
    ros::Subscriber conn_sub;
    ros::Publisher robot_state_pub;
    mdis_state_machine::RobotsState state_pub_data;
 
-   void connCB(const mdis_state_machine::Connection::ConstPtr msg);
+   void connCB(const coms::nearby::ConstPtr msg);
 };
 
 

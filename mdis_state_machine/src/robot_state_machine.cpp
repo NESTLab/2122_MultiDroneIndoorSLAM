@@ -218,12 +218,12 @@ bool GoToMeet::entryPoint()
 
 bool GoToMeet::isDone()
 {
-   if(connected)
-   {
-     if(isConnDirectRelated(conn_robot))
-     {
-       ROS_INFO("Robot is connected to the party of interest");
-       return true;
+   if(connected) {
+     for(auto robot : conn_robots) {
+      if(isConnDirectRelated(robot)) {
+        ROS_INFO("Robot is connected to the party of interest");
+        return true;
+      }
      }
    }
    return false;
@@ -257,18 +257,10 @@ void GoToMeet::exitPoint()
 }
 
 
-void GoToMeet::connCB(const mdis_state_machine::Connection::ConstPtr msg)
+void GoToMeet::connCB(const coms::nearby::ConstPtr msg)
 {
-  connected = false;
-  for(int i = 0; i<msg->connection_between.size(); i++)
-  {
-    if(robot_name == msg->connection_between.at(i).data)
-    {
-      int j = 1 ? i==0 : 0;
-      connected = true;
-      conn_robot = msg->connection_between.at(j).data;
-    }
-  }
+  connected = msg->remote_addresses.size() > 0;
+  conn_robots = msg->remote_addresses;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// M E E T   S T A T E   C L A S S ////////////////////////////////////

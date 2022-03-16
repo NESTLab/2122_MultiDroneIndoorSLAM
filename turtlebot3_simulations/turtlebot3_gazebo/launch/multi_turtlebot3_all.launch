@@ -54,7 +54,7 @@
     <node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find turtlebot3_gazebo)/rviz/path_following.rviz"/>
   </group>
 
-  <node pkg="mdis_state_machine" type="connection_check" name="connection_check" args="2"/>
+  <!-- <node pkg="mdis_state_machine" type="connection_check" name="connection_check" args="2"/> -->
 
   <node pkg="tf" type="static_transform_publisher" name="world_to_bot_0_tf_broadcaster"  args="0 0 0 0 0 0 /map /tb3_0/map 100"/>
   <node pkg="tf" type="static_transform_publisher" name="world_to_bot_1_tf_broadcaster"  args="0 0 0 0 0 0 /map /tb3_1/map 100"/>
