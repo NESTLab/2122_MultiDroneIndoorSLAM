@@ -6,6 +6,6 @@
 
   <!-- The argument 6 is to notify the code that it is in testing mode for the robot Relay -->
   <group ns = "test_robot_2">
-    <node pkg="mdis_state_machine" type="team_scheduler" name="team_scheduler" args="6 dummy_parent dummy_child" output="screen"/>
+    <node pkg="mdis_state_machine" type="team_scheduler" name="team_scheduler" args="6 192.168.0.2:8765 192.168.0.3:8765" output="screen"/>
   </group>
 </launch>
