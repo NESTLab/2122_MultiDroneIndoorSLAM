@@ -30,3 +30,4 @@ CATKIN_IGNORE
 # Coveralls
 .coverage
 .idea/
+coms/coms/test1/*
