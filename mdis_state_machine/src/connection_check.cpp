@@ -64,20 +64,19 @@ int main(int argc, char** argv)
   {
     mdis_state_machine::Connection conn_msg;
     conn_msg.connection_between.resize(2);
-    for (int i=0; i<number_of_robots; i++)
+    std::string robot_1 = nh.getNamespace();
+    robot_1.erase (0,1); // The namespace has a leading forward slash
+                         // Hence deleting the first character
+    for (int j=0; j<number_of_robots; j++)
     {
-      std::string robot_1 = "tb3_"+std::to_string(i);
-      for (int j=i+1; j<number_of_robots; j++)
+      std::string robot_2 = "tb3_"+std::to_string(j);
+      float dist = getDistanceOfPoints(getRobotCurrentPose(robot_1, tf_listener), getRobotCurrentPose(robot_2, tf_listener));
+      // ROS_INFO_STREAM("Distance between "<<robot_1<<" and "<<robot_2<<":"<<dist);
+      if(dist<DIST_THRESHOLD && robot_1!=robot_2)
       {
-        std::string robot_2 = "tb3_"+std::to_string(j);
-        float dist = getDistanceOfPoints(getRobotCurrentPose(robot_1, tf_listener), getRobotCurrentPose(robot_2, tf_listener));
-        // ROS_INFO_STREAM("Distance between "<<robot_1<<" and "<<robot_2<<":"<<dist);
-        if(dist<DIST_THRESHOLD)
-        {
-          conn_msg.connection_between.at(0).data = robot_1;
-          conn_msg.connection_between.at(1).data = robot_2;
-          conn_msg.distance = dist;
-        }
+        conn_msg.connection_between.at(0).data = robot_1;
+        conn_msg.connection_between.at(1).data = robot_2;
+        conn_msg.distance = dist;
       }
     }
     conn_pub.publish(conn_msg);

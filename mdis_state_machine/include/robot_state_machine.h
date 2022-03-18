@@ -186,7 +186,7 @@ private:
 class GoToExplore: public RobotState{
 public:
    GoToExplore(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_EXPLORE, "GoToExplore", nh, testing){
-   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);     
+   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
    }
    bool isDone() override ;
 
@@ -205,8 +205,8 @@ private:
 class Explore: public RobotState{
 public:
    Explore(ros::NodeHandle &nh, bool testing):RobotState(EXPLORE, "Explore", nh, testing){
-     pause_exploration_pub = nh.advertise<std_msgs::Bool>("explore/pause_exploration", 1000);     
-     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);     
+     pause_exploration_pub = nh.advertise<std_msgs::Bool>(nh.getNamespace() + "/explore/pause_exploration", 1000);     
+     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
    }
    bool isDone() override ;
 
@@ -227,10 +227,10 @@ private:
 class GoToMeet: public RobotState{
 public:
    GoToMeet(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_MEET, "GoToMeet", nh, testing){
-     conn_sub = nh.subscribe("/connection_check", 1000, &GoToMeet::connCB, this);     
-   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);
-     interest_sub = nh.subscribe("/interest_check", 1000, &GoToMeet::interestCB, this);
-     interest_pub = nh.advertise<mdis_state_machine::Interest>("/interest_check", 1000);     
+      conn_sub = nh.subscribe(nh.getNamespace() + "/connection_check", 1000, &GoToMeet::connCB, this);     
+      robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);
+      interest_sub = nh.subscribe("/interest_check", 1000, &GoToMeet::interestCB, this);
+      interest_pub = nh.advertise<mdis_state_machine::Interest>("/interest_check", 1000);     
    }
    bool isDone() override ;
 
@@ -254,16 +254,15 @@ private:
 class Meet: public RobotState{
 public:
    Meet(ros::NodeHandle &nh, bool testing):RobotState(MEET, "Meet", nh, testing){
-     meeting_data_pub = nh.advertise<mdis_state_machine::DataCommunication>("/data_communication", 1000);
-     meeting_data_sub = nh.subscribe("/data_communication", 1000, &Meet::nextMeetingLocationCB, this);
-   //   frontier_data_sub = nh.subscribe("/frontier_list", 1000, &Meet::getFrontiersCB, this);
-     frontier_data_sub = nh.subscribe("/tb3_0/frontier_list", 1000, &Meet::getBestFrontiersCB, this);
-     location_data_pub = nh.advertise<mdis_state_machine::Location>("/robot_location", 1000);
-     location_data_sub = nh.subscribe("/robot_location", 1000, &Meet::getLocationCB, this);
-     location_data_ack_pub = nh.advertise<mdis_state_machine::LocationAck>("/robot_location_ack", 1000);
-     location_data_ack_sub = nh.subscribe("/robot_location_ack", 1000, &Meet::getLocationAckCB, this);
-     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);
+     meeting_data_pub = nh.advertise<mdis_state_machine::DataCommunication>(nh.getNamespace() + "/data_communication", 1000);
+     meeting_data_sub = nh.subscribe(nh.getNamespace() + "/data_communication", 1000, &Meet::nextMeetingLocationCB, this);     
+     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     frontier_data_sub = nh.subscribe("/tb3_0/frontier_list", 1000, &Meet::getBestFrontiersCB, this);
+    location_data_pub = nh.advertise<mdis_state_machine::Location>("/robot_location", 1000);
+    location_data_sub = nh.subscribe("/robot_location", 1000, &Meet::getLocationCB, this);
+    location_data_ack_pub = nh.advertise<mdis_state_machine::LocationAck>("/robot_location_ack", 1000);
+    location_data_ack_sub = nh.subscribe("/robot_location_ack", 1000, &Meet::getLocationAckCB, this);
      frontier_req_pub = nh.advertise<std_msgs::String>("/frontier_request", 1000);   
+     frontier_data_sub = nh.subscribe("/tb3_0/frontier_list", 1000, &Meet::getBestFrontiersCB, this);
 
      mergeRequestClient = nh.serviceClient<coms::TriggerMerge>(srv_name);
    }
@@ -313,7 +312,7 @@ private:
 class GoToDumpData: public RobotState{
 public:
    GoToDumpData(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_DUMP_DATA, "GoToDumpData", nh, testing){
-   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);     
+   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
    }
    bool isDone() override ;
    TEAM_STATES transition() override;
@@ -327,7 +326,7 @@ private:
 class DumpData: public RobotState{
 public:
    DumpData(ros::NodeHandle &nh, bool testing):RobotState(DUMP_DATA, "DumpData", nh, testing){
-      robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>("/robots_state", 1000);
+   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
    }
    bool isDone() override ;
    TEAM_STATES transition() override;
