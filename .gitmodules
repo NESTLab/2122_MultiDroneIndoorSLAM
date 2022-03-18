@@ -2,7 +2,3 @@
 	path = turtlebot3_simulations
 	url = https://github.com/NESTLab/turtlebot3_simulations.git
 	branch = noetic-devel
-[submodule "coms"]
-	path = coms
-	url = https://github.com/NESTLab/coms.git
-	branch = main
