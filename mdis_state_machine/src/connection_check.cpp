@@ -58,7 +58,7 @@ int main(int argc, char** argv)
   }
   int number_of_robots = std::stoi(argv[1]);
   tf::TransformListener tf_listener;
-  ros::Publisher conn_pub = nh.advertise<mdis_state_machine::Connection>("connection_check", 1000);
+  ros::Publisher conn_pub = nh.advertise<mdis_state_machine::Connection>(nh.getNamespace() + "/connection_check", 1000);
 
   while(ros::ok())
   {
