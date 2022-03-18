@@ -1,4 +1,0 @@
-[submodule "coms"]
-	path = coms
-	url = https://github.com/NESTLab/coms.git
-	branch = main
