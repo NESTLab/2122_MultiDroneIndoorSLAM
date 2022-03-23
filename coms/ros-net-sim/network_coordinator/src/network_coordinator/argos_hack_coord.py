@@ -340,40 +340,63 @@ class ArgosNetCoordinator:
 
     # Capture line of site data for every agent in simulation
     def _obtain_line_of_site_data(self: ArgosNetCoordinator) -> None:
-        while self.run_event.is_set():
-            los_map = ArgosNetCoordinator.gen_empty_los_array(len(self.argos_models))
+        los_map = ArgosNetCoordinator.gen_empty_los_array(len(self.argos_models))
 
-            for model in self.argos_models:
-                # Event used to wait for a single call to the callback funciton
-                self.los_called = Event()
 
-                # Aggregate los data when data is published to 'lineOfSight' topic
-                def callback(data):
-                    robots: List[los] = data.robots
-                    from_idx: int = self.argos_model_to_idx[model]
+        a = self.argos_model_to_idx['A']
+        b = self.argos_model_to_idx['B']
+        c = self.argos_model_to_idx['C']
+        d = self.argos_model_to_idx['D']
+        e = self.argos_model_to_idx['E']
 
-                    los_map[from_idx][from_idx] = True
-                    for robot in robots:
-                        robot_name: str = self._clean_robot_name(robot.robotName)
-                        if len(robot_name) == 0:
-                            continue
-                        to_idx: int = self.argos_model_to_idx[robot_name]
-                        # Populate line of site relationship as "reachable"
-                        los_map[from_idx][to_idx] = True
-                        los_map[to_idx][from_idx] = True
+        los_map[a][b] = True
+        los_map[b][a] = True
 
-                    self.los_called.set()
-                # Setup & teardown line of site subscriber
-                sub = rospy.Subscriber("/{0}/lineOfSight".format(model), losList, callback)
-                # Blocking to allow for a single call to callback()
-                self.los_called.wait(timeout=0.5)
-                sub.unregister()
-            # Populate los
-            self.los_lock.acquire()
-            self.los = los_map
-            self.los_lock.release()
+        los_map[c][b] = True
+        los_map[b][c] = True
 
-        print("Terminating Line of Site subscriptions")
+        los_map[c][d] = True
+        los_map[d][c] = True
+
+        los_map[e][d] = True
+        los_map[d][e] = True
+
+        los_map[e][b] = True
+        los_map[b][e] = True
+
+        # while self.run_event.is_set():
+        #     los_map = ArgosNetCoordinator.gen_empty_los_array(len(self.argos_models))
+
+        #     for model in self.argos_models:
+        #         # Event used to wait for a single call to the callback funciton
+        #         self.los_called = Event()
+
+        #         # Aggregate los data when data is published to 'lineOfSight' topic
+        #         def callback(data):
+        #             robots: List[los] = data.robots
+        #             from_idx: int = self.argos_model_to_idx[model]
+
+        #             los_map[from_idx][from_idx] = True
+        #             for robot in robots:
+        #                 robot_name: str = self._clean_robot_name(robot.robotName)
+        #                 if len(robot_name) == 0:
+        #                     continue
+        #                 to_idx: int = self.argos_model_to_idx[robot_name]
+        #                 # Populate line of site relationship as "reachable"
+        #                 los_map[from_idx][to_idx] = True
+        #                 los_map[to_idx][from_idx] = True
+
+        #             self.los_called.set()
+        #         # Setup & teardown line of site subscriber
+        #         sub = rospy.Subscriber("/{0}/lineOfSight".format(model), losList, callback)
+        #         # Blocking to allow for a single call to callback()
+        #         self.los_called.wait(timeout=0.5)
+        #         sub.unregister()
+        #     # Populate los
+        self.los_lock.acquire()
+        self.los = los_map
+        self.los_lock.release()
+
 
     def _clean_robot_name(self: ArgosNetCoordinator, name: str) -> str:
         for model in self.argos_models:

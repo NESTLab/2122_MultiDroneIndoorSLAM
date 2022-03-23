@@ -19,6 +19,7 @@ esac
 # Upgrade pip
 python -m pip install -U pip
 
+pip install pickle4 pandas
 # Install coms
 make -f /root/catkin_ws/src/Makefile install
 

@@ -3,6 +3,10 @@ SETUP=source /opt/ros/noetic/setup.bash;source /root/catkin_ws/devel/setup.bash
 PATH_TO_MAKEFILE=$(abspath $(lastword $(MAKEFILE_LIST)))
 WORKDIR=$(shell dirname $(PATH_TO_MAKEFILE))
 
+pickle:
+	$(SETUP); \
+	python3 $(WORKDIR)/coms/coms/src/mapmerge/get_maps.py
+
 install-state-machine:
 	pip install -e $(WORKDIR)/mdis_state_machine
 
