@@ -8,12 +8,29 @@ from typing import List, Tuple
 from subprocess import check_output, call
 from std_msgs.msg import String
 from coms.msg import nearby
-from msg.ping import Ping
+from socketserver import BaseRequestHandler, TCPServer, ThreadingMixIn, ThreadingTCPServer
 from coms.constants import QUICK_WAIT_TIMER, RESPONSE_TIMEOUT, BROADCAST_INTERVAL, ENCODING, CATKIN_WS, SUB_TOPIC, PUB_TOPIC # noqa: E501
 from coms.utils import get_interface_from_ip, get_port_from, get_ip_list, get_device_numbers, addr_to_str
 from coms.server import server, send_messsage
 from concurrent.futures import ThreadPoolExecutor, Future
+from msg.message import Message
+from msg.utils import get_message_type
+from msg.ping import Ping
+from msg.merge import Merge
 
+def read_all(s: socket.socket) -> bytes:
+    cunch_size = 1024
+    return s.recv(cunch_size)
+
+class ThreadedTCPRequestHandler(BaseRequestHandler):
+    def handle(self: BaseRequestHandler) -> None:
+        pass
+
+class ThreadedTCPServer(ThreadingMixIn, TCPServer):
+    def server_bind(self: ThreadingTCPServer) -> None:
+        self.socket.settimeout(RESPONSE_TIMEOUT)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.socket.bind(self.server_address)
 
 class Sim():
     LOCAL_IPS: List[str] = []                               # List of ip addresses defined in configuration file
@@ -26,14 +43,23 @@ class Sim():
     pub: rospy.Publisher = None                             # ROS Publisher for sending msg responses to other nodes
     sub: rospy.Subscriber = None                            # ROS Subscriber for listening to message requests
     namespace: str = ""                                     # Robot namespace for use in publishing robot specific topics
+    local_map: np.ndarray = None
+    local_score: int = 1
 
-    def __init__(self: Sim, address: str, net_sim_launch_file: str = None, net_config: str = "testing.yaml", namespace: str = "/robot_X/") -> None:
+    def __init__(self: Sim, address: str, net_sim_launch_file: str = None, net_config: str = "testing.yaml", namespace: str = "/robot_X/", local_map: np.ndarray = None) -> None:
         path_to_config = check_output("find {0} -type f -name '{1}'".format(CATKIN_WS, net_config), shell=True)
         self.LOCAL_IPS = get_ip_list(path_to_config.decode(ENCODING).strip())
         self.NET_SIM_LAUNCH_FILE = net_sim_launch_file
         self.LISTEN_ADDRESS = (address, get_port_from(address, True))
         self.keep_runing = Lock()
         self.namespace = namespace
+        self.local_map = local_map
+        self.all_neighbors = []
+        for ip in self.LOCAL_IPS:
+            if ip != address:
+                self.all_neighbors.append((ip, get_port_from(address, True)))
+        
+        print(self.all_neighbors)
 
     def start(self: Sim) -> None:
         # Start simulated network
@@ -66,11 +92,65 @@ class Sim():
         self.executor.shutdown(wait=True)
         # Shutdown Pub/Sub channels
         self.unregister_ros_topics()
+    
+    def handle(self: Sim, brh: BaseRequestHandler) -> None:
+        request: socket.socket = brh.request
+        raw_data: bytes = read_all(request)
+        m_type = get_message_type(raw_data)
+        m_struct: Message = None
+        
+        
+        print("****************************************************")
+        print("****************************************************")
+        print(raw_data)
+        print("****************************************************")
+        print("****************************************************")
+        
+        if m_type == 'Merge':
+            m_struct = Merge()
+        elif m_type == 'Ping':
+            m_struct = Ping()
+        else:
+            # print("Unrecognized message, dropping connection")
+            brh.request.close()
+            return
+
+        msg: Message = m_struct.consume_payload(raw_data)
+
+        if isinstance(msg, Ping):
+            msg.handle()
+            resp = Ping(source=request.getsockname(), destination=request.getpeername())
+            request.sendall(resp.produce_payload())
+        elif isinstance(msg, Merge):
+            print("Merge message")
+            msg.handle()
+            request.sendall(b'Merge')
+            brh.request.close()
+        else:
+            # print("Unrecognized message, dropping connection")
+            return
+            brh.request.close()
 
     def _listener(self: Sim) -> None:
         # Blocks untill kill_thread_event is set
         print("Starting listener at :", self.LISTEN_ADDRESS)
-        server(self.LISTEN_ADDRESS, self.keep_runing)
+        server(self.LISTEN_ADDRESS, self.keep_runing, lambda x: self.handle(x))
+        # ThreadedTCPRequestHandler.handle = lambda x: self.handle(x)
+        # server = ThreadedTCPServer(self.LISTEN_ADDRESS, ThreadedTCPRequestHandler)
+        # with server:
+        #     # Start a thread with the server -- that thread will then start one
+        #     # more thread for each request
+        #     server_thread = Thread(target=server.serve_forever)
+        #     # Exit the server thread when the main thread terminates
+        #     server_thread.daemon = True
+        #     server_thread.start()
+        #     print("Server loop running in thread:", server_thread.name)
+
+        #     self.keep_runing.acquire()
+        #     self.keep_runing.release()
+
+        #     server.shutdown()
+        #     server.socket.close()
         print("Finished listening at :", self.LISTEN_ADDRESS)
 
     # TODO: Fix broadcaster
@@ -82,9 +162,11 @@ class Sim():
         local_addr = (self.LISTEN_ADDRESS[0], get_port_from(self.LISTEN_ADDRESS[0], False))
         while self.keep_runing.locked():
             neighbors = self.get_reachable_ips(nic)
-            self.publish_nearby_robots(neighbors)
+            # self.publish_nearby_robots(neighbors)
+            print(neighbors)
             for neighbor in neighbors:
-                send_messsage(
+                
+                self.send_messsage(
                     nic=nic,
                     destination=neighbor,
                     message=Ping(
@@ -94,7 +176,40 @@ class Sim():
             time.sleep(BROADCAST_INTERVAL)
         print("Finished broadcasting for :", self.LISTEN_ADDRESS[0])
 
+    def send_messsage(self: Sim, nic: str, destination: Tuple[str, int], message: Message) -> None:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.setsockopt(socket.SOL_SOCKET, 25, str(nic + '\0').encode(ENCODING))
+            sock.settimeout(RESPONSE_TIMEOUT)
+            try:
+                sock.connect(destination)
+                if message.id == 0:
+                    sock.sendall(message.produce_payload())
+                elif message.id == 1:
+                    p: Ping = message
+                    p.source = sock.getsockname()
+                    p.destination = sock.getpeername()
+                    sock.sendall(message.produce_payload())
+                    
+                    raw_res = sock.recv(1024)
+                    response = message.consume_payload(raw_res)
+                    response.handle()
+                    if len(raw_res) > 0:
+                        self.local_score += 1
+                    
+                    
+                else:
+                    raise Exception("Attempted to send unsupported message type")
+
+
+            except Exception as e:
+                print(e)
+            sock.close()  
+
     def get_reachable_ips(self: Sim, nic: str) -> List[Tuple[str, int]]:
+        return self.all_neighbors
+
+    def __get_reachable_ips(self: Sim, nic: str) -> List[Tuple[str, int]]:
         neighbors = []
         for ip in self.LOCAL_IPS:
             if ip != self.LISTEN_ADDRESS[0]:

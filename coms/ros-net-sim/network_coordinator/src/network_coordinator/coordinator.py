@@ -72,7 +72,7 @@ class NetworkCoordinator:
                     continue
             except OSError:
                 self.run_event.clear()  # to end all threads
-                print("TUN " + str(i) + " seems to be gone, can't read from it")
+                # print("TUN " + str(i) + " seems to be gone, can't read from it")
                 break
 
             # identify IPs and save into buffer
@@ -83,10 +83,10 @@ class NetworkCoordinator:
                 ip_dst = int.from_bytes(data[16:20], byteorder="big")
                 with self.incoming_packet_buffer_busy:
                     self.incoming_packet_buffer[(self.packet_id.value, ip_src, ip_dst)] = data
-                    if self.config['print_debug']: print(f"Read {(self.packet_id.value, ip_src, ip_dst)} from TUN {i}")
+                    # if self.config['print_debug']: print(f"Read {(self.packet_id.value, ip_src, ip_dst)} from TUN {i}")
                     self.packet_id.increment()
 
-        print("TUN " + str(i) + " exiting")
+        # print("TUN " + str(i) + " exiting")
         tuns[i].close()
 
     def _run_protobuf_client_phy_coord(self: NetworkCoordinator):
@@ -238,7 +238,7 @@ class NetworkCoordinator:
 
                         try:
                             os.write(tuns[ip_to_tun_map[time_update_tuple[4]]].fileno(), data)
-                            if self.config['print_debug']: print(f"Wrote {key_tuple} to TUN {ip_to_tun_map[time_update_tuple[4]]}")
+                            # if self.config['print_debug']: print(f"Wrote {key_tuple} to TUN {ip_to_tun_map[time_update_tuple[4]]}")
                         except (OSError, KeyError, ValueError) as msg:
                             #print("Network simulator client: Error while writing to TUN. %s" % (msg,))
                             continue
@@ -290,7 +290,7 @@ class NetworkCoordinator:
             try:
                 with netsim_lock:
                     send_one_message(netsim_driver_socket, gzip.compress(driver_requests_string))
-                if self.config['print_debug']: print(f"Wrote driver request to network simulator")
+                # if self.config['print_debug']: print(f"Wrote driver request to network simulator")
             except socket.error as msg:
                 print("Error (Driver request transfer): %s" % (msg,))
 

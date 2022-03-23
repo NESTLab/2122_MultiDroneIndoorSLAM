@@ -1,4 +1,5 @@
 import socket
+import select
 from typing import Tuple
 from threading import current_thread, Lock, Thread
 from socketserver import BaseRequestHandler, TCPServer, ThreadingMixIn, ThreadingTCPServer
@@ -8,21 +9,33 @@ from msg.utils import get_message_type
 from msg.ping import Ping
 from msg.merge import Merge
 
+def read_all(s: socket.socket) -> bytes:
+    cunch_size = 1024
+    return s.recv(cunch_size)
 
 class ThreadedTCPRequestHandler(BaseRequestHandler):
     def handle(self: BaseRequestHandler) -> None:
         # print("handling request: ", self.request)
         # self.request.close()
         request: socket.socket = self.request
-        raw_data: bytes = request.recv(1024)
+        raw_data: bytes = read_all(request)
         m_type = get_message_type(raw_data)
         m_struct: Message = None
+        
+        
+        print("****************************************************")
+        print("****************************************************")
+        print(raw_data)
+        print("****************************************************")
+        print("****************************************************")
+        
         if m_type == 'Merge':
             m_struct = Merge()
         elif m_type == 'Ping':
             m_struct = Ping()
         else:
             # print("Unrecognized message, dropping connection")
+            self.request.close()
             return
 
         msg: Message = m_struct.consume_payload(raw_data)
@@ -38,6 +51,7 @@ class ThreadedTCPRequestHandler(BaseRequestHandler):
         else:
             # print("Unrecognized message, dropping connection")
             return
+            self.request.close()
 
 
 class ThreadedTCPServer(ThreadingMixIn, TCPServer):
@@ -63,7 +77,7 @@ def send_messsage(nic: str, destination: Tuple[str, int], message: Message) -> N
                 sock.sendall(message.produce_payload())
             else:
                 raise Exception("Attempted to send unsupported message type")
-            response = message.consume_payload(sock.recv(1024))
+            response = message.consume_payload(read_all(sock))
             response.handle()
 
         except Exception as e:
@@ -71,7 +85,8 @@ def send_messsage(nic: str, destination: Tuple[str, int], message: Message) -> N
         sock.close()
 
 
-def server(address: Tuple[str, int], keep_runing: Lock) -> None:
+def server(address: Tuple[str, int], keep_runing: Lock, handler) -> None:
+    ThreadedTCPRequestHandler.handle = handler
     server = ThreadedTCPServer(address, ThreadedTCPRequestHandler)
     with server:
         # Start a thread with the server -- that thread will then start one
