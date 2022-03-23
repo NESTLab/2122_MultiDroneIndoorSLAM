@@ -19,7 +19,7 @@ from msg.ping import Ping
 from msg.merge import Merge
 
 def read_all(s: socket.socket) -> bytes:
-    cunch_size = 1024
+    cunch_size = 944276
     return s.recv(cunch_size)
 
 class ThreadedTCPRequestHandler(BaseRequestHandler):
@@ -100,36 +100,42 @@ class Sim():
         m_struct: Message = None
         
         
-        print("****************************************************")
-        print("****************************************************")
-        print(raw_data)
-        print("****************************************************")
-        print("****************************************************")
-        
         if m_type == 'Merge':
             m_struct = Merge()
         elif m_type == 'Ping':
             m_struct = Ping()
         else:
-            # print("Unrecognized message, dropping connection")
-            brh.request.close()
+            print("Unrecognized message, dropping connection")
+            # brh.request.close()
             return
 
         msg: Message = m_struct.consume_payload(raw_data)
 
         if isinstance(msg, Ping):
-            msg.handle()
-            resp = Ping(source=request.getsockname(), destination=request.getpeername())
-            request.sendall(resp.produce_payload())
-        elif isinstance(msg, Merge):
             print("Merge message")
+            print("****************************************************")
+            print("****************************************************")
+            print(raw_data)
             msg.handle()
+            print("****************************************************")
+            print("****************************************************")
+            self.local_score += 1
+            resp = Ping(source=request.getsockname(), destination=request.getpeername(), map = self.local_map)
+            s = resp.produce_payload()
+            try:
+                request.sendall(s)
+            except Exception as e:
+                print("Listen handler couldn't send reply -> ", e)
+                
+        elif isinstance(msg, Merge):
+
             request.sendall(b'Merge')
-            brh.request.close()
+            # brh.request.close()
         else:
-            # print("Unrecognized message, dropping connection")
+            print("Unrecognized message, dropping connection")
+            # brh.request.close()
             return
-            brh.request.close()
+            
 
     def _listener(self: Sim) -> None:
         # Blocks untill kill_thread_event is set
@@ -171,7 +177,8 @@ class Sim():
                     destination=neighbor,
                     message=Ping(
                         source=local_addr,
-                        destination=neighbor
+                        destination=neighbor,
+                        map=self.local_map
                     ))
             time.sleep(BROADCAST_INTERVAL)
         print("Finished broadcasting for :", self.LISTEN_ADDRESS[0])
@@ -190,8 +197,7 @@ class Sim():
                     p.source = sock.getsockname()
                     p.destination = sock.getpeername()
                     sock.sendall(message.produce_payload())
-                    
-                    raw_res = sock.recv(1024)
+                    raw_res = read_all(sock)
                     response = message.consume_payload(raw_res)
                     response.handle()
                     if len(raw_res) > 0:

@@ -3,3 +3,4 @@ pyyaml==5.3.1
 scikit-image==0.18.3
 pyquaternion==0.9.9
 opencv-python==4.5.5.62
+numcompress==0.1.2

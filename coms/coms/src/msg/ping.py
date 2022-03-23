@@ -2,22 +2,32 @@ from __future__ import annotations
 from msg.message import Message
 from msg.utils import extract_payload_id
 from coms.constants import ENCODING
+from numcompress import compress_ndarray, decompress_ndarray, compress
 from typing import Tuple
+# from random import randbytes
+import numpy as np
 
 
 class Ping(Message):
     id = 1
     source: Tuple[str, int] = ()
     destination: Tuple[str, int] = ()
+    map: np.ndarray = None
+    dim: str = ""
 
-    def __init__(self: Message, source: Tuple[str, int] = (), destination: Tuple[str, int] = ()) -> None:
+    def __init__(self: Message, source: Tuple[str, int] = (), destination: Tuple[str, int] = (), map: np.ndarray = None) -> None:
         super().__init__()
         self.source = source
         self.destination = destination
+        if map is not None:
+            self.dim = str(map.shape[0]) + ',' + str(map.shape[1])
+            self.map = map
 
     def produce_payload(self: Ping) -> bytes:
-        msg: str = "{0}|{1}|{2}".format(self.id, self.source, self.destination)
-        return msg.encode(ENCODING)
+        msg: str = "{0}|{1}|{2}|{3}|{4}".format(self.id, self.source, self.destination, self.dim, compress(self.map.flatten().tolist(), precision=0))
+        c = msg.encode(ENCODING)
+        print(len(c))
+        return c
 
     def consume_payload(self: Ping, payload: bytes) -> Message:
         if extract_payload_id(payload) != self.id:

@@ -61,11 +61,11 @@ def experiment(overlap: float) -> None:
     robot_maps = robot_maps[0:4]
     robots = gen_robots(robot_maps)
 
-    launch = start_network()
+    # launch = start_network()
     start_robots(robots)
     time.sleep(10)
     stop_robots(robots)
-    stop_network(launch)
+    # stop_network(launch)
 
     print("\n\n\nchange!")
     n_maps = []
@@ -75,13 +75,12 @@ def experiment(overlap: float) -> None:
         old = 0
         n = robo.local_score
         n_maps.append(robo.local_map)
-        dif = 1
-        print("Robot {0} had {1} -> {2} increase of {3}".format(r_name, old, n, dif))
+        print("Robot {0} had {1} -> {2}".format(r_name, old, n))
 
     # show_array_of_maps(n_maps)
 
 def main() -> None:
-    experiment(0.95)
+    experiment(0.1)
 
 
 
