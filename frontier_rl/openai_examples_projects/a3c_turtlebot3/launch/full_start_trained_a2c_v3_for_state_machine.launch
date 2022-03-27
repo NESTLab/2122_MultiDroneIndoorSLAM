@@ -1,0 +1,9 @@
+<launch>
+
+    <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_all.launch"/>
+    <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_slam.launch"/>
+    <!-- make sure to add move base into multi_turtlebot3_single.launch -->
+<!--     <node pkg="multi_map_ros" name="publish_inputs_rl" type="publish_inputs_for_learning.py" output="screen" required="True"/> -->
+    <node pkg="a3c_turtlebot3" name="turtlebot3_world" type="a2c_v3_trained_for_state_machine.py" output="screen" required="True"/>
+
+</launch>
