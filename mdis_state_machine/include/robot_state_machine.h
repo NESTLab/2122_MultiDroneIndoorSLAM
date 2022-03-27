@@ -15,6 +15,7 @@
 #include <std_msgs/Int8.h>
 #include <mdis_state_machine/RobotsState.h>
 #include <coms/TriggerMerge.h>
+#include <time.h>
 
 enum ROLE{
   RELAY,
@@ -67,7 +68,7 @@ protected:
    static bool testing_mode;
    static ROLE robot_role;
 
-   int testing_waiting_time = 1;
+   int testing_waiting_time = 5;
 
    geometry_msgs::Point data_dump_location;
 

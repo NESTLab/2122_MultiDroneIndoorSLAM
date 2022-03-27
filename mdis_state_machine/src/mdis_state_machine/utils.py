@@ -2,6 +2,9 @@ import rospy
 from subprocess import Popen, DEVNULL
 from mdis_state_machine.msg import RobotsState
 from mdis_state_machine.msg import Connection
+from mdis_state_machine.msg import Interest
+from mdis_state_machine.msg import Location
+from geometry_msgs.msg import Point
 from std_msgs.msg import String
 from typing import List
 from roslaunch.parent import ROSLaunchParent
@@ -22,6 +25,7 @@ max_time_to_wait_to_change_state = 6
 message_wait_timeout = 30
 robot_state_topic = "/robots_state"
 connection_check_topic = "/connection_check"
+interest_check_topic = "/interest_check"
 
 def gen_topic_name(lst: List[str]) -> str:
 	result = ""
@@ -54,7 +58,7 @@ def verifyTimedStateChange(init_state, change_state, robot_name):
 	return False
 
 
-def verifyConnStateChange(init_state, change_state, robot_name):
+def verifyConnStateChange(init_state, change_state, robot_name, robot_partner):
 	rospy.sleep(ideal_state_change_duration - headstart_to_check)
 	init_state_sucs = False
 	# while rospy.get_rostime().secs < time_start+max_time_to_wait_to_change_state:
@@ -68,12 +72,19 @@ def verifyConnStateChange(init_state, change_state, robot_name):
 	robot_conn_msg.connection_between = []
 	robot_conn_msg.connection_between.append(String(data=robot_name))
 	robot_conn_msg.connection_between.append(String(data="dummy_parent"))
+	robot_interest_msg = Interest()
+	robot_interest_msg.req = []
+	robot_interest_msg.req.append(String(data="Request for connection"))
+	robot_interest_msg.req.append(String(data=robot_partner))
 
 	connection_topic_name = gen_topic_name([robot_name, connection_check_topic])
+	# interest_topic_name = gen_topic_name([robot_partner, interest_check_topic])
 	pub = rospy.Publisher(connection_topic_name, Connection, queue_size=10)
+	int_pub = rospy.Publisher('/interest_check', Interest, queue_size=10)
 	time_start = rospy.get_rostime().secs
 	while rospy.get_rostime().secs < time_start + max_time_to_wait_to_change_state:
 		pub.publish(robot_conn_msg)
+		int_pub.publish(robot_interest_msg)
 		rospy.sleep(0.5)
 		msg = rospy.wait_for_message(state_topic_name, RobotsState, timeout=message_wait_timeout)
 		if msg.robot_name.data == robot_name:
