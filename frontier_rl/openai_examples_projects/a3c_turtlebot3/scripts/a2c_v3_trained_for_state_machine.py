@@ -83,6 +83,13 @@ class find_frontier:
 
         # self.timer = rospy.Timer(rospy.Duration(5), self.frontier_callback)
 
+        num_inputs = 12288
+        print("num inputs: " + str(num_inputs))
+        num_outputs = 100
+        print("num outputs:" + str(num_outputs))
+
+        self.actor_critic = ActorCritic(num_inputs, num_outputs, hidden_size)
+
         self.init_subscribers_and_publishers(self.robot_namespace)
 
         rospy.loginfo("FINISHED INIT")
@@ -118,6 +125,7 @@ class find_frontier:
 
     def map_callback(self, msg):
         self.map = msg
+        print("map received")
         # if self.curr_msg_count > self.max_msg_count_before_start:
         #     self.frontier_callback(0)
         #     self.curr_msg_count = 0
@@ -427,30 +435,13 @@ class find_frontier:
 
 
     def a2c(self, observation):
-        num_inputs = 12288
-        print("num inputs: " + str(num_inputs))
-        num_outputs = 100
-        print("num outputs:" + str(num_outputs))
-
-        actor_critic = ActorCritic(num_inputs, num_outputs, hidden_size)
-        actor_critic.actor_linear1.load_state_dict(torch.load(a1_filepath))
-        actor_critic.actor_linear2.load_state_dict(torch.load(a2_filepath))
-        actor_critic.critic_linear1.load_state_dict(torch.load(c1_filepath))
-        actor_critic.critic_linear2.load_state_dict(torch.load(c2_filepath))
-        actor_critic.actor_linear1.eval()
-        actor_critic.actor_linear2.eval()
-        actor_critic.critic_linear1.eval()
-        actor_critic.critic_linear2.eval()
-
-        ac_optimizer = optim.Adam(actor_critic.parameters(), lr=learning_rate)
-        ac_optimizer.load_state_dict(torch.load(ao_filepath))
 
         # normalization
         observation = np.where(observation == 0, 1, observation)
         observation = np.where(observation == -1, 0, observation)
         observation = np.where(observation == 100, -1, observation)
 
-        value, policy_dist = actor_critic.forward(observation)
+        value, policy_dist = self.actor_critic.forward(observation)
         dist = policy_dist.detach().numpy()
 
         action = np.argmax(np.squeeze(dist))
@@ -462,5 +453,26 @@ class find_frontier:
 if __name__ == '__main__':
     node = find_frontier()
 
+    num_inputs = 12288
+    print("num inputs: " + str(num_inputs))
+    num_outputs = 100
+    print("num outputs:" + str(num_outputs))
+
+    # node.actor_critic = ActorCritic(num_inputs, num_outputs, hidden_size)
+    node.actor_critic.actor_linear1.load_state_dict(torch.load(a1_filepath))
+    node.actor_critic.actor_linear2.load_state_dict(torch.load(a2_filepath))
+    node.actor_critic.critic_linear1.load_state_dict(torch.load(c1_filepath))
+    node.actor_critic.critic_linear2.load_state_dict(torch.load(c2_filepath))
+    node.actor_critic.actor_linear1.eval()
+    node.actor_critic.actor_linear2.eval()
+    node.actor_critic.critic_linear1.eval()
+    node.actor_critic.critic_linear2.eval()
+
+    node.ac_optimizer = optim.Adam(node.actor_critic.parameters(), lr=learning_rate)
+    node.ac_optimizer.load_state_dict(torch.load(ao_filepath))
+
+    print("LOADED RL MODELS")
+
     while not rospy.is_shutdown():
         pass
+
