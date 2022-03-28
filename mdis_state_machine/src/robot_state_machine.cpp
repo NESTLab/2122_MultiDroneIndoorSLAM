@@ -4,7 +4,7 @@ float RobotState::curr_meet_x = 0.0;
 float RobotState::curr_meet_y = 0.0;
 float RobotState::next_meet_x = 0.0;
 float RobotState::next_meet_y = 0.0;
-float RobotState::time_for_exploration = 20.0;
+float RobotState::time_for_exploration = 40.0;
 
 std::string RobotState::parent_robot_name = "";
 std::string RobotState::child_robot_name = "";
@@ -28,11 +28,22 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   }
   robot_name = ros::this_node::getNamespace();
   robot_name.erase(robot_name.begin());
-
-  curr_meet_x = 0;
-  curr_meet_y = 0;
-  next_meet_x = 2;
-  next_meet_y = 0;
+  
+  int robot_num = (int)(robot_name.back())-48;
+  if(robot_num<=1)
+  {
+    curr_meet_x = 3;
+    curr_meet_y = 2;
+    next_meet_x = 5;
+    next_meet_y = 0;
+  }
+  else
+  {
+    curr_meet_x = 3;
+    curr_meet_y = -2;
+    next_meet_x = 4;
+    next_meet_y = -3;
+  }
 
   data_dump_location.x = 0;
   data_dump_location.y = 0;
@@ -103,6 +114,7 @@ bool GoToExplore::isDone()
       return true;
    }
   
+   robot_state_pub.publish(state_pub_data);
    explore_interface->goToPoint(temp_point, true);
    return true;
 }
@@ -175,6 +187,7 @@ void Explore::step()
   std_msgs::Bool msg;
   msg.data = false;
   pause_exploration_pub.publish(msg);
+  robot_state_pub.publish(state_pub_data);
   ROS_INFO_THROTTLE(10,"Executing step for EXPLORE");
 }
 
@@ -563,7 +576,7 @@ bool GoToDumpData::isDone()
 
       return true;
    }
-  
+   robot_state_pub.publish(state_pub_data);
    explore_interface->goToPoint(data_dump_location, true);
    return true;
 }
@@ -619,6 +632,7 @@ bool DumpData::isDone()
 
       return true;
    }
+   robot_state_pub.publish(state_pub_data);
   
    return true;
 }

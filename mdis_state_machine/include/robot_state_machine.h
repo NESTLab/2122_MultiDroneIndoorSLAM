@@ -254,8 +254,8 @@ private:
 class Meet: public RobotState{
 public:
    Meet(ros::NodeHandle &nh, bool testing):RobotState(MEET, "Meet", nh, testing){
-     meeting_data_pub = nh.advertise<mdis_state_machine::DataCommunication>(nh.getNamespace() + "/data_communication", 1000);
-     meeting_data_sub = nh.subscribe(nh.getNamespace() + "/data_communication", 1000, &Meet::nextMeetingLocationCB, this);     
+     meeting_data_pub = nh.advertise<mdis_state_machine::DataCommunication>("/data_communication", 1000);
+     meeting_data_sub = nh.subscribe("/data_communication", 1000, &Meet::nextMeetingLocationCB, this);     
      robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     frontier_data_sub = nh.subscribe("/tb3_0/frontier_list", 1000, &Meet::getBestFrontiersCB, this);
     location_data_pub = nh.advertise<mdis_state_machine::Location>("/robot_location", 1000);
     location_data_sub = nh.subscribe("/robot_location", 1000, &Meet::getLocationCB, this);

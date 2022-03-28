@@ -24,7 +24,7 @@
     
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model $(arg ns) -x $(arg tb3_x_pos) -y $(arg tb3_y_pos) -z $(arg tb3_z_pos) -Y $(arg tb3_yaw) -param robot_description" />
 
-    <node name="team_scheduler" pkg="mdis_state_machine" type="team_scheduler" args="$(arg role) $(arg parent_name) $(arg child_name)"/>
+    <node name="team_scheduler" pkg="mdis_state_machine" type="team_scheduler" args="$(arg role) $(arg parent_name) $(arg child_name)" output="screen"/>
 
     <node name='merge_handler' pkg='coms' type='merge_handler.py' output="screen">
         <param name="robot_name" value="$(arg ns)"/>
@@ -36,7 +36,7 @@
         <param name="map_service" value="$(arg map_service)"/>
     </node>
 
-    <node pkg="mdis_state_machine" type="connection_check" name="connection_check" args="2"/>
+    <node pkg="mdis_state_machine" type="connection_check" name="connection_check" args="4"/>
 
   </group>
   
@@ -54,6 +54,8 @@
   <include file="$(find turtlebot3_gazebo)/launch/multi_move_base.launch">
     <arg name="ns" value="$(arg ns)"/>
   </include>
+  
+	<node pkg="multi_map_ros" name="find_fontier_$(arg ns)" type="frontier_clustering.py" output="screen"/>
 
   <include file="$(find explore_lite)/launch/explore.launch">
     <arg name="ns" value="$(arg ns)"/>

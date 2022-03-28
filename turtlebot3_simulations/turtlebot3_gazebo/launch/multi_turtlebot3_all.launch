@@ -30,21 +30,27 @@
     <arg name="child_name" value="tb3_0"/>
   </include>  
   
-  <!-- <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">
+  <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">
     <arg name="ns" value="tb3_2"/>
-    <arg name="tb3_x_pos" value="-31"/>
-    <arg name="tb3_y_pos" value="-7"/>
+    <arg name="tb3_x_pos" value="0.5"/>
+    <arg name="tb3_y_pos" value="-0.5"/>
     <arg name="tb3_z_pos" value="0.0"/>
     <arg name="tb3_yaw" value="0.0"/>
-  </include>   -->
+    <arg name="role" value="1"/>
+    <arg name="parent_name" value="tb3_3"/>
+    <arg name="child_name" value=""/>
+  </include>  
   
-  <!-- <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">
+  <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">
     <arg name="ns" value="tb3_3"/>
     <arg name="tb3_x_pos" value="-0.5"/>
-    <arg name="tb3_y_pos" value="0.5"/>
+    <arg name="tb3_y_pos" value="-0.5"/>
     <arg name="tb3_z_pos" value="0.0"/>
     <arg name="tb3_yaw" value="0.0"/>
-  </include> -->
+    <arg name="role" value="0"/>
+    <arg name="parent_name" value="data_center"/>
+    <arg name="child_name" value="tb3_2"/>
+  </include>
   
   <!-- Launch multi map merge -->
   <!-- <include file="$(find turtlebot3_gazebo)/launch/multi_map_merge.launch"/> -->
@@ -60,5 +66,8 @@
   <node pkg="tf" type="static_transform_publisher" name="world_to_bot_1_tf_broadcaster"  args="0 0 0 0 0 0 /map /tb3_1/map 100"/>
   <node pkg="tf" type="static_transform_publisher" name="odom_to_bot_1_tf_broadcaster"  args="0 0 0 0 0 0 /tb3_1/map /tb3_1/odom 100"/>
   <node pkg="tf" type="static_transform_publisher" name="world_to_bot_2_tf_broadcaster"  args="0 0 0 0 0 0 /map /tb3_2/map 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="odom_to_bot_2_tf_broadcaster"  args="0 0 0 0 0 0 /tb3_2/map /tb3_2/odom 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="world_to_bot_3_tf_broadcaster"  args="0 0 0 0 0 0 /map /tb3_3/map 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="odom_to_bot_3_tf_broadcaster"  args="0 0 0 0 0 0 /tb3_3/map /tb3_3/odom 100"/>
 
 </launch>

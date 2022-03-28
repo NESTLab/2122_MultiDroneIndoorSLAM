@@ -79,6 +79,15 @@ int main(int argc, char** argv)
         conn_msg.distance = dist;
       }
     }
+    geometry_msgs::Point data_center_location; // We consider data center to be at (0,0) hence no initiation necessary
+    float dist = getDistanceOfPoints(getRobotCurrentPose(robot_1, tf_listener), data_center_location);
+    // ROS_INFO_STREAM("Distance between "<<robot_1<<" and "<<data_center<<":"<<dist);
+    if(dist<DIST_THRESHOLD)
+    {
+      conn_msg.connection_between.at(0).data = robot_1;
+      conn_msg.connection_between.at(1).data = "turtlebot3_slam_gmapping";
+      conn_msg.distance = dist;
+    }
     conn_pub.publish(conn_msg);
     ros::Duration(1).sleep();
   }
