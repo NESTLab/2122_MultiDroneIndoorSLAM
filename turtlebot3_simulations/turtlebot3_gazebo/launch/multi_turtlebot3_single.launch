@@ -57,8 +57,8 @@
   
 	<node pkg="multi_map_ros" name="find_fontier_$(arg ns)" type="frontier_clustering.py" output="screen"/>
 
-  <include file="$(find explore_lite)/launch/explore.launch">
+  <!--<include file="$(find explore_lite)/launch/explore.launch">
     <arg name="ns" value="$(arg ns)"/>
-  </include>
+  </include>-->
 
 </launch>

@@ -10,8 +10,8 @@
   <!-- Launch three robots in the house -->
   <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">
     <arg name="ns" value="tb3_0"/>
-    <arg name="tb3_x_pos" value="0.5"/>
-    <arg name="tb3_y_pos" value="0.5"/>
+    <arg name="tb3_x_pos" value="-9.0"/>
+    <arg name="tb3_y_pos" value="-3.0"/>
     <arg name="tb3_z_pos" value="0.0"/>
     <arg name="tb3_yaw" value="0.0"/>  
     <arg name="role" value="1"/>
@@ -21,8 +21,8 @@
   
   <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">
     <arg name="ns" value="tb3_1"/>
-    <arg name="tb3_x_pos" value="-0.5"/>
-    <arg name="tb3_y_pos" value="0.5"/>
+    <arg name="tb3_x_pos" value="-10.0"/>
+    <arg name="tb3_y_pos" value="-3.0"/>
     <arg name="tb3_z_pos" value="0.0"/>
     <arg name="tb3_yaw" value="0.0"/>
     <arg name="role" value="0"/>
