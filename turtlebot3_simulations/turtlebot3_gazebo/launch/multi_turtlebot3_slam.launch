@@ -27,10 +27,10 @@
     <param name="str" value="0.01"/>
     <param name="stt" value="0.02"/>
     <param name="resampleThreshold" value="0.5"/>
-    <param name="xmin" value="-10.0"/>
-    <param name="ymin" value="-10.0"/>
-    <param name="xmax" value="10.0"/>
-    <param name="ymax" value="10.0"/>
+    <param name="xmin" value="0.0"/>
+    <param name="ymin" value="-7.5"/>
+    <param name="xmax" value="15.0"/>
+    <param name="ymax" value="7.5"/>
     <param name="llsamplerange" value="0.01"/>
     <param name="llsamplestep" value="0.01"/>
     <param name="lasamplerange" value="0.005"/>
