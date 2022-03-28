@@ -32,12 +32,12 @@ GAMMA = 0.99
 num_steps = 10
 max_episodes = 3000
 
-a1_filepath = "/home/taylor/multidrone_slam/src/2122_MultiDroneIndoorSLAM/frontier_rl/openai_examples_projects/a3c_turtlebot3/training_v3/actor_1_dict.pth"
-a2_filepath = "/home/taylor/multidrone_slam/src/2122_MultiDroneIndoorSLAM/frontier_rl/openai_examples_projects/a3c_turtlebot3/training_v3/actor_2_dict.pth"
-c1_filepath = "/home/taylor/multidrone_slam/src/2122_MultiDroneIndoorSLAM/frontier_rl/openai_examples_projects/a3c_turtlebot3/training_v3/critic_1_dict.pth"
-c2_filepath = "/home/taylor/multidrone_slam/src/2122_MultiDroneIndoorSLAM/frontier_rl/openai_examples_projects/a3c_turtlebot3/training_v3/critic_2_dict.pth"
-ao_filepath = "/home/taylor/multidrone_slam/src/2122_MultiDroneIndoorSLAM/frontier_rl/openai_examples_projects/a3c_turtlebot3/training_v3/ao_dict.pth"
-model_run_time_data = "/home/taylor/multidrone_slam/src/2122_MultiDroneIndoorSLAM/frontier_rl/openai_examples_projects/a3c_turtlebot3/training_v3/model_run_data.csv"
+a1_filepath = "/root/catkin_ws/src/frontier_rl/openai_examples_projects/a3c_turtlebot3/training_v3/actor_1_dict.pth"
+a2_filepath = "/root/catkin_ws/src/frontier_rl/openai_examples_projects/a3c_turtlebot3/training_v3/actor_2_dict.pth"
+c1_filepath = "/root/catkin_ws/src/frontier_rl/openai_examples_projects/a3c_turtlebot3/training_v3/critic_1_dict.pth"
+c2_filepath = "/root/catkin_ws/src/frontier_rl/openai_examples_projects/a3c_turtlebot3/training_v3/critic_2_dict.pth"
+ao_filepath = "/root/catkin_ws/src/frontier_rl/openai_examples_projects/a3c_turtlebot3/training_v3/ao_dict.pth"
+model_run_time_data = "/root/catkin_ws/src/frontier_rl/openai_examples_projects/a3c_turtlebot3/training_v3/model_run_data.csv"
 
 
 class ActorCritic(nn.Module):
