@@ -124,13 +124,34 @@ class find_frontier:
         self.move_helper_pub.publish(msg)
 
     def map_callback(self, msg):
-        self.map = msg
+        self.raw_map = msg
+
         print("map received")
-        # if self.curr_msg_count > self.max_msg_count_before_start:
-        #     self.frontier_callback(0)
-        #     self.curr_msg_count = 0
-        # self.curr_msg_count += 1
-        # rospy.loginfo("curr message count is: " + str(self.curr_msg_count))
+
+        map_height = self.raw_map.info.height
+        map_width = self.raw_map.info.width
+        if map_width<self.desired_dimension_x or map_height<self.desired_dimension_y:
+            self.map_cells = np.array(self.raw_map.data)
+            resized_map = np.reshape(self.map_cells, (map_height, map_width))
+            resized_map = np.pad(resized_map, [(0, self.desired_dimension_y-map_height), (0, self.desired_dimension_x-map_width)], mode='constant', constant_values=-1)
+            final_resized_map = resized_map.reshape(-1)
+
+            resized_map = OccupancyGrid()
+            resized_map_info = MapMetaData()
+            resized_map_header = Header()
+            resized_map_info.height = self.desired_dimension_y
+            resized_map_info.width = self.desired_dimension_x
+            resized_map_info.origin = self.raw_map.info.origin
+            resized_map_info.resolution = self.raw_map.info.resolution
+            resized_map.info = resized_map_info
+            resized_map_header.frame_id = self.raw_map.header.frame_id
+            resized_map.header = resized_map_header
+            resized_map.data = final_resized_map
+
+            self.map = resized_map
+            print("map resized")
+        else:
+            self.map = self.raw_map
 
         if SEND_STATE_MACHINE_FRONTIERS:
             if self.publish_next_frontier and self.publish_ns in str(msg.header.frame_id):
