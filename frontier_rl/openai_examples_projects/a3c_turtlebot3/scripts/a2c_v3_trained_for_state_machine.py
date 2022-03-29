@@ -87,6 +87,9 @@ class find_frontier:
         print("num inputs: " + str(num_inputs))
         num_outputs = 100
         print("num outputs:" + str(num_outputs))
+        
+        self.desired_dimension_x = 192
+        self.desired_dimension_y = 64
 
         self.actor_critic = ActorCritic(num_inputs, num_outputs, hidden_size)
 
