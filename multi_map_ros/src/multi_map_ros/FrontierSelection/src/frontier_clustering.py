@@ -68,9 +68,9 @@ class find_frontier:
 
         self.move_pub = rospy.Publisher(ns + '/move_base_simple/goal', PoseStamped, queue_size=10)
 
-        self.move_helper_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.helper)
+        #self.move_helper_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.helper)
 
-        self.move_helper_pub = rospy.Publisher(ns + '/move_base_simple/goal', PoseStamped,
+        #self.move_helper_pub = rospy.Publisher(ns + '/move_base_simple/goal', PoseStamped,
 
                                                queue_size=10)
 
@@ -94,8 +94,7 @@ class find_frontier:
 
     def helper(self, msg):
 
-        # self.move_helper_pub.publish(msg)
-        pass
+        self.move_helper_pub.publish(msg)
 
     def map_callback(self, msg):
 
@@ -487,7 +486,7 @@ class find_frontier:
 
         move_msg.pose.orientation.w = 1
 
-        # self.move_pub.publish(move_msg)
+        self.move_pub.publish(move_msg)
 
     def get_current_position_in_map(self):
 
