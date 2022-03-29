@@ -20,6 +20,7 @@ RUN set -ex; \
       lsb-core \
       gnupg2 \
       curl \
+      wget \
       bash \
       fluxbox \
       git \
@@ -76,7 +77,13 @@ RUN sudo apt-get update; \
     iproute2 \
     ros-noetic-catkin \
     python3-catkin-tools \
-    libtf2-ros-dev
+    libtf2-ros-dev \
+    ros-noetic-global-planner
+  
+# Learning
+RUN pip install gym tensorflow; \
+  wget https://raw.githubusercontent.com/NESTLab/turtlebot3_simulations/local_costmap_fix/turtlebot3_gazebo/costmap_common_params_burger_local.yaml -P /opt/ros/noetic/share/turtlebot3_navigation/param/
+
 
 # Add ROS dependent scripts
 RUN rosdep init; \
@@ -87,6 +94,16 @@ RUN rosdep init; \
   echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/argos3:/opt/ros/noetic/lib" >> ~/.bashrc; \
   echo "export ARGOS_PLUGIN_PATH=$HOME/catkin_ws/src/argos_bridge/ros_lib_links" >> ~/.bashrc; \
   echo "export ARGOS_PLUGIN_PATH=$ARGOS_PLUGIN_PATH:$HOME/catkin_ws/devel/lib" >> ~/.bashrc
+
+
+# Permissions
+RUN sudo chmod a+rwx /root -R
+
+
+# NOTE: This is not neede when when using 'compose', as the docker-compose.yaml file specifies a systemlink (aka: volume)
+#       However, if you ONLY want to run the dockerfile, or build it with our work, uncomment the line below.
+# COPY . /root/catkin_ws/src
+
 EXPOSE 8080
 
 CMD ["/root/catkin_ws/src/entrypoint.sh"]
