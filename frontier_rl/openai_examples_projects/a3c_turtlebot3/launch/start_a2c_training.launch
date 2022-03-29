@@ -1,0 +1,6 @@
+<launch>
+    <!-- This version uses the openai_ros environments -->
+    <rosparam command="load" file="$(find a3c_turtlebot3)/config/a2c_params.yaml" />
+    <!-- Launch the training system -->
+    <node pkg="a3c_turtlebot3" name="turtlebot3_world" type="a2c.py" output="screen"/>
+</launch>

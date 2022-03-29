@@ -1,2 +1,2 @@
-std_msgs/String[] connection_between
+std_msgs/String connection_to
 float32 distance

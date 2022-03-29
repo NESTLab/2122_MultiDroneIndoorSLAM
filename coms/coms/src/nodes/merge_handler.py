@@ -66,7 +66,8 @@ class MergeHandler:
         if self.logging:
             self.bag.write('map', msg)
 
-
+        self.map_header = msg.header
+        self.map_info = msg.info
         # breakpoint()
         MergeHandler.parse_and_save(msg, self.latest_map)
         # unpack gmapping
@@ -153,10 +154,18 @@ class MergeHandler:
     def create_occupancy_msg(self, seq: int) -> OccupancyGrid:
         occ = OccupancyGrid()
         # header
-        occ.header.seq = seq
-        # metadata
+        # occ.header.seq = seq
+        # occ.header.frame_id = "tb3_"+self.robot_name[-1]+"/map"
+        # occ.header.stamp = rospy.Time.now()
+
+        # # metadata
+        # occ.info.resolution = 0.05000000074505806
+        # occ.info.origin.orientation.w = 1.0
+        occ.header = self.map_header
+        occ.info = self.map_info
         occ.info.height = self.latest_map.shape[0]
         occ.info.width = self.latest_map.shape[1]
+
         # data
         occ.data = tuple(numpy_to_ros(self.latest_map.flatten()))
         return occ

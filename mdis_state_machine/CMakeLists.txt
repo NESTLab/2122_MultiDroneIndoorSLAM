@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   octomap_msgs
   nav_msgs
+  coms
   tf
 )
 
@@ -25,6 +26,9 @@ add_message_files(
   FILES
   Connection.msg
   DataCommunication.msg
+  Location.msg
+  LocationAck.msg
+  Interest.msg
   RobotsState.msg
 )
 

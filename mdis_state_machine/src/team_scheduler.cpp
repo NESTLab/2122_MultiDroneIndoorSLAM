@@ -7,13 +7,14 @@ TeamScheduler::TeamScheduler(ros::NodeHandle &nh, ROLE role, const std::string& 
       setInitialState(GO_TO_EXPLORE);
     else if (role == RELAY)
       setInitialState(GO_TO_MEET);
+      // setInitialState(GO_TO_DUMP_DATA);
     current_state_ptr->setParent(parent_name);
     current_state_ptr->setChild(child_name);
     current_state_ptr->setRobotRole(role);
 }
 
 TeamScheduler::~TeamScheduler()
-{   
+{
    std::for_each(
       MACRO_STATE_PTR_MAP.begin(),
       MACRO_STATE_PTR_MAP.end(),
@@ -47,7 +48,7 @@ void TeamScheduler::addState(RobotState* pc_state) {
 //    return m_pcTeam->getState(un_state);
 // }
 
-RobotState& TeamScheduler::getStatePtr(uint64_t un_id) 
+RobotState& TeamScheduler::getStatePtr(uint64_t un_id)
 {
    auto pcState = MACRO_STATE_PTR_MAP.find(un_id);
    if(pcState != MACRO_STATE_PTR_MAP.end()) {
@@ -64,7 +65,7 @@ void TeamScheduler::setInitialState(uint64_t un_state) {
    if(pcState != MACRO_STATE_PTR_MAP.end()) {
       // acquire value of the state (every map has a key(first) and a value(second))
       current_state_ptr = pcState->second;
-      
+
       // completes entry point of the initial state
       current_state_ptr->entryPoint();
       setTeamMacroState((TEAM_STATES) un_state);
@@ -94,7 +95,7 @@ void TeamScheduler::step() {
          current_state_ptr->exitPoint();
          // cNewState->setResetRobot(reset_robot_odometry);
          bool entry = cNewState->entryPoint();
-         
+
          setTeamMacroState((TEAM_STATES) cNewState->getId());
          if(!entry)
             return;
@@ -127,7 +128,7 @@ int main(int argc, char** argv)
 {
    ros::init(argc, argv, "state_machine");
    ros::NodeHandle nh;
-   
+
   //  if (argc != 4 && argc != 2)
   //  {
   //    ROS_ERROR("This node must be launched with number of robots as argument");
@@ -149,11 +150,11 @@ int main(int argc, char** argv)
      testing = true;
      role = std::stoi(argv[1]) == 5 ? EXPLORER : RELAY;
    }
-   
+
    parent_name = argv[2];
    if(role != EXPLORER)
      child_name = argv[3];
-   
+
    if(role == RELAY && !testing)
        ros::Duration(20).sleep();
 
