@@ -30,20 +30,11 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   robot_name.erase(robot_name.begin());
   
   int robot_num = (int)(robot_name.back())-48;
-  if(robot_num<=1)
-  {
-    curr_meet_x = 3;
-    curr_meet_y = 2;
-    next_meet_x = 5;
-    next_meet_y = 0;
-  }
-  else
-  {
-    curr_meet_x = 3;
-    curr_meet_y = -2;
-    next_meet_x = 4;
-    next_meet_y = -3;
-  }
+  geometry_msgs::Point current_pose = explore_interface->getRobotCurrentPose().pose.position;
+  curr_meet_x = current_pose.x;
+  curr_meet_y = current_pose.y;
+  next_meet_x = current_pose.x;
+  next_meet_y = current_pose.y;
 
   data_dump_location.x = 0;
   data_dump_location.y = 0;
