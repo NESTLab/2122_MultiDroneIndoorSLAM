@@ -23,7 +23,7 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   }
   else
   {
-    ROS_INFO("Testing mode, skipping initializations");
+    ROS_INFO_STREAM("["<<robot_name<<"] "<< "Testing mode, skipping initializations");
     RobotState::testing_mode = true;
   }
   robot_name = ros::this_node::getNamespace();
@@ -64,7 +64,7 @@ TEAM_STATES Idle::transition()
 
 void Idle::step()
 {
-  ROS_INFO("Step for Idle");
+  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Step for Idle");
 }
 
 void Idle::exitPoint()
@@ -78,13 +78,13 @@ void Idle::exitPoint()
 
 bool GoToExplore::entryPoint()
 {
-   ROS_INFO("Entering the state GO_TO_EXPLORE");
+   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Entering the state GO_TO_EXPLORE");
    return true;
 }
 
 bool GoToExplore::isDone()
 {
-   ROS_INFO_STREAM("Going to explore at "<<getNextMeetingPoint());
+   ROS_INFO_STREAM("["<<robot_name<<"] "<<"Going to explore at "<<getNextMeetingPoint());
    geometry_msgs::Point temp_point = getNextMeetingPoint();
 
    state_pub_data.robot_name.data = robot_name;
@@ -120,12 +120,12 @@ TEAM_STATES GoToExplore::transition()
 
 void GoToExplore::step()
 {
-  ROS_INFO("Executing step for GO_TO_EXPLORE");
+  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Executing step for GO_TO_EXPLORE");
 }
 
 void GoToExplore::exitPoint()
 {
-   ROS_INFO("Exiting the state GO_TO_EXPLORE");
+   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Exiting the state GO_TO_EXPLORE");
 }
 
 
@@ -136,8 +136,8 @@ void GoToExplore::exitPoint()
 bool Explore::entryPoint()
 {
    starting_time = ros::Time::now();
-   ROS_INFO("Entering the state EXPLORE");
-   ROS_INFO_STREAM("Exploring for "<<time_for_exploration<<" Seconds");
+   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Entering the state EXPLORE");
+   ROS_INFO_STREAM("["<<robot_name<<"] "<<"Exploring for "<<time_for_exploration<<" Seconds");
    return true;
 }
 
@@ -198,7 +198,7 @@ void Explore::exitPoint()
      explore_interface->stopRobot();
   }
   
-  ROS_INFO_STREAM("Exiting the state EXPLORE\nNext meeting "<<getNextMeetingPoint());
+  ROS_INFO_STREAM("["<<robot_name<<"] "<<"Exiting the state EXPLORE\nNext meeting "<<getNextMeetingPoint());
 
 }
 
@@ -209,8 +209,8 @@ void Explore::exitPoint()
 
 bool GoToMeet::entryPoint()
 {
-   ROS_INFO("Entering the state GO_TO_MEET");
-   ROS_INFO_STREAM("Going to meet at"<<getCurrentMeetingPoint());
+   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Entering the state GO_TO_MEET");
+   ROS_INFO_STREAM("["<<robot_name<<"] "<<"Going to meet at"<<getCurrentMeetingPoint());
    geometry_msgs::Point temp_point = getCurrentMeetingPoint();
    // explore_interface->goToPoint(temp_point, false);
    interested = false;
@@ -235,7 +235,7 @@ bool GoToMeet::isDone()
        interest_pub.publish(data);
        ros::Duration(1).sleep();
        if(interested){
-        ROS_INFO("Robot is connected to the party of interest");
+        ROS_INFO_STREAM("["<<robot_name<<"] "<< "Robot is connected to the party of interest");
         return true;
        }
 
@@ -267,7 +267,7 @@ void GoToMeet::step()
 
 void GoToMeet::exitPoint()
 {
-  ROS_INFO("Exiting the state GO_TO_MEET");
+  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Exiting the state GO_TO_MEET");
   if(!RobotState::testing_mode)
     explore_interface->stopRobot();
 }
@@ -289,11 +289,11 @@ void GoToMeet::connCB(const mdis_state_machine::Connection::ConstPtr msg)
 
 void GoToMeet::interestCB(const mdis_state_machine::Interest::ConstPtr msg){
   std::string r_name = msg->req.at(1).data;
-  ROS_INFO_STREAM("CONNN_ROBOT"<<r_name);
-  ROS_INFO_STREAM("ROBOT_NAME"<<robot_name);
+  ROS_INFO_STREAM("["<<robot_name<<"] "<<"CONNN_ROBOT"<<r_name);
+  ROS_INFO_STREAM("["<<robot_name<<"] "<<"ROBOT_NAME"<<robot_name);
   if (robot_name!=r_name){
 
-    ROS_INFO_STREAM("Setting interested as true");
+    ROS_INFO_STREAM("["<<robot_name<<"] "<<"Setting interested as true");
     interested = true;
     ros::spinOnce();
   }
@@ -307,7 +307,7 @@ void GoToMeet::interestCB(const mdis_state_machine::Interest::ConstPtr msg){
 bool Meet::entryPoint()
 {
   // ros::Duration(5).sleep();
-   ROS_INFO("Entering the state MEET");
+   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Entering the state MEET");
    data_received = false;
    frontier_data_received = false;
    location_data_received = false;
@@ -356,7 +356,7 @@ void Meet::step()
   state_pub_data.robot_state = (int)MEET;
   robot_state_pub.publish(state_pub_data);
   
-  ROS_INFO("Executing the step for MEET");
+  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Executing the step for MEET");
   requestMerge(connected_robot_name);
 }
 
@@ -364,9 +364,9 @@ void Meet::exitPoint()
 {
   if (robot_role == RELAY){
     while(ros::ok() && !location_data_ack){
-      ROS_INFO("sending location data");
+      ROS_INFO_STREAM("["<<robot_name<<"] "<< "sending location data");
       ros::spinOnce();
-      ROS_INFO_STREAM("bool"<<location_data_ack);
+      ROS_INFO_STREAM("["<<robot_name<<"] "<<"bool"<<location_data_ack);
       geometry_msgs::Point temp_location = explore_interface->getRobotCurrentPose().pose.position;
       location_data_pub.publish(temp_location);
       ros::Duration(0.5).sleep();
@@ -376,7 +376,7 @@ void Meet::exitPoint()
   if (robot_role == EXPLORER){
     while(ros::ok() && !location_data_received)
   {
-    ROS_INFO("Waiting for location data");
+    ROS_INFO_STREAM("["<<robot_name<<"] "<< "Waiting for location data");
     ros::spinOnce();
     ros::Duration(0.5).sleep();
   }
@@ -388,7 +388,7 @@ void Meet::exitPoint()
     // ros::Duration(0.1).sleep();
     // location_data_ack_pub.publish(data);
   }
-  ROS_INFO("Exiting the state MEET");
+  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Exiting the state MEET");
   geometry_msgs::Point temp_location = explore_interface->getRobotCurrentPose().pose.position;
   robot_locations_during_meeting.push_back(temp_location);
   robot_locations_during_meeting.push_back(location_msg);
@@ -416,17 +416,17 @@ void Meet::requestMerge(std::string conn_robot)
   mergeRequest.request.robot_id = conn_robot;
   bool success = false;
 
-  ROS_INFO("Attemping merge...");
+  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Attemping merge...");
   if(mergeRequestClient.call(mergeRequest))
   {
     success = mergeRequest.response.success;
     if(success)
     {
-      ROS_INFO_STREAM("Successful merge with: " << conn_robot);
+      ROS_INFO_STREAM("["<<robot_name<<"] "<<"Successful merge with: " << conn_robot);
     }
     else
     {
-      ROS_INFO_STREAM("Failed merge with: " << conn_robot);
+      ROS_INFO_STREAM("["<<robot_name<<"] "<<"Failed merge with: " << conn_robot);
     }
   }
   else
@@ -478,10 +478,10 @@ void Meet::publishNextMeetingLocation()
 {
     while(ros::ok() && !frontier_data_received)
   {
-    ROS_INFO("Waiting for frontier data");
+    ROS_INFO_STREAM("["<<robot_name<<"] "<< "Waiting for frontier data");
     std_msgs::String data;
     data.data = robot_name;
-    // ROS_INFO_STREAM("ROBOT NAME IS"<<robot_name);
+    // ROS_INFO_STREAM("["<<robot_name<<"] "<<"ROBOT NAME IS"<<robot_name);
     frontier_req_pub.publish(data);
     ros::spinOnce();
     ros::Duration(0.1).sleep();
@@ -491,9 +491,9 @@ void Meet::publishNextMeetingLocation()
   data.connection_between.resize(2);
   data.connection_between.at(0).data = robot_name;
   data.connection_between.at(1).data = parent_robot_name;
-  // ROS_INFO_STREAM("DATADTATDTADTTADTATDATDATADATDATDTADTATDATDATDTAATDATDTATDATA"<<robot_locations_during_meeting.size());
+  // ROS_INFO_STREAM("["<<robot_name<<"] "<<"DATADTATDTADTTADTATDATDATADATDATDTADTATDATDATDTAATDATDTATDATA"<<robot_locations_during_meeting.size());
   data.next_meeting_point = getNextFurthestMeetingPoint(frontier_msg, robot_locations_during_meeting);
-  ROS_INFO_STREAM("NEXT MEETING POINT"<<data.next_meeting_point);
+  ROS_INFO_STREAM("["<<robot_name<<"] "<<"NEXT MEETING POINT"<<data.next_meeting_point);
   meeting_data_pub.publish(data);
   ros::Duration(0.2).sleep();
   meeting_data_pub.publish(data);
@@ -508,11 +508,11 @@ void Meet::getNextMeetingLocationFromCallback()
   // THIS NEEDS TO EXIT SOMETIME IF NO CONNECTION IS MADE
   while(ros::ok() && (!testing_mode && !data_received))
   {
-    ROS_INFO("Waiting for meeting data");
+    ROS_INFO_STREAM("["<<robot_name<<"] "<< "Waiting for meeting data");
     ros::spinOnce();
     ros::Duration(0.1).sleep();
   }
-  ROS_INFO("Data received");
+  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Data received");
   setCurrentMeetingPoint(buffer_next_location);
   ros::Duration(0.1).sleep();
   setCurrentMeetingPoint(buffer_next_location);
@@ -520,7 +520,7 @@ void Meet::getNextMeetingLocationFromCallback()
 
 void Meet::nextMeetingLocationCB(const mdis_state_machine::DataCommunication::ConstPtr msg)
 {
-  ROS_INFO("Data Received");
+  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Data Received");
   std::string conn_robot;
   for(int i = 0; i<msg->connection_between.size(); i++)
   {
@@ -542,13 +542,13 @@ void Meet::nextMeetingLocationCB(const mdis_state_machine::DataCommunication::Co
 
 bool GoToDumpData::entryPoint()
 {
-   ROS_INFO("Entering the state GO_TO_DUMP");
+   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Entering the state GO_TO_DUMP");
    return true;
 }
 
 bool GoToDumpData::isDone()
 {
-   ROS_INFO_STREAM("Going to Dump Data at"<<data_dump_location);
+   ROS_INFO_STREAM("["<<robot_name<<"] "<<"Going to Dump Data at"<<data_dump_location);
  
    state_pub_data.robot_name.data = robot_name;
    state_pub_data.robot_state = (int)GO_TO_DUMP_DATA;
@@ -587,7 +587,7 @@ void GoToDumpData::step()
 
 void GoToDumpData::exitPoint()
 {
-  ROS_INFO("Exiting the state GO_TO_DUMP");
+  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Exiting the state GO_TO_DUMP");
   if(!RobotState::testing_mode)
     explore_interface->stopRobot();
 }
@@ -598,7 +598,7 @@ void GoToDumpData::exitPoint()
 
 bool DumpData::entryPoint()
 {
-   ROS_INFO("Entering the state DUMP_DATA");
+   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Entering the state DUMP_DATA");
    return true;
 }
 
@@ -638,10 +638,10 @@ TEAM_STATES DumpData::transition()
 
 void DumpData::step()
 {
-  ROS_INFO("Step for DumpData");
+  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Step for DumpData");
 }
 
 void DumpData::exitPoint()
 {
-    ROS_INFO("Exiting the state DUMP_DATA");
+    ROS_INFO_STREAM("["<<robot_name<<"] "<< "Exiting the state DUMP_DATA");
 }
