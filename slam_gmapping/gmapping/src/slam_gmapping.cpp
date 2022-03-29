@@ -832,7 +832,7 @@ bool SlamGMapping::isLocationFarEnough(geometry_msgs::Point point_1, geometry_ms
   float y = point_1.y - point_2.y;
 
   float dist = std::hypot(x,y);
-  return dist>robot_ignore_box_dimention_*map_.map.info.resolution;
+  return dist>robot_location_movement_threshold;
 }
 
 void SlamGMapping::setRobotPixelFree()
@@ -849,11 +849,14 @@ void SlamGMapping::setRobotPixelFree()
       int obx_p = (obx/resolution);
       int oby_p = (oby/resolution);
       // ROS_INFO_STREAM("obx: "<<obx_p<<"   oby: "<<oby_p);
+      int orig_box_size = robot_location_movement_threshold/resolution/2;
+      int robot_ignore_box_dimention_ = orig_box_size == 0 ? 2 : orig_box_size+1;
+      
 
-      for (int i = -robot_ignore_box_dimention_/2; i<robot_ignore_box_dimention_/2; i++)
-        for (int j = -robot_ignore_box_dimention_/2; j<robot_ignore_box_dimention_/2; j++)
+      for (int i = -robot_ignore_box_dimention_; i<robot_ignore_box_dimention_; i++)
+        for (int j = -robot_ignore_box_dimention_; j<robot_ignore_box_dimention_; j++)
         {
-          if(obx_p+i>map_.map.info.height || oby_p+i>map_.map.info.width)
+          if(obx_p+i>map_.map.info.width || oby_p+j>map_.map.info.height)
             continue;
           map_.map.data[MAP_IDX(map_.map.info.width, obx_p+i, oby_p+j)] = 1;
         }

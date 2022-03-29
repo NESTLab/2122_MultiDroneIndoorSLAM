@@ -119,8 +119,8 @@ class SlamGMapping
     bool isLocationFarEnough(geometry_msgs::Point point_1, geometry_msgs::Point point_2);
 
     std::vector<geometry_msgs::Point> robots_past_locations[NUMBER_OF_ROBOTS];
-    // float robot_location_movement_threshold = 0.1;
-    int robot_ignore_box_dimention_ = 6;
+    float robot_location_movement_threshold = 0.3;
+    // int robot_ignore_box_dimention_ = 6;
     // Parameters used by GMapping
     double maxRange_;
     double maxUrange_;
