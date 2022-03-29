@@ -539,12 +539,16 @@ void Meet::nextMeetingLocationCB(const mdis_state_machine::DataCommunication::Co
 bool GoToDumpData::entryPoint()
 {
    ROS_INFO("Entering the state GO_TO_DUMP");
+   ROS_INFO_STREAM("Going to Dump Data at"<<data_dump_location);
+   connected = false;
+   explore_interface->goToPoint(data_dump_location, false);
+   ros::Duration(1).sleep();
    return true;
 }
 
 bool GoToDumpData::isDone()
 {
-   ROS_INFO_STREAM("Going to Dump Data at"<<data_dump_location);
+  //  ROS_INFO_STREAM("Going to Dump Data at"<<data_dump_location);
  
    state_pub_data.robot_name.data = robot_name;
    state_pub_data.robot_state = (int)GO_TO_DUMP_DATA;
@@ -563,9 +567,16 @@ bool GoToDumpData::isDone()
 
       return true;
    }
+   if(connected){
+     if(conn_robot=="turtlebot3_slam_gmapping"){
+        ROS_INFO("Dump Connection Made");
+        return true;
+     }
+   }
+   return false;
   
-   explore_interface->goToPoint(data_dump_location, true);
-   return true;
+  //  explore_interface->goToPoint(data_dump_location, true);
+  //  return true;
 }
 
 TEAM_STATES GoToDumpData::transition()
@@ -588,6 +599,19 @@ void GoToDumpData::exitPoint()
     explore_interface->stopRobot();
 }
 
+void GoToDumpData::connCB(const mdis_state_machine::Connection::ConstPtr msg)
+{
+  connected = false;
+  for(int i = 0; i<msg->connection_between.size(); i++)
+  {
+    if(robot_name == msg->connection_between.at(i).data)
+    {
+      int j = 1 ? i==0 : 0;
+      connected = true;
+      conn_robot = msg->connection_between.at(j).data;
+    }
+  }
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// D U M P   S T A T E   C L A S S ////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////

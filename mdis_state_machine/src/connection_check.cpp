@@ -78,6 +78,13 @@ int main(int argc, char** argv)
         conn_msg.connection_between.at(1).data = robot_2;
         conn_msg.distance = dist;
       }
+      geometry_msgs::Point data_center_location;
+      float dist1 = getDistanceOfPoints(getRobotCurrentPose(robot_1, tf_listener), data_center_location);
+      if(dist1<DIST_THRESHOLD){
+        conn_msg.connection_between.at(0).data = robot_1;
+        conn_msg.connection_between.at(1).data = "turtlebot3_slam_gmapping";
+        conn_msg.distance = dist1;
+      }
     }
     conn_pub.publish(conn_msg);
     ros::Duration(1).sleep();

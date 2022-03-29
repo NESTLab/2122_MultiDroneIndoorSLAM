@@ -24,7 +24,7 @@
     
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model $(arg ns) -x $(arg tb3_x_pos) -y $(arg tb3_y_pos) -z $(arg tb3_z_pos) -Y $(arg tb3_yaw) -param robot_description" />
 
-    <node name="team_scheduler" pkg="mdis_state_machine" type="team_scheduler" args="$(arg role) $(arg parent_name) $(arg child_name)"/>
+    <node name="team_scheduler" pkg="mdis_state_machine" type="team_scheduler" args="$(arg role) $(arg parent_name) $(arg child_name)" output="screen"/>
 
     <node name='merge_handler' pkg='coms' type='merge_handler.py' output="screen">
         <param name="robot_name" value="$(arg ns)"/>

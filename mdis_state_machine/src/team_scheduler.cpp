@@ -7,6 +7,7 @@ TeamScheduler::TeamScheduler(ros::NodeHandle &nh, ROLE role, const std::string& 
       setInitialState(GO_TO_EXPLORE);
     else if (role == RELAY)
       setInitialState(GO_TO_MEET);
+      // setInitialState(GO_TO_DUMP_DATA);
     current_state_ptr->setParent(parent_name);
     current_state_ptr->setChild(child_name);
     current_state_ptr->setRobotRole(role);
