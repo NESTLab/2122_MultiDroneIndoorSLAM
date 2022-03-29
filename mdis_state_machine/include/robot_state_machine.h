@@ -313,7 +313,8 @@ private:
 class GoToDumpData: public RobotState{
 public:
    GoToDumpData(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_DUMP_DATA, "GoToDumpData", nh, testing){
-   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
+   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);
+   conn_sub = nh.subscribe(nh.getNamespace() + "/connection_check", 1000, &GoToDumpData::connCB, this);     
    }
    bool isDone() override ;
    TEAM_STATES transition() override;
@@ -322,7 +323,11 @@ public:
    void exitPoint() override;
 private:
    ros::Publisher robot_state_pub;
+   ros::Subscriber conn_sub;
+   std::string conn_robot;
    mdis_state_machine::RobotsState state_pub_data;
+   bool connected;
+   void connCB(const mdis_state_machine::Connection::ConstPtr msg);
 };
 class DumpData: public RobotState{
 public:
