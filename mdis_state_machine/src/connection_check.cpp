@@ -60,10 +60,12 @@ int main(int argc, char** argv)
   tf::TransformListener tf_listener;
   ros::Publisher conn_pub = nh.advertise<mdis_state_machine::Connection>(nh.getNamespace() + "/connection_check", 1000);
 
+  geometry_msgs::Point data_center_location; 
+  data_center_location.x = -6;
+  data_center_location.y = -5;
   while(ros::ok())
   {
     mdis_state_machine::Connection conn_msg;
-    conn_msg.connection_between.resize(2);
     std::string robot_1 = nh.getNamespace();
     robot_1.erase (0,1); // The namespace has a leading forward slash
                          // Hence deleting the first character
@@ -74,28 +76,19 @@ int main(int argc, char** argv)
       // ROS_INFO_STREAM("Distance between "<<robot_1<<" and "<<robot_2<<":"<<dist);
       if(dist<DIST_THRESHOLD && robot_1!=robot_2)
       {
-        conn_msg.connection_between.at(0).data = robot_1;
-        conn_msg.connection_between.at(1).data = robot_2;
+        conn_msg.connection_to.data = robot_2;
         conn_msg.distance = dist;
-      }
-      geometry_msgs::Point data_center_location;
-      float dist1 = getDistanceOfPoints(getRobotCurrentPose(robot_1, tf_listener), data_center_location);
-      if(dist1<DIST_THRESHOLD){
-        conn_msg.connection_between.at(0).data = robot_1;
-        conn_msg.connection_between.at(1).data = "turtlebot3_slam_gmapping";
-        conn_msg.distance = dist1;
+        conn_pub.publish(conn_msg);
       }
     }
-    geometry_msgs::Point data_center_location; // We consider data center to be at (0,0) hence no initiation necessary
     float dist = getDistanceOfPoints(getRobotCurrentPose(robot_1, tf_listener), data_center_location);
     // ROS_INFO_STREAM("Distance between "<<robot_1<<" and "<<data_center<<":"<<dist);
     if(dist<DIST_THRESHOLD)
     {
-      conn_msg.connection_between.at(0).data = robot_1;
-      conn_msg.connection_between.at(1).data = "turtlebot3_slam_gmapping";
+      conn_msg.connection_to.data = "data_center";
       conn_msg.distance = dist;
+      conn_pub.publish(conn_msg);
     }
-    conn_pub.publish(conn_msg);
     ros::Duration(1).sleep();
   }
   return 0;

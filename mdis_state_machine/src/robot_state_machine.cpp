@@ -36,8 +36,8 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   next_meet_x = current_pose.x;
   next_meet_y = current_pose.y;
 
-  data_dump_location.x = 0;
-  data_dump_location.y = 0;
+  data_dump_location.x = -6;
+  data_dump_location.y = -5;
 }
 
 
@@ -226,20 +226,16 @@ bool GoToMeet::isDone()
 {
    if(connected)
    {
-     if(isConnDirectRelated(conn_robot))
-     {
-       mdis_state_machine::Interest data;
-       data.req.resize(2);
-       data.req.at(0).data = "Request for connection. Interested?";
-       data.req.at(1).data = robot_name;
-       interest_pub.publish(data);
-       ros::Duration(1).sleep();
-       if(interested){
-        ROS_INFO_STREAM("["<<robot_name<<"] "<< "Robot is connected to the party of interest");
-        return true;
-       }
-
-     }
+     mdis_state_machine::Interest data;
+     data.req.resize(2);
+     data.req.at(0).data = "Request for connection. Interested?";
+     data.req.at(1).data = robot_name;
+     interest_pub.publish(data);
+     ros::Duration(1).sleep();
+     if(interested){
+      ROS_INFO_STREAM("["<<robot_name<<"] "<< "Robot is connected to the party of interest");
+     return true;
+    }
    }
    return false;
 }
@@ -262,6 +258,10 @@ void GoToMeet::step()
   state_pub_data.robot_state = (int)GO_TO_MEET;
   robot_state_pub.publish(state_pub_data);
 
+  ros::Duration time_since_connection = ros::Time::now() - time_of_last_conn;
+  if(time_since_connection>wait_time_for_conn)
+    connected = false;
+
   ROS_INFO_THROTTLE(10,"Executing the step for GO_TO_MEET");
 }
 
@@ -275,15 +275,11 @@ void GoToMeet::exitPoint()
 
 void GoToMeet::connCB(const mdis_state_machine::Connection::ConstPtr msg)
 {
-  connected = false;
-  for(int i = 0; i<msg->connection_between.size(); i++)
+  if(msg->connection_to.data == parent_robot_name || msg->connection_to.data == child_robot_name)
   {
-    if(robot_name == msg->connection_between.at(i).data)
-    {
-      int j = 1 ? i==0 : 0;
-      connected = true;
-      conn_robot = msg->connection_between.at(j).data;
-    }
+    connected = true;
+    time_of_last_conn = ros::Time::now();
+    conn_robot = msg->connection_to.data;
   }
 }
 
@@ -291,13 +287,12 @@ void GoToMeet::interestCB(const mdis_state_machine::Interest::ConstPtr msg){
   std::string r_name = msg->req.at(1).data;
   ROS_INFO_STREAM("["<<robot_name<<"] "<<"CONNN_ROBOT"<<r_name);
   ROS_INFO_STREAM("["<<robot_name<<"] "<<"ROBOT_NAME"<<robot_name);
-  if (robot_name!=r_name){
+  if (r_name== parent_robot_name || r_name == child_robot_name){
 
     ROS_INFO_STREAM("["<<robot_name<<"] "<<"Setting interested as true");
     interested = true;
     ros::spinOnce();
   }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -557,6 +552,7 @@ bool GoToDumpData::isDone()
    state_pub_data.robot_name.data = robot_name;
    state_pub_data.robot_state = (int)GO_TO_DUMP_DATA;
 
+   robot_state_pub.publish(state_pub_data);
    if(RobotState::testing_mode)
    {
       int i = 0;
@@ -572,10 +568,8 @@ bool GoToDumpData::isDone()
       return true;
    }
    if(connected){
-     if(conn_robot=="turtlebot3_slam_gmapping"){
-        ROS_INFO("Dump Connection Made");
-        return true;
-     }
+      ROS_INFO("Dump Connection Made");
+      return true;
    }
    return false;
   
@@ -594,6 +588,10 @@ TEAM_STATES GoToDumpData::transition()
 void GoToDumpData::step()
 {
   ROS_INFO_THROTTLE(10, "Going to dump data");
+  ros::Duration time_since_connection = ros::Time::now() - time_of_last_conn;
+  if(time_since_connection>wait_time_for_conn)
+    connected = false;
+
 }
 
 void GoToDumpData::exitPoint()
@@ -605,15 +603,10 @@ void GoToDumpData::exitPoint()
 
 void GoToDumpData::connCB(const mdis_state_machine::Connection::ConstPtr msg)
 {
-  connected = false;
-  for(int i = 0; i<msg->connection_between.size(); i++)
+  if(msg->connection_to.data == "data_center")
   {
-    if(robot_name == msg->connection_between.at(i).data)
-    {
-      int j = 1 ? i==0 : 0;
-      connected = true;
-      conn_robot = msg->connection_between.at(j).data;
-    }
+    connected = true;
+    time_of_last_conn = ros::Time::now();
   }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -633,6 +626,7 @@ bool DumpData::isDone()
    state_pub_data.robot_name.data = robot_name;
    state_pub_data.robot_state = (int)DUMP_DATA;
 
+   robot_state_pub.publish(state_pub_data);
    if(RobotState::testing_mode)
    {
       int i = 0;

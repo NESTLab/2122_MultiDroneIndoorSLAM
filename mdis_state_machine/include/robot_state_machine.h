@@ -251,6 +251,9 @@ private:
    mdis_state_machine::RobotsState state_pub_data;
    void connCB(const mdis_state_machine::Connection::ConstPtr msg);
    void interestCB(const mdis_state_machine::Interest::ConstPtr msg);
+
+   ros::Time time_of_last_conn;
+   ros::Duration wait_time_for_conn = ros::Duration(2.0);
 };
 class Meet: public RobotState{
 public:
@@ -328,6 +331,9 @@ private:
    mdis_state_machine::RobotsState state_pub_data;
    bool connected;
    void connCB(const mdis_state_machine::Connection::ConstPtr msg);
+
+   ros::Time time_of_last_conn;
+   ros::Duration wait_time_for_conn = ros::Duration(2.0);
 };
 class DumpData: public RobotState{
 public:

@@ -94,7 +94,8 @@ class find_frontier:
 
     def helper(self, msg):
 
-        self.move_helper_pub.publish(msg)
+        # self.move_helper_pub.publish(msg)
+        pass
 
     def map_callback(self, msg):
 
@@ -486,7 +487,7 @@ class find_frontier:
 
         move_msg.pose.orientation.w = 1
 
-        self.move_pub.publish(move_msg)
+        # self.move_pub.publish(move_msg)
 
     def get_current_position_in_map(self):
 

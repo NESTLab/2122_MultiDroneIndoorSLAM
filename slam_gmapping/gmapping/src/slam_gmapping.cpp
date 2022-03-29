@@ -850,7 +850,7 @@ void SlamGMapping::setRobotPixelFree()
       int oby_p = (oby/resolution);
       // ROS_INFO_STREAM("obx: "<<obx_p<<"   oby: "<<oby_p);
       int orig_box_size = robot_location_movement_threshold/resolution/2;
-      int robot_ignore_box_dimention_ = orig_box_size == 0 ? 2 : orig_box_size+1;
+      int robot_ignore_box_dimention_ = orig_box_size == 0 ? 1 : orig_box_size;
       
 
       for (int i = -robot_ignore_box_dimention_; i<robot_ignore_box_dimention_; i++)
