@@ -73,7 +73,7 @@ class MergeHandler:
         # unpack gmapping
         new_map = ros_to_numpy(msg.data).reshape(-1,msg.info.width)
         self.merge_map(new_map)
-        print("merge")
+        # print("merge")
 
     @staticmethod
     def parse_and_save(msg, old_map):
