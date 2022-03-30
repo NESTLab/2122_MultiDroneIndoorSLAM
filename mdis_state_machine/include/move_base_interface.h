@@ -108,6 +108,10 @@ class MoveBaseInterface
      */
     bool recoverRobot();
 
+    bool navigationSucceeded();
+
+    bool navigationDone();
+
   private:
     ros::NodeHandle nh_;
     // typedef for move base

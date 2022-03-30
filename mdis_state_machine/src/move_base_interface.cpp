@@ -145,7 +145,7 @@ geometry_msgs::PoseStamped MoveBaseInterface::getRobotCurrentPose()
   }
   
   if(not_found_tf)
-    ROS_ERROR("Could not find the transform after %i attempts", MAX_ATTEMPTS);
+    ROS_INFO("Could not find the transform after %i attempts", MAX_ATTEMPTS);
   else
     result_transform = transformTf2msg(transform);
 
@@ -180,4 +180,16 @@ float MoveBaseInterface::getTimePredictionForTravel(geometry_msgs::Point &start_
   float distance = getDistancePrediction(start_point, end_point);
   float time = distance/ROBOT_SPEED;
   return time;
+}
+
+bool MoveBaseInterface::navigationSucceeded()
+{
+  bool success = move_base_client_->getState()==actionlib::SimpleClientGoalState::SUCCEEDED;
+  return success;
+}
+
+bool MoveBaseInterface::navigationDone()
+{
+  bool done = move_base_client_->getState().isDone();
+  return done;
 }

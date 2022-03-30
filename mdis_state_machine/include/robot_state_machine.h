@@ -168,6 +168,22 @@ protected:
      return ((conn_parent) || (conn_child));
    }
    
+   inline const std::string getFormattedMessage(const std::string& msg)
+   {
+     return "[ "+robot_name+" | mdis_state_machine | robot_state_machine]: " + msg;
+   }
+
+   inline void printMessage(const std::string& msg)
+   {
+     std::string full_msg = getFormattedMessage(msg);
+     ROS_INFO("%s", &full_msg[0]);
+   }
+
+   inline void printMessageThrottled(const std::string& msg)
+   {
+     std::string full_msg = getFormattedMessage(msg);
+     ROS_INFO_THROTTLE(1, "%s", &full_msg[0]);
+   }
 };
 
 class Idle: public RobotState{
@@ -219,6 +235,7 @@ public:
 private:
    ros::Publisher robot_state_pub;
    mdis_state_machine::RobotsState state_pub_data;
+   bool send_once;
 };
 
 

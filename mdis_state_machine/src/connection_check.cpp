@@ -30,7 +30,7 @@ geometry_msgs::Point getRobotCurrentPose(const std::string& robot_name, tf::Tran
   }
   
   if(not_found_tf)
-    ROS_ERROR("Could not find the transform after %i attempts", MAX_ATTEMPTS);
+    ROS_INFO("Could not find the transform after %i attempts", MAX_ATTEMPTS);
   else
   {
     result_transform.x = transform.getOrigin().x();

@@ -33,7 +33,7 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   geometry_msgs::Point current_pose = explore_interface->getRobotCurrentPose().pose.position;
   curr_meet_x = current_pose.x;
   curr_meet_y = current_pose.y;
-  next_meet_x = current_pose.x;
+  next_meet_x = current_pose.x+3;
   next_meet_y = current_pose.y;
 
   data_dump_location.x = -6;
@@ -115,53 +115,48 @@ void ErrorState::exitPoint()
 
 bool GoToExplore::entryPoint()
 {
-   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Entering the state GO_TO_EXPLORE");
+   printMessage("Entering the state GO_TO_EXPLORE");
+   send_once = true;
    return true;
 }
 
 bool GoToExplore::isDone()
 {
-   ROS_INFO_STREAM("["<<robot_name<<"] "<<"Going to explore at "<<getNextMeetingPoint());
-   geometry_msgs::Point temp_point = getNextMeetingPoint();
-
-   state_pub_data.robot_name.data = robot_name;
-   state_pub_data.robot_state = (int)GO_TO_EXPLORE;
-
-   if(RobotState::testing_mode)
-   {
-      int i = 0;
-      int rate = 5;
-      
-      // Hardcoded publish for 5 seconds
-      while(i++ < testing_waiting_time*rate)
-      {
-        ros::Rate(rate).sleep();
-        robot_state_pub.publish(state_pub_data);
-      }
-
-      return true;
-   }
-  
-   robot_state_pub.publish(state_pub_data);
-   explore_interface->goToPoint(temp_point, true);
-   return true;
+  return explore_interface->navigationDone();
 }
 
 TEAM_STATES GoToExplore::transition()
 {
+  // For explorers, this is the initial state. And for the init states, the transition gets checked before the step fucntion. 
+  // Hence this flag is required to make sure the state continues when the state is executed for the first time
+  if(send_once)
+    return GO_TO_EXPLORE;
+
   if(isDone())
-    return EXPLORE;
+  {
+    if(explore_interface->navigationSucceeded())
+      return EXPLORE;
+    else
+      return ERROR_STATE;
+  }
   else
     return GO_TO_EXPLORE;
 }
 
 void GoToExplore::step()
 {
-  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Executing step for GO_TO_EXPLORE");
+  printMessage("Executing step for GO_TO_EXPLORE");
+  if(send_once)
+  {
+   geometry_msgs::Point nav_point = getNextMeetingPoint();
+   explore_interface->goToPoint(nav_point);
+   send_once = false;
+  }
 }
 
 void GoToExplore::exitPoint()
 {
+   send_once = false;
    ROS_INFO_STREAM("["<<robot_name<<"] "<< "Exiting the state GO_TO_EXPLORE");
 }
 
@@ -173,8 +168,8 @@ void GoToExplore::exitPoint()
 bool Explore::entryPoint()
 {
    starting_time = ros::Time::now();
-   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Entering the state EXPLORE");
-   ROS_INFO_STREAM("["<<robot_name<<"] "<<"Exploring for "<<time_for_exploration<<" Seconds");
+   printMessage("Entering the state EXPLORE");
+   
    return true;
 }
 
@@ -182,20 +177,6 @@ bool Explore::isDone()
 {
    state_pub_data.robot_name.data = robot_name;
    state_pub_data.robot_state = (int)EXPLORE;
-
-   if(RobotState::testing_mode)
-   {
-      int i = 0;
-      int rate = 5;
-      
-      // Hardcoded publish for 5 seconds
-      while(i++ < testing_waiting_time*rate)
-      {
-        ros::Rate(rate).sleep();
-        robot_state_pub.publish(state_pub_data);
-      }
-      return true;
-   }
   
    ros::Duration time_since_start = ros::Time::now() - starting_time;
    ros::Duration time_until_next_meeting = ros::Duration(time_for_exploration);
@@ -204,6 +185,9 @@ bool Explore::isDone()
 
 TEAM_STATES Explore::transition()
 {
+  // Cannot determine through state machine whether the robot is actually exploring or not. 
+  //    or has the exploration failed. Hence no logic for the same. 
+
   if(isDone())
     return GO_TO_MEET;
   else
@@ -216,7 +200,7 @@ void Explore::step()
   msg.data = false;
   pause_exploration_pub.publish(msg);
   robot_state_pub.publish(state_pub_data);
-  ROS_INFO_THROTTLE(10,"Executing step for EXPLORE");
+  printMessageThrottled("Executing step for EXPLORE");
 }
 
 void Explore::exitPoint()
@@ -225,18 +209,13 @@ void Explore::exitPoint()
   msg.data = true;
   pause_exploration_pub.publish(msg);
 
-  // TO-DO
-  // BUG!!!!
-  // Values are being changed only for the class Explore
-  // Need to change values for all
   if(!RobotState::testing_mode)
   {
      setNextMeetingPoint(explore_interface->getRobotCurrentPose().pose.position);
      explore_interface->stopRobot();
   }
   
-  ROS_INFO_STREAM("["<<robot_name<<"] "<<"Exiting the state EXPLORE\nNext meeting "<<getNextMeetingPoint());
-
+  printMessage("Exiting the state EXPLORE");
 }
 
 
