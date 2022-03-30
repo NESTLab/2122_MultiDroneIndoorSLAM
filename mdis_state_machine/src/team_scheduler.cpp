@@ -1,13 +1,13 @@
 #include <team_scheduler.h>
 
-TeamScheduler::TeamScheduler(ros::NodeHandle &nh, ROLE role, const std::string& parent_name, const std::string& child_name, bool testing)
+TeamScheduler::TeamScheduler(ros::NodeHandle &nh, const std::string& robot_name, ROLE role, const std::string& parent_name, const std::string& child_name, bool testing):nh_(nh), testing_mode_(testing),robot_name_(robot_name)
 {
-    addStates(nh, testing);
+    addStates();
     if (role == EXPLORER)
       setInitialState(GO_TO_EXPLORE);
     else if (role == RELAY)
       setInitialState(GO_TO_MEET);
-      // setInitialState(GO_TO_DUMP_DATA);
+
     current_state_ptr->setParent(parent_name);
     current_state_ptr->setChild(child_name);
     current_state_ptr->setRobotRole(role);
@@ -23,89 +23,87 @@ TeamScheduler::~TeamScheduler()
       });
 }
 
-void TeamScheduler::addStates(ros::NodeHandle &nh, bool testing_mode)
+void TeamScheduler::addStates()
 {
-    addState(new Idle(nh, testing_mode));
-    addState(new GoToExplore(nh, testing_mode));
-    addState(new Explore(nh, testing_mode));
-    addState(new GoToMeet(nh, testing_mode));
-    addState(new Meet(nh, testing_mode));
-    addState(new GoToDumpData(nh, testing_mode));
-    addState(new DumpData(nh, testing_mode));
+    addState(new Idle(nh_, testing_mode_));
+    addState(new GoToExplore(nh_, testing_mode_));
+    addState(new Explore(nh_, testing_mode_));
+    addState(new GoToMeet(nh_, testing_mode_));
+    addState(new Meet(nh_, testing_mode_));
+    addState(new GoToDumpData(nh_, testing_mode_));
+    addState(new DumpData(nh_, testing_mode_));
+    addState(new ErrorState(nh_, testing_mode_));
 }
 
 void TeamScheduler::addState(RobotState* pc_state) {
    if(MACRO_STATE_PTR_MAP.find(pc_state->getId()) == MACRO_STATE_PTR_MAP.end()) {
       MACRO_STATE_PTR_MAP[pc_state->getId()] = pc_state;
-      // pc_state->setTeam(*this);
    }
    else {
-      ROS_ERROR_STREAM("[mdis_state_machine | team_scheduler.cpp ]: Duplicated state id :" << pc_state->getId());
+      ROS_WARN_STREAM("["<<robot_name_<<" | mdis_state_machine | team_scheduler.cpp]: Duplicated state id :" << pc_state->getId());
    }
 }
 
-// TEAM_STATES RobotState::getState(uint64_t un_state) {
-//    return m_pcTeam->getState(un_state);
-// }
-
-RobotState& TeamScheduler::getStatePtr(uint64_t un_id)
+RobotState* TeamScheduler::getStatePtr(uint64_t un_id)
 {
    auto pcState = MACRO_STATE_PTR_MAP.find(un_id);
    if(pcState != MACRO_STATE_PTR_MAP.end()) {
-      return *(pcState->second);
+      return (pcState->second);
    }
    else {
-      ROS_ERROR_STREAM("[TEAM_LEVEL | team_scheduler ]:Can't get state id " << un_id);
+      ROS_ERROR_STREAM("["<<robot_name_<<" | mdis_state_machine | team_scheduler.cpp]:Can't get state id " << un_id);
+      auto pcState = MACRO_STATE_PTR_MAP.find(ERROR_STATE);
+      if(pcState != MACRO_STATE_PTR_MAP.end()) {
+          ROS_ERROR_STREAM("["<<robot_name_<<" | mdis_state_machine | team_scheduler.cpp]:Changing to ERROR_STATE " << un_id);
+          return pcState->second;
+      }
+      else
+      {
+        ROS_ERROR_STREAM("["<<robot_name_<<" | mdis_state_machine | team_scheduler.cpp]: Error state not found. Creating and returning new error state.");
+        return new ErrorState(nh_, false);
+      }
    }
 }
 
 void TeamScheduler::setInitialState(uint64_t un_state) {
-   auto pcState = MACRO_STATE_PTR_MAP.find(un_state);
-   // if state exists in map, then set it to the initial state of the scheduler
-   if(pcState != MACRO_STATE_PTR_MAP.end()) {
-      // acquire value of the state (every map has a key(first) and a value(second))
-      current_state_ptr = pcState->second;
+   current_state_ptr = getStatePtr(un_state);
+   current_state_ptr->entryPoint();
+   setTeamMacroState((TEAM_STATES) un_state);
+}
 
-      // completes entry point of the initial state
-      current_state_ptr->entryPoint();
-      setTeamMacroState((TEAM_STATES) un_state);
-   }
-   else {
-      ROS_ERROR_STREAM("[TEAM_LEVEL | team_scheduler ]: Can't set initial state to " << un_state);
-   }
+void TeamScheduler::setErrorState()
+{
+  setTeamMacroState(ERROR_STATE);
+  current_state_ptr = getStatePtr(ERROR_STATE);
+  current_state_ptr->entryPoint();
+  return;
 }
 
 void TeamScheduler::step() {
    /* Only execute if 'current' was initialized */
    if(current_state_ptr) {
-      //  ROS_INFO_STREAM(hired_scout << "  " << hired_excavator << "  " << hired_hauler);
-    //    ROS_INFO_STREAM("Robot enum:" << SCOUT_1);
       /* Attempt a transition, every state of every rover has its own transition() */
       TEAM_STATES newStateEnum = current_state_ptr->transition();
-      RobotState* cNewState = &getStatePtr(newStateEnum);
-      // RobotState* cNewState = current_state_ptr;
-      if (new_state_request)
-      {
-         cNewState = &getStatePtr(robot_state);
-         new_state_request = false;
-      }
+      RobotState* cNewState = getStatePtr(newStateEnum);
 
       if(cNewState != current_state_ptr) {
          /* Perform transition */
          current_state_ptr->exitPoint();
-         // cNewState->setResetRobot(reset_robot_odometry);
-         bool entry = cNewState->entryPoint();
-
-         setTeamMacroState((TEAM_STATES) cNewState->getId());
-         if(!entry)
+         if(!cNewState->entryPoint())
+         {
+            ROS_ERROR_STREAM("["<<robot_name_<<" | mdis_state_machine | team_scheduler.cpp]: Entry point to the state "<<newStateEnum<<" failed. Transitioning to ERROR_STATE");
+            setErrorState();
             return;
+         }
+
+         setTeamMacroState(newStateEnum);
          current_state_ptr = cNewState;
       }
       /* Execute current state */
       current_state_ptr->step();
    }
    else {
-      ROS_ERROR_STREAM("[TEAM_LEVEL | team_scheduler ]: The Team has not been initialized, you must call SetInitialState()");
+      ROS_ERROR_STREAM("["<<robot_name_<<" | mdis_state_machine | team_scheduler.cpp]: The robot has not been initialized, you must call SetInitialState()");
    }
 }
 
@@ -128,12 +126,6 @@ int main(int argc, char** argv)
 {
    ros::init(argc, argv, "state_machine");
    ros::NodeHandle nh;
-
-  //  if (argc != 4 && argc != 2)
-  //  {
-  //    ROS_ERROR("This node must be launched with number of robots as argument");
-  //    return 0;
-  //  }
 
    bool testing = false;
    ROLE role;
@@ -158,7 +150,11 @@ int main(int argc, char** argv)
    if(role == RELAY && !testing)
        ros::Duration(20).sleep();
 
-   TeamScheduler team(nh, role, parent_name, child_name, testing);
+    
+   std::string robot_name = ros::this_node::getNamespace();
+   robot_name.erase(robot_name.begin());
+
+   TeamScheduler team(nh, robot_name, role, parent_name, child_name, testing);
    
    team.exec();
 

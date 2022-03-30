@@ -31,6 +31,7 @@ enum TEAM_STATES{
    MEET,
    GO_TO_DUMP_DATA,
    DUMP_DATA,
+   ERROR_STATE,
 };
 
 class RobotState {
@@ -181,6 +182,24 @@ public:
 
 private:
    ros::Publisher chatter_pub;
+};
+
+class ErrorState: public RobotState{
+public:
+   ErrorState(ros::NodeHandle &nh, bool testing):RobotState(ERROR_STATE, "ErrorState", nh, testing){
+   robot_cmd_vel = nh.advertise<geometry_msgs::Twist>(nh.getNamespace() + "/cmd_vel", 1000);     
+   }
+   bool isDone() override ;
+
+   TEAM_STATES transition() override;
+   bool entryPoint() override;
+   void step() override;
+   void exitPoint() override;
+
+private:
+   ros::Publisher robot_cmd_vel;
+   geometry_msgs::Twist twist_msg;
+   int direction = 1;
 };
 
 
