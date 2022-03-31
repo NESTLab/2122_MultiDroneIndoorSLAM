@@ -19,7 +19,6 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
 {
   explore_interface = new MoveBaseInterface(nh, testing);
   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
-  RobotState::testing_mode = true;
 
   robot_name = ros::this_node::getNamespace();
   robot_name.erase(robot_name.begin());
@@ -35,6 +34,9 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   data_dump_location.y = -5;
 
   ros::Duration(0.050).sleep();
+  
+  if(testing)
+    RobotState::testing_mode = true;
 }
 
 
