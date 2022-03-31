@@ -14,127 +14,64 @@ the `ros-net-sim` package, a given physics_sim may be invoked to match the robot
 ARGos3 - Line-of-site topics are generated for each robot run within its physics engine.
 The broadcaster subscribes to a given `/robot<num>/line-of-site` topic and re-broadcasts them on a regular interval to the `/nearby_robots` topic for other ROS nodes.
 
-Gazebo - TODO
+## Debugging 🔧
+We expose the topic: `/tb3_0/coms_debug` to see what's going on in the coms node. You can see sync and ping requests from neighbors and watch connections open & close. If you send a trigger to the topic: `/tb3_0/coms_listening`, you can see that too!
 
-## Message Handling ❌
-Each robot running a Coms node is required to choose a __unique static IP__ that will not conflict with other robots. When each robot is within proximity with each other, they attempt to establish a connection. Network conditions vary depending on the deployment environment, which can result in abrupt disconnection or packet loss. For this reason, each message may define the number of retires, timeout, and error handler to manage failures.
+### Try it out
 
-## Environments 🌏
-Coms needs to know where it's deployed so it can forward messages correctly. For now, there are only two environments to choose from: Raspberry Pi & Simulation
-
-### Raspberry Pi
-This assumes the ROS node is running on hardware that resembles a __wifi-enabled__ Raspberry Pi. The network card will then be programmed into the ad-hoc mode, and attempt to send message payloads over WiFi as TCP/UDP network packets.
-
-### Simulation | __Ubuntu Only__
-This assumes all nodes are running on the same host machine. In this case, there must be __no collisions between name-spacing__ of robots. Coms sets up a virtual network simulator on the host machine, where each robot is assigned a virtual network device for all communications. For this reason, this environment is __only supported by Ubuntu 18.04+__, as this feature relies on the OS to make network tunnels.
-
-Coms also deploys a physics simulator that analyses the environment of the robots to control network reliability. Currently, this is implemented with a rudimentary form of collision detection and proximity. However, feel free to read the docs of the project this was forked from, [ROSNetSim](https://arxiv.org/pdf/2101.10113.pdf), for guidance in implementing more sophisticated raytracing.
-
-## Usage 🛠
-
-### For Simulation Environments:
-
-
-It's recommended to attach a Coms node to every Robot that wishes to communicate with the network. In ROS, this means adding it to your launch file.
-```launch
-<launch>
-
-    <arg name="my_robot"/>
-
-    <node name="network_coms" pkg="coms">
-        <arg name="environment" value="[ pi | sim ]"/>
-        <arg name="ip" value="192.168.0.5"/>
-    </node>
-
-<launch>
-```
-Alternatively, you can manually run Coms as a script which
 ```zsh
-rosrun coms main.py --environment=[ pi | sim ] --ip=192.168.0.5
+# Start the simulation
+$ roslaunch turtlebot3_gazebo multi_turtlebot3_all.launch
 ```
-or start it using it's launch file:
+
 ```zsh
-roslaunch coms main.launch --environment=[ pi | sim ] --ip=192.168.0.5
+# Listen to the coms debugging channel 
+$ rostopic echo /tb3_0/coms_debug
 ```
 
-## Create a Message 📨
-> Simply create a class, within `/msg`, which implements the _Message interface_.
-> Here's an example of what this looks like:
-
-To create a new Message we specify the data we want to pass back and forth and store them as class attributes. For this example, a `Meeting` message holds `location`, `time`, and `ack` information. At the same time, we define the number of `retries` to keep sending the same message and define when a message becomes stale - if it hasn't received a response in `timeout` seconds. These values override the defaults within the Message interface, so they are not explicitly required.
-
-```py
-class Meeting(Message):
-
- retries:int = 5
- timeout:int = 4
- 
- def __init__(self, location:Tuple[int] = None, time:time.time = None, ack:bool = None) -> None:
- self.location = location
- self.time = time
- self.ack = ack
- 
- ...
-
+```zsh
+# Ask coms to invoke a sync
+# NOTE: tb3_0 is bound to 192.168.0.1
+#       tb3_1 is bound to 192.168.0.2
+$ rostopic pub /tb3_0/coms_listening std_msgs/String "sync|192.168.0.2|"
 ```
 
-Next, we implement the `produce_payload` class function to handle the packaging of our message information. There are no restrictions on how you may produce this payload, as long as the end result are bytes. Additionally, we implement `consume_payload` for deconstructing a payload into a new message object. Ensure all attributes are populated within this new message object so they can be handled when received.
-
-```py
-class Meeting(Message):
-
- retries:int = 5
- timeout:int = 4
-
- def __init__(self, location:Tuple[int] = None, time:time.time = None, ack:bool = None) -> None:
- self.location = location
- self.time = time
- self.ack = ack
- 
- @classmethod
- def produce_payload(location:Tuple[int], time:time.time, ack:bool = False) -> bytes:
- payload:bytes = b''
- # TODO: Package the arguments into bytes
- return payload
-
- @classmethod
- def consume_payload(payload:bytes) -> Meeting:
- msg = Meeting()
- # TODO: Convert the payload into a Meeting object
- return msg
-
- ...
+The result:
+```log
+data: "Recieving message from topic /tb3_0/coms_listening: sync|192.168.0.2| to sync [TOPIC]"
+---
+data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #31 OPEN]"
+---
+data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #32 OPEN]"
+---
+data: "Server 192.168.0.1 got PING from 192.168.0.2 [ID #32 PING]"
+---
+data: "Server 192.168.0.1 closed connection with 192.168.0.2 [ID #32 CLOSED]"
+---
+data: "Server 192.168.0.1 got SYNC from 192.168.0.2 [ID #31 SYNC]"
+---
+data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #33 OPEN]"
+---
+data: "Server 192.168.0.1 got PING from 192.168.0.2 [ID #33 PING]"
+---
+data: "Server 192.168.0.1 closed connection with 192.168.0.2 [ID #33 CLOSED]"
+---
+data: "Server 192.168.0.1 closed connection with 192.168.0.2 [ID #31 CLOSED]"
+---
+data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #34 OPEN]"
+---
+data: "Server 192.168.0.1 got PING from 192.168.0.2 [ID #34 PING]"
+---
+data: "Server 192.168.0.1 closed connection with 192.168.0.2 [ID #34 CLOSED]"
+---
+data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #35 OPEN]"
+---
+data: "Server 192.168.0.1 got PING from 192.168.0.2 [ID #35 PING]"
+---
+data: "Server 192.168.0.1 closed connection with 192.168.0.2 [ID #35 CLOSED]"
+---
+data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #36 OPEN]"
+---
+data: "Synchronizer merged with neighbor 192.168.0.2 [SUCCESS]" <--------------- WIN
 
 ```
-
-Optionally, messages can implement an error handling strategy for when a Message exhausts all retries and cannot be sent over the network.
-
-```py
-class Meeting(Message):
-
- retries:int = 5
- timeout:int = 4
-
- def __init__(self, location:Tuple[int] = None, time:time.time = None, ack:bool = None) -> None:
- self.location = location
- self.time = time
- self.ack = ack
- 
- @classmethod
- def produce_payload(location:Tuple[int], time:time.time, ack:bool = False) -> bytes:
- payload:bytes = b''
- # TODO: Package the arguments into bytes
- return payload
-
- @classmethod
- def consume_payload(payload:bytes) -> Meeting:
- msg = Meeting()
- # TODO: Convert the payload into a Meeting object
- return msg
-
- @classmethod
- def on_failure() -> None:
- # TODO: Optionally handle errors
-```
-
-
