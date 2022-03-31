@@ -56,7 +56,7 @@ def run_protobuf_server(config):
                     time_update.ParseFromString(gzip.decompress(data))
                     channel_data = cd.ChannelData()
                     channel_data.ParseFromString(gzip.decompress(time_update.channel_data))
-                    print(channel_data)
+                    # print(channel_data)
 
                 send_one_message(connection, data)
             except socket.error as err:
@@ -128,7 +128,7 @@ def driver_process(config):
             socket_list.append(sock)
             sock.listen(1)
             connection, _ = sock.accept()
-            print(f"Connected to {addr}")
+            # print(f"Connected to {addr}")
             if id == 1:
                 time.sleep(0.5)
             mac_tuple = ("1a", "2a")
@@ -138,11 +138,11 @@ def driver_process(config):
 
             try:
                 while True:
-                    print("Sent: " + (request))
+                    # print("Sent: " + (request))
                     send_one_message(connection, request.encode("utf-8"))
                     r, __, __ = select.select([connection, ], [], [], 0)
-                    if r:
-                        print("Received: " + (recv_one_message(connection)).decode("utf-8"))
+                    # if r:
+                        # print("Received: " + (recv_one_message(connection)).decode("utf-8"))
                     time.sleep(5)
             except socket.error:
                 return

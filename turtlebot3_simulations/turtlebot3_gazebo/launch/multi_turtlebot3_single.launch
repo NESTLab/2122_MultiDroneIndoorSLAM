@@ -1,8 +1,13 @@
 <launch>
   <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
   <arg name="ns" default="tb3_0"/>
+
+  <arg name="config_file" default="argos_demo.yaml" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="launch_file" default="$(find example)/launch/gazebo.launch" doc="model type [burger, waffle, waffle_pi]"/>
   
   <arg name='map_service' default='dynamic_map'/>
+
+  <arg name='ip_address' default=''/>
 
   <arg name="tb3_x_pos" default="-7.0"/>
   <arg name="tb3_y_pos" default="-1.0"/>
@@ -34,6 +39,13 @@
     <node name='gmapping_merger' pkg='coms' type='gmapping_merger.py' output="screen">
         <param name="robot_name" value="$(arg ns)"/>
         <param name="map_service" value="$(arg map_service)"/>
+    </node>
+  
+    <node name="coms_net" pkg="coms" type="lite_net.py" output="screen">
+        <param name="environment" value="sim" />
+        <param name="ip" value="$(arg ip_address)" />
+        <param name="launch" value="$(arg launch_file)"/>
+        <param name="config" value="$(arg config_file)"/>
     </node>
   </group>
   

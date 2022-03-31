@@ -1,12 +1,31 @@
 import socket
 import select
 import yaml
+import time
 import netifaces
+import rospy
+from std_msgs.msg import String
+from coms.msg import nearby
 from typing import List, Dict, Tuple
-from coms.constants import RESPONSE_TIMEOUT, ENCODING, STATIC_LISTENER_PORT, BROADCASTER_PORT_PREFIX, LISTENER_PORT_PREFIX # noqa: E501
+from coms.constants import RESPONSE_TIMEOUT, ENCODING, STATIC_LISTENER_PORT, CHUNK_SIZE, MAP_MSG_ID # noqa: E501
 from subprocess import check_output
 from roslaunch.parent import ROSLaunchParent
+from mapmerge.ros_utils import ros_to_numpy
+from numcompress import compress_ndarray, decompress_ndarray
+from nav_msgs.srv import GetMap
+from trio import SocketStream
+import numpy as np
 
+def debug(pub: rospy.Publisher, data: str) -> None:
+    filter = [
+        "all attempts to connect"
+    ]
+    if pub is None:
+        return
+    for f in filter:
+        if f in data:
+            return
+    pub.publish(String(data))
 
 def readable(sock: socket.socket, timeout: float = RESPONSE_TIMEOUT) -> bool:
     try:
@@ -104,3 +123,88 @@ def stop_roscore(parent: ROSLaunchParent) -> None:
 
 def addr_to_str(addr: Tuple[str, int]) -> str:
     return "{0}:{1}".format(addr[0], addr[1])
+
+def publish_nearby_robots(pub: rospy.Publisher, local_ip:str, addresses: List[str]) -> None:
+    if len(addresses) == 0:
+        return
+    addr_strings = []
+    for addr in addresses:
+        if addr != local_ip:
+            addr_strings.append(addr_to_str(f"{addr}:{STATIC_LISTENER_PORT}"))
+    payload = nearby()
+    payload.remote_addresses = addresses
+    payload.local_address = local_ip
+    pub.publish(payload)
+
+def get_map(namespace: str) -> np.ndarray:
+    return np.random.rand(300,300)
+
+def _get_map(namespace: str) -> np.ndarray:
+    namespace = namespace.replace('/', '')
+    pref = namespace.index('_')
+    name = '/tb3' + namespace[pref:] + '/get_map'
+
+    rospy.wait_for_service(name)
+    while 1:
+        try:
+            map_service = rospy.ServiceProxy(name, GetMap)
+            resp = map_service()
+            return ros_to_numpy(resp.map.data).reshape(-1, resp.map.info.width)
+        except rospy.ServiceException as e:
+            rospy.loginfo("service call failed: %s" % e)
+        time.sleep(0.1)
+
+def compress_map(map: np.ndarray) -> bytes:
+    m: str = compress_ndarray(map)
+    return m.encode(ENCODING)
+
+def decompress_map(raw: bytes) -> np.ndarray:
+    m = raw.decode(ENCODING)
+    return decompress_ndarray(m)
+
+def gen_id_chunk(id: int) -> bytes:
+    result = str(id)
+    padding = CHUNK_SIZE - len(result)
+    return (result + "\0" * padding).encode(ENCODING)
+
+def read_id_chunk(chunk: bytes) -> int:
+    block = chunk.decode(ENCODING)
+    block = block.replace("\0", "")
+    return int(block, 10)
+
+def map_to_chunks(map: np.ndarray, id: int = MAP_MSG_ID) -> List[bytes]:
+    m: str = compress_ndarray(map)
+    raw_data = m.encode(ENCODING)
+    return [gen_id_chunk(id)] + pack_bytes(raw_data)
+
+def pack_bytes(raw_data: bytes) -> List[bytes]:
+    result = []
+    while True:
+        if len(raw_data) > CHUNK_SIZE:
+            result.append(raw_data[:CHUNK_SIZE])
+            raw_data = raw_data[CHUNK_SIZE:]
+        else:
+            result.append(raw_data)
+            break
+    return result
+
+
+async def read_all_chunks(stream: SocketStream) -> Tuple[int, bytes]:
+    msg_id = -1
+    raw_resp = b''
+    chunk = b''
+    async for data in stream:
+        chunk += data
+        if len(chunk) >= CHUNK_SIZE:
+            c = chunk[:CHUNK_SIZE]
+            chunk = chunk[CHUNK_SIZE:]
+            if msg_id == -1:
+                msg_id = read_id_chunk(c)
+            else:
+                raw_resp += c
+    if msg_id == -1:
+        msg_id = read_id_chunk(chunk)
+    else:
+        raw_resp += chunk
+    return (msg_id, raw_resp)
+
