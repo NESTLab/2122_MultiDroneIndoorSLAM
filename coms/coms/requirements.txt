@@ -1,7 +1,7 @@
 trio==0.20.0
 numcompress==0.1.2
 netifaces==0.11.0
-pyyaml==5.3.1
+pyyaml==5.4
 scikit-image==0.18.3
 pyquaternion==0.9.9
 opencv-python==4.5.5.62
