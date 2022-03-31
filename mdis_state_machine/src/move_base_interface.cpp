@@ -1,22 +1,40 @@
 #include <move_base_interface.h>
 
-MoveBaseInterface::MoveBaseInterface(ros::NodeHandle nh): nh_(nh)
+bool MoveBaseInterface::testing_switch_trigger = false;
+
+MoveBaseInterface::MoveBaseInterface(ros::NodeHandle nh, bool testing): nh_(nh), testing_mode(testing)
 {
-  move_base_client_ = new MoveBaseTypedef("move_base", true);
-  move_base_planning_client_ = nh.serviceClient<nav_msgs::GetPlan>("move_base/make_plan");
-  debug_generated_path_pub = nh.advertise<nav_msgs::Path>("debug_plan_path", 1000);
+  if(!testing_mode)
+  {
+    move_base_client_ = new MoveBaseTypedef("move_base", true);
+    move_base_planning_client_ = nh.serviceClient<nav_msgs::GetPlan>("move_base/make_plan");
+    debug_generated_path_pub = nh.advertise<nav_msgs::Path>("debug_plan_path", 1000);
 
-  ROS_INFO_STREAM(logging_prefix_ << "Waiting for actionlib servers");
-  move_base_client_->waitForServer();
-  ROS_INFO_STREAM(logging_prefix_ << "All servers started");
+    ROS_INFO_STREAM(logging_prefix_ << "Waiting for actionlib servers");
+    move_base_client_->waitForServer();
+    ROS_INFO_STREAM(logging_prefix_ << "All servers started");
 
-  namespace_prefix.erase(namespace_prefix.begin());
-  map_frame = namespace_prefix+"/map";
-  robot_frame = namespace_prefix+"/base_footprint";
+    namespace_prefix.erase(namespace_prefix.begin());
+    map_frame = namespace_prefix+"/map";
+    robot_frame = namespace_prefix+"/base_footprint";
+  }
+  else
+  {
+    MoveBaseInterface::testing_switch_trigger = false;
+    testing_switch_trigger_sub = nh.subscribe(nh.getNamespace() + "/testing_switch_trigger", 1000, &MoveBaseInterface::testSwitchTrigCB, this);     
+  }
+}
+
+void MoveBaseInterface::testSwitchTrigCB(std_msgs::Empty msg)
+{
+  testing_switch_trigger = true;
 }
 
 bool MoveBaseInterface::goToPose(geometry_msgs::PoseStamped &goal_pose, bool wait_for_result)
 {
+  if(testing_mode)
+    return true;
+    
   move_base_action_goal_.target_pose = goal_pose;
   move_base_client_->sendGoal(move_base_action_goal_);
   ROS_INFO_STREAM(logging_prefix_ << "Waiting");
@@ -33,6 +51,9 @@ bool MoveBaseInterface::goToPose(geometry_msgs::PoseStamped &goal_pose, bool wai
 
 bool MoveBaseInterface::goToPoint(geometry_msgs::Point &goal, bool wait_for_result)
 {
+  if(testing_mode)
+    return true;
+    
   move_base_action_goal_.target_pose.pose.position = goal;
   move_base_action_goal_.target_pose.pose.orientation.w = 1.;
   move_base_action_goal_.target_pose.header.frame_id = namespace_prefix+"/map";
@@ -52,12 +73,18 @@ bool MoveBaseInterface::goToPoint(geometry_msgs::Point &goal, bool wait_for_resu
 
 bool MoveBaseInterface::stopRobot()
 {
+  if(testing_mode)
+    return true;
+    
   move_base_client_->cancelGoal();
   return true;
 }
 
 float MoveBaseInterface::getDistancePrediction(geometry_msgs::PoseStamped &start_pose, geometry_msgs::PoseStamped &end_pose)
 {
+  if(testing_mode)
+    return 0.0;
+    
   nav_msgs::GetPlan srv;
   srv.request.start = start_pose;
   srv.request.goal = end_pose;
@@ -68,6 +95,9 @@ float MoveBaseInterface::getDistancePrediction(geometry_msgs::PoseStamped &start
 
 float MoveBaseInterface::getDistancePrediction(geometry_msgs::Point &start_point, geometry_msgs::Point &end_point)
 {
+  if(testing_mode)
+    return 0.0;
+
   nav_msgs::GetPlan srv;
   srv.request.start.pose.position = start_point;
   srv.request.start.pose.orientation.w = 1.;
@@ -89,6 +119,9 @@ float MoveBaseInterface::getDistancePrediction(geometry_msgs::Point &start_point
 
 float MoveBaseInterface::getDistancePrediction(geometry_msgs::Point &goal)
 {
+  if(testing_mode)
+    return 0.0;
+  
   nav_msgs::GetPlan srv;
   srv.request.start = getRobotCurrentPose();
 
@@ -107,6 +140,9 @@ float MoveBaseInterface::getDistancePrediction(geometry_msgs::Point &goal)
 
 float MoveBaseInterface::calculatePathLength(const nav_msgs::Path& path)
 {
+  if(testing_mode)
+    return 0.0;
+  
   double length = 0;
   float last_x, last_y;
   for(int i = 0; i<path.poses.size(); i++)
@@ -123,6 +159,12 @@ float MoveBaseInterface::calculatePathLength(const nav_msgs::Path& path)
 
 geometry_msgs::PoseStamped MoveBaseInterface::getRobotCurrentPose()
 {
+  if(testing_mode)
+  {
+    geometry_msgs::PoseStamped dummy_msg;
+    return dummy_msg;
+  }
+  
   int attempt = 0;
   bool not_found_tf = true;
   tf::StampedTransform transform;
@@ -154,6 +196,12 @@ geometry_msgs::PoseStamped MoveBaseInterface::getRobotCurrentPose()
 
 geometry_msgs::PoseStamped MoveBaseInterface::transformTf2msg(const tf::StampedTransform& transform)
 {
+  if(testing_mode)
+  {
+    geometry_msgs::PoseStamped dummy_msg;
+    return dummy_msg;
+  }
+  
   geometry_msgs::PoseStamped msg;
   
   msg.pose.position.x = transform.getOrigin().x();
@@ -170,6 +218,9 @@ geometry_msgs::PoseStamped MoveBaseInterface::transformTf2msg(const tf::StampedT
 
 float MoveBaseInterface::getTimePredictionForTravel(geometry_msgs::Point &goal)
 {
+  if(testing_mode)
+    return 0.0;
+  
   float distance = getDistancePrediction(goal);
   float time = distance/ROBOT_SPEED;
   return time;
@@ -177,6 +228,9 @@ float MoveBaseInterface::getTimePredictionForTravel(geometry_msgs::Point &goal)
 
 float MoveBaseInterface::getTimePredictionForTravel(geometry_msgs::Point &start_point, geometry_msgs::Point &end_point)
 {
+  if(testing_mode)
+    return 0.0;
+  
   float distance = getDistancePrediction(start_point, end_point);
   float time = distance/ROBOT_SPEED;
   return time;
@@ -184,12 +238,32 @@ float MoveBaseInterface::getTimePredictionForTravel(geometry_msgs::Point &start_
 
 bool MoveBaseInterface::navigationSucceeded()
 {
+  if(testing_mode)
+  {
+    // if(testing_switch_trigger)
+    // {
+    //   testing_switch_trigger = false;
+    //   return true;
+    // }
+    return true;
+  }
+
   bool success = move_base_client_->getState()==actionlib::SimpleClientGoalState::SUCCEEDED;
   return success;
 }
 
 bool MoveBaseInterface::navigationDone()
 {
+  if(testing_mode)
+  {
+    if(testing_switch_trigger)
+    {
+      testing_switch_trigger = false;
+      return true;
+    }
+    return false;
+  }
+    
   bool done = move_base_client_->getState().isDone();
   return done;
 }

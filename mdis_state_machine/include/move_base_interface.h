@@ -5,13 +5,14 @@
 #include <actionlib_msgs/GoalStatus.h>
 #include <nav_msgs/GetPlan.h>
 #include <nav_msgs/Path.h>
+#include <std_msgs/Empty.h>
 #include <tf/transform_listener.h>
 
 
 class MoveBaseInterface
 {
   public:
-    MoveBaseInterface(ros::NodeHandle nh);
+    MoveBaseInterface(ros::NodeHandle nh, bool testing=false);
     ~MoveBaseInterface(){};
 
     /**
@@ -120,7 +121,7 @@ class MoveBaseInterface
 
     ros::ServiceClient move_base_planning_client_;
     ros::Publisher debug_generated_path_pub;
-    
+    ros::Subscriber testing_switch_trigger_sub;
     tf::TransformListener tf_listener_;
     
     move_base_msgs::MoveBaseGoal move_base_action_goal_;
@@ -129,11 +130,14 @@ class MoveBaseInterface
     std::string logging_prefix_ = "[ "+ namespace_prefix +" | mdis_state_machine | move_base_interface ] ";
     std::string map_frame;
     std::string robot_frame;
+    bool testing_mode;
 
     const int MAX_ATTEMPTS = 5;
     const float ROBOT_SPEED = (14/68.4); // Experimentally derived
 
     float calculatePathLength(const nav_msgs::Path& path);
+    void testSwitchTrigCB(std_msgs::Empty msg);
+    static bool testing_switch_trigger;
 
     geometry_msgs::PoseStamped transformTf2msg(const tf::StampedTransform& transform);
 };

@@ -78,8 +78,14 @@ protected:
    bool meeting_started, go_for_exploration;
 
    MoveBaseInterface *explore_interface;
+   ros::Publisher robot_state_pub;
 
-
+   void publishRobotState()
+   {
+     mdis_state_machine::RobotsState state_pub_data;
+     state_pub_data.robot_state = m_unId;
+     robot_state_pub.publish(state_pub_data);
+   }
 
    void setCurrentMeetingPoint(const geometry_msgs::Point& meeting)
    {
@@ -222,7 +228,6 @@ private:
 class GoToExplore: public RobotState{
 public:
    GoToExplore(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_EXPLORE, "GoToExplore", nh, testing){
-   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
    }
    bool isDone() override ;
 
@@ -233,8 +238,6 @@ public:
    void exitPoint() override;
 
 private:
-   ros::Publisher robot_state_pub;
-   mdis_state_machine::RobotsState state_pub_data;
    bool send_once;
 };
 
@@ -243,7 +246,6 @@ class Explore: public RobotState{
 public:
    Explore(ros::NodeHandle &nh, bool testing):RobotState(EXPLORE, "Explore", nh, testing){
      pause_exploration_pub = nh.advertise<std_msgs::Bool>(nh.getNamespace() + "/explore/pause_exploration", 1000);     
-     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
    }
    bool isDone() override ;
 
@@ -255,8 +257,6 @@ public:
 
 private:
    ros::Publisher pause_exploration_pub;
-   ros::Publisher robot_state_pub;
-   mdis_state_machine::RobotsState state_pub_data;
    ros::Time starting_time;
 };
 
@@ -282,9 +282,7 @@ private:
    std::string conn_robot;
    ros::Publisher interest_pub;
    ros::Subscriber interest_sub;
-   ros::Publisher robot_state_pub;
    ros::Subscriber conn_sub;
-   mdis_state_machine::RobotsState state_pub_data;
    void connCB(const mdis_state_machine::Connection::ConstPtr msg);
    void interestCB(const mdis_state_machine::Interest::ConstPtr msg);
 
@@ -296,7 +294,7 @@ public:
    Meet(ros::NodeHandle &nh, bool testing):RobotState(MEET, "Meet", nh, testing){
      meeting_data_pub = nh.advertise<mdis_state_machine::DataCommunication>("/data_communication", 1000);
      meeting_data_sub = nh.subscribe("/data_communication", 1000, &Meet::nextMeetingLocationCB, this);     
-     robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     frontier_data_sub = nh.subscribe("/tb3_0/frontier_list", 1000, &Meet::getBestFrontiersCB, this);
+     frontier_data_sub = nh.subscribe("/tb3_0/frontier_list", 1000, &Meet::getBestFrontiersCB, this);
     location_data_pub = nh.advertise<mdis_state_machine::Location>("/robot_location", 1000);
     location_data_sub = nh.subscribe("/robot_location", 1000, &Meet::getLocationCB, this);
     location_data_ack_pub = nh.advertise<mdis_state_machine::LocationAck>("/robot_location_ack", 1000);
@@ -324,9 +322,7 @@ private:
    ros::Subscriber location_data_sub;
    ros::Publisher location_data_ack_pub;
    ros::Subscriber location_data_ack_sub;
-   ros::Publisher robot_state_pub;
    ros::ServiceClient mergeRequestClient;
-   mdis_state_machine::RobotsState state_pub_data;
 
 
    bool data_received;
@@ -361,10 +357,8 @@ public:
    void step() override;
    void exitPoint() override;
 private:
-   ros::Publisher robot_state_pub;
    ros::Subscriber conn_sub;
    std::string conn_robot;
-   mdis_state_machine::RobotsState state_pub_data;
    bool connected;
    void connCB(const mdis_state_machine::Connection::ConstPtr msg);
 
@@ -374,7 +368,6 @@ private:
 class DumpData: public RobotState{
 public:
    DumpData(ros::NodeHandle &nh, bool testing):RobotState(DUMP_DATA, "DumpData", nh, testing){
-   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
    }
    bool isDone() override ;
    TEAM_STATES transition() override;
@@ -382,8 +375,6 @@ public:
    void step() override;
    void exitPoint() override;
 private:
-   ros::Publisher robot_state_pub;
-   mdis_state_machine::RobotsState state_pub_data;
 };
 
 
