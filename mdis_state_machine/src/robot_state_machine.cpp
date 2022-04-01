@@ -79,7 +79,7 @@ void Idle::exitPoint()
 bool ErrorState::entryPoint()
 {
    explore_interface->stopRobot();
-   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Entry point for ErrorState");
+   printMessage("Entry point for ErrorState");
    return true;
 }
 
@@ -100,7 +100,7 @@ void ErrorState::step()
   direction *= -1;
   robot_cmd_vel.publish(twist_msg);
   ros::Duration(0.5).sleep();
-  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Step for ErrorState");
+  printMessage("Step for ErrorState");
 }
 
 void ErrorState::exitPoint()
@@ -157,7 +157,7 @@ void GoToExplore::step()
 void GoToExplore::exitPoint()
 {
    send_once = false;
-   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Exiting the state GO_TO_EXPLORE");
+   printMessage("Exiting the state GO_TO_EXPLORE");
 }
 
 
@@ -209,11 +209,8 @@ void Explore::exitPoint()
   msg.data = true;
   pause_exploration_pub.publish(msg);
 
-  if(!RobotState::testing_mode)
-  {
-     setNextMeetingPoint(explore_interface->getRobotCurrentPose().pose.position);
-     explore_interface->stopRobot();
-  }
+  setNextMeetingPoint(explore_interface->getRobotCurrentPose().pose.position);
+  explore_interface->stopRobot();
   
   printMessage("Exiting the state EXPLORE");
 }
@@ -225,86 +222,92 @@ void Explore::exitPoint()
 
 bool GoToMeet::entryPoint()
 {
-   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Entering the state GO_TO_MEET");
-   ROS_INFO_STREAM("["<<robot_name<<"] "<<"Going to meet at"<<getCurrentMeetingPoint());
-   geometry_msgs::Point temp_point = getCurrentMeetingPoint();
-   // explore_interface->goToPoint(temp_point, false);
-   interested = false;
-   connected = false;
-   if(!RobotState::testing_mode)
-     explore_interface->goToPoint(temp_point, false);
-   // explore_interface->goToPoint(temp_point, false);
-   ros::Duration(1).sleep();  // Giving it some time to reflect
+   printMessage("Entering the state GO_TO_MEET");
+   connection_request_received = false;
+   send_once = true;
    return true;
 }
 
 bool GoToMeet::isDone()
 {
-   if(connected)
-   {
-     mdis_state_machine::Interest data;
-     data.req.resize(2);
-     data.req.at(0).data = "Request for connection. Interested?";
-     data.req.at(1).data = robot_name;
-     interest_pub.publish(data);
-     ros::Duration(1).sleep();
-     if(interested){
-      ROS_INFO_STREAM("["<<robot_name<<"] "<< "Robot is connected to the party of interest");
-     return true;
-    }
-   }
-   return false;
+   return explore_interface->navigationDone();
 }
 
 
 TEAM_STATES GoToMeet::transition()
 {
-  if(isDone())
-  {
-    connected_robot_name = conn_robot;
-    return MEET;
-  }
-  else
-    return GO_TO_MEET;
+   if (connection_request_received)
+      return MEET;
+
+   if(isDone())
+   {
+      if(!explore_interface->navigationSucceeded())
+         return ERROR_STATE;
+   }
+   
+   return GO_TO_MEET;
 }
 
 void GoToMeet::step()
 {
+   if(send_once)
+      sendRobotToLocation();
+
   ros::Duration time_since_connection = ros::Time::now() - time_of_last_conn;
   if(time_since_connection>wait_time_for_conn)
     connected = false;
 
+   if(connected)
+      publishConnectionRequest();
+
   publishRobotState();
-  ROS_INFO_THROTTLE(10,"Executing the step for GO_TO_MEET");
+  printMessageThrottled("Executing the step for GO_TO_MEET");
+}
+
+void GoToMeet::publishConnectionRequest()
+{
+   mdis_state_machine::ConnectionRequest data;
+   data.robot_name.data = robot_name;
+   data.connection_to.data = conn_robot;
+   data.robot_state = (int)(m_unId);
+   connection_request_pub.publish(data);
+}
+
+void GoToMeet::sendRobotToLocation()
+{
+   geometry_msgs::Point nav_point = getCurrentMeetingPoint();
+   ROS_INFO_STREAM("Current Meeting point:"<<nav_point);
+   explore_interface->goToPoint(nav_point);
+   send_once = false;
 }
 
 void GoToMeet::exitPoint()
 {
-  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Exiting the state GO_TO_MEET");
-  if(!RobotState::testing_mode)
-    explore_interface->stopRobot();
+   send_once = false;
+   connected = false;
+   connection_request_received = false;
+   explore_interface->stopRobot();
+
+   printMessage("Exiting the state GO_TO_MEET");
 }
 
 
 void GoToMeet::connCB(const mdis_state_machine::Connection::ConstPtr msg)
 {
-  if(msg->connection_to.data == parent_robot_name || msg->connection_to.data == child_robot_name)
+  if(isConnDirectRelated(msg->connection_to.data))
   {
     connected = true;
-    time_of_last_conn = ros::Time::now();
     conn_robot = msg->connection_to.data;
+    time_of_last_conn = ros::Time::now();
   }
 }
 
-void GoToMeet::interestCB(const mdis_state_machine::Interest::ConstPtr msg){
-  std::string r_name = msg->req.at(1).data;
-  ROS_INFO_STREAM("["<<robot_name<<"] "<<"CONNN_ROBOT"<<r_name);
-  ROS_INFO_STREAM("["<<robot_name<<"] "<<"ROBOT_NAME"<<robot_name);
-  if (r_name== parent_robot_name || r_name == child_robot_name){
-
-    ROS_INFO_STREAM("["<<robot_name<<"] "<<"Setting interested as true");
-    interested = true;
-    ros::spinOnce();
+void GoToMeet::connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg)
+{
+  std::string conn_robot_name = msg->robot_name.data;
+  std::string conn_robot_request_name = msg->connection_to.data;
+  if (isConnDirectRelated(conn_robot_name) && conn_robot_request_name == robot_name){
+    connection_request_received = true;
   }
 }
 
@@ -359,6 +362,7 @@ TEAM_STATES Meet::transition()
 
 void Meet::step()
 {
+  publishRobotState();
   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Executing the step for MEET");
   requestMerge(connected_robot_name);
 }

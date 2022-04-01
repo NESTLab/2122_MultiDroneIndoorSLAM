@@ -7,7 +7,7 @@
 #include <mdis_state_machine/DataCommunication.h>
 #include <mdis_state_machine/Location.h>
 #include <mdis_state_machine/LocationAck.h>
-#include <mdis_state_machine/Interest.h>
+#include <mdis_state_machine/ConnectionRequest.h>
 #include <cmath>
 #include <explore_lite/FrontiersArray.h>
 #include <std_msgs/String.h>
@@ -265,9 +265,8 @@ class GoToMeet: public RobotState{
 public:
    GoToMeet(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_MEET, "GoToMeet", nh, testing){
       conn_sub = nh.subscribe(nh.getNamespace() + "/connection_check", 1000, &GoToMeet::connCB, this);     
-      robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);
-      interest_sub = nh.subscribe("/interest_check", 1000, &GoToMeet::interestCB, this);
-      interest_pub = nh.advertise<mdis_state_machine::Interest>("/interest_check", 1000);     
+      connection_request_sub = nh.subscribe("/connection_request", 1000, &GoToMeet::connectionRequestCB, this);
+      connection_request_pub = nh.advertise<mdis_state_machine::ConnectionRequest>("/connection_request", 1000);     
    }
    bool isDone() override ;
 
@@ -279,12 +278,19 @@ public:
 
 private:
    bool connected;
+   bool connection_request_received;
+   bool send_once;
+
    std::string conn_robot;
-   ros::Publisher interest_pub;
-   ros::Subscriber interest_sub;
+   ros::Publisher connection_request_pub;
+   ros::Subscriber connection_request_sub;
    ros::Subscriber conn_sub;
+
    void connCB(const mdis_state_machine::Connection::ConstPtr msg);
-   void interestCB(const mdis_state_machine::Interest::ConstPtr msg);
+   void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
+
+   void publishConnectionRequest();
+   void sendRobotToLocation();
 
    ros::Time time_of_last_conn;
    ros::Duration wait_time_for_conn = ros::Duration(2.0);

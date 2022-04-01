@@ -21,9 +21,10 @@ class TestStateShiftExplorer(unittest.TestCase):
 
 		self.assertEqual(verifyInitState(GO_TO_EXPLORE, ROBOT_NAME), True, "Initial state check for explorer failed")
 
-		# def test_timed_states(self: unittest.TestCase) -> None:
 		self.assertEqual(verifyStateChange(GO_TO_EXPLORE, EXPLORE, ROBOT_NAME), True, "State shift check for explorer state 1-2 failed")
 		self.assertEqual(verifyStateChange(EXPLORE, GO_TO_MEET, ROBOT_NAME), True, "State shift check for explorer state 2-3 failed")
+
+		self.assertEqual(verifyConnStateChange(GO_TO_MEET, MEET, ROBOT_NAME, ROBOT_PARTNER), True, "State shift check for explorer state 3-4 failed")
 		# self.assertEqual(verifyTimedStateChange(GO_TO_EXPLORE, EXPLORE, ROBOT_NAME), True, "State shift check for explorer state 1-2 failed")
 		# self.assertEqual(verifyTimedStateChange(EXPLORE, GO_TO_MEET, ROBOT_NAME), True, "State shift check for explorer state 2-3 failed")
 

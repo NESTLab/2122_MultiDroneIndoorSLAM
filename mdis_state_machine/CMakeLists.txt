@@ -28,7 +28,7 @@ add_message_files(
   DataCommunication.msg
   Location.msg
   LocationAck.msg
-  Interest.msg
+  ConnectionRequest.msg
   RobotsState.msg
 )
 

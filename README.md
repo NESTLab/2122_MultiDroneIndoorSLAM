@@ -24,6 +24,11 @@ Or attach a shell session:
 docker exec -it 2122_multidroneindoorslam_novnc_1 /bin/bash
 ```
 
+
+> If you see an error `2122_multidroneindoorslam-novnc-1  | standard_init_linux.go:228: exec user process caused: no such file or directory` (possibly while running on Windows)
+
+> Change the file `entrypoint.sh` end of line conversion from CRLF to LF
+
 # Local Setup
 > NOTE: We are using Ubuntu 20.04 for this example
 1. Follow the instructions for installing [ROS Noetic](http://wiki.ros.org/noetic/Installation/Ubuntu) and [Gazebo](http://www.gazebosim.org/tutorials?tut=install_ubuntu)

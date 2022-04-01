@@ -1,0 +1,3 @@
+std_msgs/String robot_name
+std_msgs/String connection_to
+int8 robot_state
