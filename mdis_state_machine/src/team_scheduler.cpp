@@ -30,7 +30,10 @@ void TeamScheduler::addStates()
     addState(new Explore(nh_, testing_mode_));
     addState(new GoToMeet(nh_, testing_mode_));
     addState(new TransitToMeet(nh_, testing_mode_));
-    addState(new Meet(nh_, testing_mode_));
+    addState(new MergeMap(nh_, testing_mode_));
+    addState(new DecideNextMeeting(nh_, testing_mode_));
+    addState(new ReceiveNextMeeting(nh_, testing_mode_));
+    addState(new EndMeeting(nh_, testing_mode_));
     addState(new GoToDumpData(nh_, testing_mode_));
     addState(new DumpData(nh_, testing_mode_));
     addState(new ErrorState(nh_, testing_mode_));

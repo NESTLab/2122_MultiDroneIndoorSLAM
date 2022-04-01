@@ -29,7 +29,10 @@ enum TEAM_STATES{
    EXPLORE,
    GO_TO_MEET,
    TRANSIT_TO_MEET,
-   MEET,
+   MERGE_MAP,
+   DECIDE_NEXT_MEETING,
+   RECEIVE_NEXT_MEETING,
+   END_MEETING,
    GO_TO_DUMP_DATA,
    DUMP_DATA,
    ERROR_STATE,
@@ -141,58 +144,6 @@ protected:
    {
      std::string full_msg = getFormattedMessage(msg);
      ROS_INFO_THROTTLE(1, "%s", &full_msg[0]);
-   }
-
-   geometry_msgs::Point getNextFurthestMeetingPoint(const std::vector<geometry_msgs::Point>& frontiers, const std::vector<geometry_msgs::Point>& curr_location_f)
-   // geometry_msgs::Point getNextFurthestMeetingPoint(const std::vector<geometry_msgs::Point>& frontiers, const geometry_msgs::Point& curr_location_f)
-   {
-      float max_dis = 0.0;
-      geometry_msgs::Point point;
-      geometry_msgs::Point temp_pos;
-      // temp_pos.x=curr_location_f.x;
-      // temp_pos.y=curr_location_f.y;
-
-      for (auto& frontier : frontiers){//euclidean distance to frontier from explorer meeting point
-         geometry_msgs::Point temp;
-         // geometry_msgs::Point temp_pos;
-         temp.x=frontier.x;
-         temp.y=frontier.y;
-         float total_distance_from_frontier = 0;
-         for (int i=0;i<curr_location_f.size();i++){
-            temp_pos.x=curr_location_f[i].x;
-            temp_pos.y=curr_location_f[i].y;
-            float distance_from_frontier = explore_interface->getDistancePrediction(temp, temp_pos);
-            total_distance_from_frontier += distance_from_frontier;
-         }
-         // float total_distance_from_frontier = explore_interface->getDistancePrediction(temp, temp_pos);
-         if (total_distance_from_frontier>max_dis){
-            max_dis = total_distance_from_frontier;
-            point.x=frontier.x;
-            point.y=frontier.y;
-            setNextMeetingPoint(point);
-            
-         }
-
-      }
-     return point;
-   }
-   geometry_msgs::Point getNextClosestMeetingPoint(const std::vector<geometry_msgs::Point>& frontiers, const geometry_msgs::Point& curr_location_f)
-   {
-      float min_dis = LONG_MAX;
-      geometry_msgs::Point point;
-      for (auto& frontier : frontiers){
-         geometry_msgs::Point temp;
-         temp.x=frontier.x;
-         temp.y=frontier.y;
-         float distance_from_frontier = explore_interface->getDistancePrediction(temp);
-         // float distance_from_frontier = sqrt(((curr_location_f.x-frontier.x)*(curr_location_f.x-frontier.x))+((curr_location_f.y-frontier.y)*(curr_location_f.y-frontier.y)));
-         if (distance_from_frontier<min_dis){
-            min_dis = distance_from_frontier;
-            point.x=frontier.x;
-            point.y=frontier.y;
-         }
-      }
-     return point;
    }
 };
 
@@ -326,23 +277,12 @@ private:
 
 };
 
-class Meet: public RobotState{
+class MergeMap: public RobotState{
 public:
-   Meet(ros::NodeHandle &nh, bool testing):RobotState(MEET, "Meet", nh, testing){
-     meeting_data_pub = nh.advertise<mdis_state_machine::DataCommunication>("/data_communication", 1000);
-     meeting_data_sub = nh.subscribe("/data_communication", 1000, &Meet::nextMeetingLocationCB, this);     
-     frontier_data_sub = nh.subscribe("/tb3_0/frontier_list", 1000, &Meet::getBestFrontiersCB, this);
-    location_data_pub = nh.advertise<mdis_state_machine::Location>("/robot_location", 1000);
-    location_data_sub = nh.subscribe("/robot_location", 1000, &Meet::getLocationCB, this);
-    location_data_ack_pub = nh.advertise<mdis_state_machine::LocationAck>("/robot_location_ack", 1000);
-    location_data_ack_sub = nh.subscribe("/robot_location_ack", 1000, &Meet::getLocationAckCB, this);
-     frontier_req_pub = nh.advertise<std_msgs::String>("/frontier_request", 1000);   
-     frontier_data_sub = nh.subscribe("/tb3_0/frontier_list", 1000, &Meet::getBestFrontiersCB, this);
-
+   MergeMap(ros::NodeHandle &nh, bool testing):RobotState(MERGE_MAP, "MergeMap", nh, testing){
      mergeRequestClient = nh.serviceClient<coms::TriggerMerge>(srv_name);
    }
 
-  std::string srv_name = "trigger_merge";
    bool isDone() override ;
    TEAM_STATES transition() override;
    bool entryPoint() override;
@@ -350,38 +290,83 @@ public:
    void exitPoint() override;
 
 private:
-   ros::Publisher meeting_data_pub;
-   ros::Publisher frontier_req_pub;
-   ros::Subscriber meeting_data_sub;
-   ros::Subscriber frontier_data_sub;
-   // frontier_exploration::FrontierSearch search_;
-   ros::Publisher location_data_pub;
-   ros::Subscriber location_data_sub;
-   ros::Publisher location_data_ack_pub;
-   ros::Subscriber location_data_ack_sub;
-   ros::ServiceClient mergeRequestClient;
-
-
-   bool data_received;
-   bool frontier_data_received;
-   bool location_data_received;
-   bool location_data_ack;
-   void getFrontiersCB(const explore_lite::FrontiersArray::ConstPtr msg);
-   void getBestFrontiersCB(const geometry_msgs::PoseArray::ConstPtr msg);
-   void requestMerge(std::string conn_robot);
-   void publishNextMeetingLocation();
-   void nextMeetingLocationCB(const mdis_state_machine::DataCommunication::ConstPtr msg);
-   void getLocationCB(const mdis_state_machine::Location::ConstPtr msg);
-   void getLocationAckCB(const mdis_state_machine::LocationAck::ConstPtr msg);
-   void getNextMeetingLocationFromCallback();
-   void setExplorationTime();
-   void getLocations();
-   geometry_msgs::Point buffer_next_location;
-   std::vector<geometry_msgs::Point> frontier_msg;
-   geometry_msgs::Point location_msg;
+   std::string srv_name = "trigger_merge";
    bool is_merge_complete;
 
+   ros::ServiceClient mergeRequestClient;
+   void requestMerge(std::string conn_robot);
 };
+
+class DecideNextMeeting: public RobotState{
+public:
+   DecideNextMeeting(ros::NodeHandle &nh, bool testing):RobotState(DECIDE_NEXT_MEETING, "DecideNextMeeting", nh, testing){
+      frontier_req_pub = nh.advertise<std_msgs::String>(nh.getNamespace() + "/frontier_request", 1000);   
+      frontier_data_sub = nh.subscribe(nh.getNamespace() + "/frontier_list", 1000, &DecideNextMeeting::getBestFrontiersCB, this);
+   }
+
+   bool isDone() override ;
+   TEAM_STATES transition() override;
+   bool entryPoint() override;
+   void step() override;
+   void exitPoint() override;
+
+private:
+   bool updated_meeting_location;
+   bool frontier_received;
+
+   ros::Publisher frontier_req_pub;
+   ros::Subscriber frontier_data_sub;
+   std::vector<geometry_msgs::Point> frontiers_list;
+
+   void getBestFrontiersCB(const geometry_msgs::PoseArray::ConstPtr msg);
+   void requestFrontiers();
+   void updateNextMeetingPoint();
+};
+
+class ReceiveNextMeeting: public RobotState{
+public:
+   ReceiveNextMeeting(ros::NodeHandle &nh, bool testing):RobotState(RECEIVE_NEXT_MEETING, "ReceiveNextMeeting", nh, testing){
+    connection_request_sub = nh.subscribe("/connection_request", 1000, &ReceiveNextMeeting::connectionRequestCB, this);
+   }
+
+   bool isDone() override ;
+   TEAM_STATES transition() override;
+   bool entryPoint() override;
+   void step() override;
+   void exitPoint() override;
+
+private:
+   bool connection_request_received;
+   ros::Subscriber connection_request_sub;
+   void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
+};
+
+class EndMeeting: public RobotState{
+public:
+   EndMeeting(ros::NodeHandle &nh, bool testing):RobotState(END_MEETING, "EndMeeting", nh, testing){
+    connection_request_sub = nh.subscribe("/connection_request", 1000, &EndMeeting::connectionRequestCB, this);
+    connection_request_pub = nh.advertise<mdis_state_machine::ConnectionRequest>("/connection_request", 1000);     
+   }
+
+   bool isDone() override ;
+   TEAM_STATES transition() override;
+   bool entryPoint() override;
+   void step() override;
+   void exitPoint() override;
+
+private:
+   bool once;
+   bool connection_request_received;
+   int current_publishing_counter;
+   const int LEAST_PUBLISH_COUNT = 5;
+   
+   ros::Publisher connection_request_pub;
+   ros::Subscriber connection_request_sub;
+   
+   void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
+   void publishConnectionRequest();
+};
+
 class GoToDumpData: public RobotState{
 public:
    GoToDumpData(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_DUMP_DATA, "GoToDumpData", nh, testing){

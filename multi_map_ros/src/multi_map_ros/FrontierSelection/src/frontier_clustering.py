@@ -72,11 +72,11 @@ class find_frontier:
 
         #self.move_helper_pub = rospy.Publisher(ns + '/move_base_simple/goal', PoseStamped,
 
-                                               queue_size=10)
+                                              #  queue_size=10)
 
         self.frontier_center_pub = rospy.Publisher(ns + '/frontier_list', PoseArray, queue_size=10)
 
-        self.frontier_center_request = rospy.Subscriber('/frontier_request', String, self.request_callback)
+        self.frontier_center_request = rospy.Subscriber(ns + '/frontier_request', String, self.request_callback)
 
     def request_callback(self, msg):
 

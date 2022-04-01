@@ -194,6 +194,45 @@ geometry_msgs::PoseStamped MoveBaseInterface::getRobotCurrentPose()
   return result_transform;
 }
 
+geometry_msgs::PoseStamped MoveBaseInterface::getOtherRobotCurrentPose(const std::string& target_robot_name)
+{
+  if(testing_mode)
+  {
+    geometry_msgs::PoseStamped dummy_msg;
+    return dummy_msg;
+  }
+  
+  int attempt = 0;
+  bool not_found_tf = true;
+  tf::StampedTransform transform;
+  geometry_msgs::PoseStamped result_transform;
+
+  result_transform.header.frame_id = map_frame;
+  result_transform.header.stamp = ros::Time::now();
+
+  std::string target_robot_frame = "/"+ target_robot_name + + "/base_footprint";
+
+  while (attempt++ < MAX_ATTEMPTS && not_found_tf && ros::ok()){
+    try{
+      tf_listener_.lookupTransform(map_frame, target_robot_frame,  
+                               ros::Time(0), transform);
+      
+      not_found_tf = false;
+    }
+    catch (tf::TransformException ex){
+      ROS_WARN("%s",ex.what());
+      ros::Duration(1.0).sleep();
+    }
+  }
+  
+  if(not_found_tf)
+    ROS_INFO("Could not find the transform after %i attempts", MAX_ATTEMPTS);
+  else
+    result_transform = transformTf2msg(transform);
+
+  return result_transform;
+}
+
 geometry_msgs::PoseStamped MoveBaseInterface::transformTf2msg(const tf::StampedTransform& transform)
 {
   if(testing_mode)

@@ -16,9 +16,15 @@ GO_TO_EXPLORE = 1
 EXPLORE = 2
 GO_TO_MEET = 3
 TRANSIT_TO_MEET = 4
-MEET = 5
-GO_TO_DUMP_DATA = 6
-DUMP_DATA = 7
+MERGE_MAP = 5
+DECIDE_NEXT_MEETING = 6
+RECEIVE_NEXT_MEETING = 7
+END_MEETING = 8
+GO_TO_DUMP_DATA = 9
+DUMP_DATA = 10
+ERROR_STATE = 11
+
+
 
 max_attempts_for_robot_message = 10
 ideal_state_change_duration = 5

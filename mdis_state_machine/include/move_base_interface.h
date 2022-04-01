@@ -97,6 +97,13 @@ class MoveBaseInterface
      */
     geometry_msgs::PoseStamped getRobotCurrentPose();
 
+    /**
+     * @brief Get the Robot Current Pose object
+     * 
+     * @return geometry_msgs::PoseStamped    Robot's current pose
+     */
+    geometry_msgs::PoseStamped getOtherRobotCurrentPose(const std::string& robot_name);
+
 
     //////////// TO-DO ////////////
     /**
