@@ -28,6 +28,7 @@ enum TEAM_STATES{
    GO_TO_EXPLORE,
    EXPLORE,
    GO_TO_MEET,
+   TRANSIT_TO_MEET,
    MEET,
    GO_TO_DUMP_DATA,
    DUMP_DATA,
@@ -65,9 +66,11 @@ protected:
    std::string robot_name;
    static float curr_meet_x, curr_meet_y, next_meet_x, next_meet_y;
    static float time_for_exploration;
+   static std::string connected_robot_name;
    static std::string parent_robot_name, child_robot_name;
    static bool testing_mode;
    static ROLE robot_role;
+   static TEAM_STATES last_robot_state;
 
    int testing_waiting_time = 5;
 
@@ -104,6 +107,42 @@ protected:
      point.y = curr_meet_y;
      return point;
    }
+   geometry_msgs::Point getNextMeetingPoint()
+   {
+     geometry_msgs::Point point;
+     point.x = next_meet_x;
+     point.y = next_meet_y;
+     return point;
+   }
+   void setCurrAsNextMeeting()
+   {
+     curr_meet_x = next_meet_x;
+     curr_meet_y = next_meet_y;
+   }
+   inline bool isConnDirectRelated(const std::string& conn_robot)
+   {
+     bool conn_parent = (conn_robot == parent_robot_name) && (conn_robot != "");
+     bool conn_child = (conn_robot == child_robot_name) && (conn_robot != "");
+     return ((conn_parent) || (conn_child));
+   }
+   
+   inline const std::string getFormattedMessage(const std::string& msg)
+   {
+     return "[ "+robot_name+" | mdis_state_machine | robot_state_machine]: " + msg;
+   }
+
+   inline void printMessage(const std::string& msg)
+   {
+     std::string full_msg = getFormattedMessage(msg);
+     ROS_INFO("%s", &full_msg[0]);
+   }
+
+   inline void printMessageThrottled(const std::string& msg)
+   {
+     std::string full_msg = getFormattedMessage(msg);
+     ROS_INFO_THROTTLE(1, "%s", &full_msg[0]);
+   }
+
    geometry_msgs::Point getNextFurthestMeetingPoint(const std::vector<geometry_msgs::Point>& frontiers, const std::vector<geometry_msgs::Point>& curr_location_f)
    // geometry_msgs::Point getNextFurthestMeetingPoint(const std::vector<geometry_msgs::Point>& frontiers, const geometry_msgs::Point& curr_location_f)
    {
@@ -137,13 +176,6 @@ protected:
       }
      return point;
    }
-   geometry_msgs::Point getNextMeetingPoint()
-   {
-     geometry_msgs::Point point;
-     point.x = next_meet_x;
-     point.y = next_meet_y;
-     return point;
-   }
    geometry_msgs::Point getNextClosestMeetingPoint(const std::vector<geometry_msgs::Point>& frontiers, const geometry_msgs::Point& curr_location_f)
    {
       float min_dis = LONG_MAX;
@@ -161,34 +193,6 @@ protected:
          }
       }
      return point;
-   }
-   void setCurrAsNextMeeting()
-   {
-     curr_meet_x = next_meet_x;
-     curr_meet_y = next_meet_y;
-   }
-   inline bool isConnDirectRelated(const std::string& conn_robot)
-   {
-     bool conn_parent = (conn_robot == parent_robot_name) && (conn_robot != "");
-     bool conn_child = (conn_robot == child_robot_name) && (conn_robot != "");
-     return ((conn_parent) || (conn_child));
-   }
-   
-   inline const std::string getFormattedMessage(const std::string& msg)
-   {
-     return "[ "+robot_name+" | mdis_state_machine | robot_state_machine]: " + msg;
-   }
-
-   inline void printMessage(const std::string& msg)
-   {
-     std::string full_msg = getFormattedMessage(msg);
-     ROS_INFO("%s", &full_msg[0]);
-   }
-
-   inline void printMessageThrottled(const std::string& msg)
-   {
-     std::string full_msg = getFormattedMessage(msg);
-     ROS_INFO_THROTTLE(1, "%s", &full_msg[0]);
    }
 };
 
@@ -291,10 +295,37 @@ private:
 
    void publishConnectionRequest();
    void sendRobotToLocation();
+   std::string getRobotOfInterestName();
 
    ros::Time time_of_last_conn;
    ros::Duration wait_time_for_conn = ros::Duration(2.0);
 };
+
+class TransitToMeet: public RobotState{
+public:
+   TransitToMeet(ros::NodeHandle &nh, bool testing):RobotState(TRANSIT_TO_MEET, "TransitToMeet", nh, testing){      
+    connection_request_sub = nh.subscribe("/connection_request", 1000, &TransitToMeet::connectionRequestCB, this);
+    connection_request_pub = nh.advertise<mdis_state_machine::ConnectionRequest>("/connection_request", 1000);     
+}
+   bool isDone() override ;
+
+   TEAM_STATES transition() override;
+   bool entryPoint() override;
+   void step() override;
+   void exitPoint() override;
+
+private:
+   bool connection_request_received;
+   int current_publishing_counter;
+   const int LEAST_PUBLISH_COUNT = 5;
+
+   ros::Publisher connection_request_pub;
+   ros::Subscriber connection_request_sub;
+   void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
+   void publishConnectionRequest();
+
+};
+
 class Meet: public RobotState{
 public:
    Meet(ros::NodeHandle &nh, bool testing):RobotState(MEET, "Meet", nh, testing){

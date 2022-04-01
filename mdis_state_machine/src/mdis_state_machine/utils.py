@@ -15,9 +15,10 @@ IDLE = 0
 GO_TO_EXPLORE = 1
 EXPLORE = 2
 GO_TO_MEET = 3
-MEET = 4
-GO_TO_DUMP_DATA = 5
-DUMP_DATA = 6
+TRANSIT_TO_MEET = 4
+MEET = 5
+GO_TO_DUMP_DATA = 6
+DUMP_DATA = 7
 
 max_attempts_for_robot_message = 10
 ideal_state_change_duration = 5
@@ -79,7 +80,7 @@ def verifyConnStateChange(init_state, change_state, robot_name, robot_partner):
 	# interest_topic_name = gen_topic_name([robot_partner, connection_request_topic])
 	pub = rospy.Publisher(connection_topic_name, Connection, queue_size=10)
 	conn_req_pub = rospy.Publisher(connection_request_topic, ConnectionRequest, queue_size=10)
-	rospy.sleep(0.2)
+	rospy.sleep(0.5)
 	pub.publish(robot_conn_msg)
 	rospy.sleep(0.2)
 	conn_req_pub.publish(robot_conn_request_msg)
@@ -88,6 +89,32 @@ def verifyConnStateChange(init_state, change_state, robot_name, robot_partner):
 	if msg.robot_state == change_state:
 		return True and init_state_sucs
 	return False
+
+def verifyTransitStateChange(init_state, change_state, robot_name, robot_partner):
+	init_state_sucs = False
+	state_topic_name = gen_topic_name([robot_name, robot_state_topic])
+	msg = rospy.wait_for_message(state_topic_name, RobotsState, timeout=message_wait_timeout)
+	if msg.robot_state == init_state:
+		init_state_sucs = True
+
+	parent_name = String(data=robot_partner)
+	conn_robot_name = String(data=robot_name)
+
+	robot_conn_request_msg = ConnectionRequest()
+	robot_conn_request_msg.robot_name = parent_name
+	robot_conn_request_msg.connection_to = conn_robot_name
+	robot_conn_request_msg.robot_state = init_state
+	conn_req_pub = rospy.Publisher(connection_request_topic, ConnectionRequest, queue_size=10)
+	rospy.sleep(0.5)
+	conn_req_pub.publish(robot_conn_request_msg)
+	rospy.sleep(1)
+	
+	msg = rospy.wait_for_message(state_topic_name, RobotsState, timeout=message_wait_timeout)	
+	if msg.robot_state == change_state:
+		return True and init_state_sucs
+	return False
+
+
 
 def verifyStateChange(init_state, change_state, robot_name):
 	init_state_sucs = False
