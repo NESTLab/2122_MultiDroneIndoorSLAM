@@ -473,6 +473,9 @@ bool DecideNextMeeting::entryPoint()
 
 bool DecideNextMeeting::isDone()
 {
+   if(testing_mode)
+      return explore_interface->navigationDone();
+
    return updated_meeting_location;
 }
 

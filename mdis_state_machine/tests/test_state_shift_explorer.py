@@ -27,6 +27,8 @@ class TestStateShiftExplorer(unittest.TestCase):
 		self.assertEqual(verifyConnStateChange(GO_TO_MEET, TRANSIT_TO_MEET, ROBOT_NAME, ROBOT_PARTNER), True, "State shift check for explorer state 3-4 failed")
 		self.assertEqual(verifyTransitStateChange(TRANSIT_TO_MEET, MERGE_MAP, ROBOT_NAME, ROBOT_PARTNER), True, "State shift check for explorer state 4-5 failed")
 		self.assertEqual(verifyStateChange(MERGE_MAP, DECIDE_NEXT_MEETING, ROBOT_NAME), True, "State shift check for explorer state 2-3 failed")
+		self.assertEqual(verifyStateChange(DECIDE_NEXT_MEETING, END_MEETING, ROBOT_NAME), True, "State shift check for explorer state 2-3 failed")
+		self.assertEqual(verifyTransitStateChange(END_MEETING, GO_TO_EXPLORE, ROBOT_NAME, ROBOT_PARTNER), True, "State shift check for explorer state 4-5 failed")
 		stop_state_machine(proc)
 
 
