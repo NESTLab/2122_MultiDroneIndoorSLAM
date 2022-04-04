@@ -14,3 +14,4 @@ QUICK_WAIT_TIMER = 0.05
 PUB_TOPIC = 'nearby_robots'
 DEBUG_TOPIC = 'coms_debug'
 SUB_TOPIC = 'coms_listening'
+PADDING_CHAR = "\0"

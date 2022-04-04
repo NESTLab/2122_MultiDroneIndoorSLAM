@@ -32,6 +32,9 @@ parser.add_argument('-launch',
 parser.add_argument('-config',
                     type=str,
                     help='path to net-sim config file')
+parser.add_argument('-role',
+                    type=str,
+                    help='role of the robot [ relay | explorer ]')
 
 
 def get_run_args() -> Dict:
@@ -46,15 +49,18 @@ def get_run_args() -> Dict:
         env = rospy.search_param('environment')
         config = rospy.search_param('config')
         launch = rospy.search_param('launch')
+        role = rospy.search_param('role')
         NODE_IP = rospy.get_param(ip, "")
         NODE_ENVIRONMENT = rospy.get_param(env, "")
         CONFIG_FILE = rospy.get_param(config, "")
         LAUNCH_FILE = rospy.get_param(launch, None)
+        ROLE = rospy.get_param(role, "")
     else:
         NODE_IP = args.ip
         NODE_ENVIRONMENT = args.env
         NODE_NAME = args.name
         CONFIG_FILE = args.config
+        ROLE = args.role
         if args.launch:
             LAUNCH_FILE = args.launch
 
@@ -62,7 +68,8 @@ def get_run_args() -> Dict:
 
     # Validate all runtime arguments
     if (NODE_NAMESPACE == "" or NODE_NAME == "" or CONFIG_FILE == "" or NODE_ENVIRONMENT == "" or NODE_IP == ""
-            or (NODE_ENVIRONMENT != "sim" and NODE_ENVIRONMENT != "pi")):
+            or (NODE_ENVIRONMENT != "sim" and NODE_ENVIRONMENT != "pi")
+            or (ROLE != 'explorer' and ROLE != 'relay')):
         print("Invalid command line or launch arguments.", file=sys.stderr)
         parser.print_usage()
         sys.exit(1)
@@ -70,6 +77,7 @@ def get_run_args() -> Dict:
         'NODE_NAMESPACE': NODE_NAMESPACE,
         'NODE_NAME': NODE_NAME,
         'NODE_IP': NODE_IP,
+        'ROLE': ROLE,
         'NODE_ENVIRONMENT': NODE_ENVIRONMENT,
         'CONFIG_FILE': CONFIG_FILE,
         'LAUNCH_FILE': LAUNCH_FILE
@@ -82,10 +90,11 @@ ___________________________
 NODE_NAMESPACE: {0}
 NODE_NAME: {1}
 NODE_IP: {2}
-NODE_ENVIRONMENT: {3}
-LAUNCH_FILE: {4}
-CONFIG_FILE: {5}\n===========================\n""".format(
-        args["NODE_NAMESPACE"], args["NODE_NAME"], args["NODE_IP"], args["NODE_ENVIRONMENT"], args['LAUNCH_FILE'], args["CONFIG_FILE"]))
+ROLE: {3}
+NODE_ENVIRONMENT: {4}
+LAUNCH_FILE: {5}
+CONFIG_FILE: {6}\n===========================\n""".format(
+        args["NODE_NAMESPACE"], args["NODE_NAME"], args["NODE_IP"], args["ROLE"], args["NODE_ENVIRONMENT"], args['LAUNCH_FILE'], args["CONFIG_FILE"]))
 
 
 def main() -> None:
@@ -117,7 +126,8 @@ def main() -> None:
     simulation = Lite_Simulator(
         local_address=(args["NODE_IP"], STATIC_LISTENER_PORT),
         neighbor_ips=local_ips,
-        namespace=args["NODE_NAMESPACE"]
+        namespace=args["NODE_NAMESPACE"],
+        role=args["ROLE"]
     )
 
     def exit_handler(signal_received: signal.Signals, frame: any) -> None:

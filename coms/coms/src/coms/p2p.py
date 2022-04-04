@@ -3,6 +3,7 @@ import numpy as np
 from rospy import Publisher
 from coms.utils import debug, get_map, map_to_chunks, decompress_map, pack_bytes, read_id_chunk, gen_id_chunk, read_all_chunks
 from coms.constants import MAP_MSG_ID, PING_MSG_ID, CHUNK_SIZE
+from coms.messages import gen_sync_msg_chunks, read_sync_msg_data
 from itertools import count
 from typing import List
 
@@ -15,9 +16,9 @@ class Client():
         self.namespace = namespace
 
     # Send and recieve map data
-    async def sync(self, ip: str, port: int, attempts: int = 1) -> bool:
+    async def sync(self, ip: str, port: int, role: str, attempts: int = 1) -> bool:
         local_map: np.ndarray = get_map(self.namespace)
-        chunks: List[bytes] = map_to_chunks(local_map)
+        chunks: List[bytes] = gen_sync_msg_chunks(local_map, role)
         try:
             msg_id = -1
             raw_resp: bytes = b''
@@ -37,10 +38,12 @@ class Client():
             if raw_resp == b'':
                 return False
 
-            forign_map = decompress_map(raw_resp)
+            map_msg: dict = await read_sync_msg_data(raw_resp)
             # TODO: Call map merge service
-
-            return (forign_map == local_map).all
+            map = map_msg['map']
+            role = map_msg['role']
+            debug(self.DEBUGGER, f"Client {self.LOCAL_IP} retrieved sync from robot with role: {role} [ROLE]")
+            return (map == local_map).all
 
         except Exception as e:
             debug(self.DEBUGGER, f"Client {self.LOCAL_IP} closed connection with {ip} [ERROR] {e}")
@@ -72,12 +75,13 @@ class Server():
     LOCAL_IP = "127.0.0.1"
     LOCAL_PORT = "8887"
 
-    def __init__(self, ip: str, port: int, debug_pub: Publisher, namespace: str) -> None:
+    def __init__(self, ip: str, port: int, debug_pub: Publisher, namespace: str, role: str) -> None:
         self.LOCAL_IP = ip
         self.LOCAL_PORT = port
         self.CONNECTION_COUNTER = count()
         self.DEBUGGER = debug_pub
         self.namespace = namespace
+        self.role = role
 
     async def handler(self, server_stream):
         # Assign each connection a unique number to make our debug prints easier
@@ -94,8 +98,11 @@ class Server():
             # write
             chunks = []
             if msg_id == MAP_MSG_ID:
-                chunks = [gen_id_chunk(MAP_MSG_ID)] + pack_bytes(raw_bytes)
-                debug(self.DEBUGGER, f"Server {self.LOCAL_IP} got SYNC from {client_ip} [ID #{ident} SYNC]")
+                map_msg: dict = await read_sync_msg_data(raw_bytes)
+                map = map_msg['map']
+                role = map_msg['role']
+                chunks = gen_sync_msg_chunks(map, self.role)
+                debug(self.DEBUGGER, f"Server {self.LOCAL_IP} got SYNC from {client_ip} with role {role} [ID #{ident} SYNC]")
             elif msg_id == PING_MSG_ID:
                 chunks = [gen_id_chunk(PING_MSG_ID), b'ping']
                 debug(self.DEBUGGER, f"Server {self.LOCAL_IP} got PING from {client_ip} [ID #{ident} PING]")

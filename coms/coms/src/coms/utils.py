@@ -7,7 +7,7 @@ import rospy
 from std_msgs.msg import String
 from coms.msg import nearby
 from typing import List, Dict, Tuple
-from coms.constants import RESPONSE_TIMEOUT, ENCODING, STATIC_LISTENER_PORT, CHUNK_SIZE, MAP_MSG_ID # noqa: E501
+from coms.constants import PADDING_CHAR, RESPONSE_TIMEOUT, ENCODING, STATIC_LISTENER_PORT, CHUNK_SIZE, MAP_MSG_ID # noqa: E501
 from subprocess import check_output
 from roslaunch.parent import ROSLaunchParent
 from mapmerge.ros_utils import ros_to_numpy
@@ -137,7 +137,7 @@ def publish_nearby_robots(pub: rospy.Publisher, local_ip:str, addresses: List[st
     pub.publish(payload)
 
 def get_map(namespace: str) -> np.ndarray:
-    return np.random.rand(300,300)
+    return np.random.randint(2, size=(300,300))
 
 def _get_map(namespace: str) -> np.ndarray:
     namespace = namespace.replace('/', '')
@@ -155,27 +155,35 @@ def _get_map(namespace: str) -> np.ndarray:
         time.sleep(0.1)
 
 def compress_map(map: np.ndarray) -> bytes:
-    m: str = compress_ndarray(map)
+    m: str = compress_ndarray(map, precision=0)
     return m.encode(ENCODING)
 
 def decompress_map(raw: bytes) -> np.ndarray:
     m = raw.decode(ENCODING)
     return decompress_ndarray(m)
 
-def gen_id_chunk(id: int) -> bytes:
+def gen_id_chunk(id: np.uint) -> bytes:
     result = str(id)
     padding = CHUNK_SIZE - len(result)
-    return (result + "\0" * padding).encode(ENCODING)
+    return (result + PADDING_CHAR * padding).encode(ENCODING)
+
+def add_padding(data: str) -> bytes:
+    padding = CHUNK_SIZE - len(data)
+    return (data + PADDING_CHAR * padding).encode(ENCODING)
+
+def add_padding(data: str) -> bytes:
+    padding = CHUNK_SIZE - len(data)
+    return (data + PADDING_CHAR * padding).encode(ENCODING)
 
 def read_id_chunk(chunk: bytes) -> int:
     block = chunk.decode(ENCODING)
-    block = block.replace("\0", "")
+    block = block.replace(PADDING_CHAR, "")
     return int(block, 10)
 
-def map_to_chunks(map: np.ndarray, id: int = MAP_MSG_ID) -> List[bytes]:
-    m: str = compress_ndarray(map)
+def map_to_chunks(map: np.ndarray, id: int = MAP_MSG_ID, role: str = 'relay') -> List[bytes]:
+    m: str = compress_ndarray(map, precision=0)
     raw_data = m.encode(ENCODING)
-    return [gen_id_chunk(id)] + pack_bytes(raw_data)
+    return [gen_id_chunk(id), add_padding(role)] + pack_bytes(raw_data)
 
 def pack_bytes(raw_data: bytes) -> List[bytes]:
     result = []

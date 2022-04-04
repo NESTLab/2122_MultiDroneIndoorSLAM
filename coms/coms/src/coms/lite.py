@@ -12,11 +12,12 @@ class Lite_Simulator():
     NEIGHBOR_IPS: List[str] = []
     LISTEN_ADDRESS: Tuple[str, int] = ()
     RUNNING: Lock
-    def __init__(self, local_address: Tuple[str, int], neighbor_ips: List[str], namespace: str) -> None:
+    def __init__(self, local_address: Tuple[str, int], neighbor_ips: List[str], namespace: str, role: str) -> None:
         self.LISTEN_ADDRESS = local_address
         self.NEIGHBOR_IPS = neighbor_ips
         self.RUNNING = Lock()
         self.namespace = namespace
+        self.role = role
         self.sub = rospy.Subscriber(
             name=namespace + SUB_TOPIC,
             data_class=String,
@@ -34,19 +35,22 @@ class Lite_Simulator():
         """
         We can do so many things with this topic.
         In order to trigger specific logic, we follow this message schema:
-        Message             Action
-        sync|192.168.0.4|    Performs map sync
+        Message                     Action                  Params
+        sync|192.168.0.4|role       Performs map sync       role = relay | explorer
         """
         msg:str = str_struct.data
         debug(self.debug, f"Recieving message from topic {self.namespace + SUB_TOPIC}: {msg} [TOPIC]")
-
         parts = msg.split('|')
         if parts[0] == 'sync':
             debug(self.debug, f"Recieving message from topic {self.namespace + SUB_TOPIC}: {msg} to sync [TOPIC]")
             neighbor = parts[1]
-            local_ip, port = self.LISTEN_ADDRESS[1]
+            role = parts[2]
+            if role != self.role:
+                debug(self.debug, f"Incorrect role. You gave {role} but the robot is {self.role} [TOPIC ERROR]")
+                return
+            local_ip, port = self.LISTEN_ADDRESS
             client = Client(local_ip, self.debug, self.namespace)
-            trio.run(client.sync, neighbor, port)
+            trio.run(client.sync, neighbor, port, role)
         else:
             debug(self.debug, f"Malformed topic message {self.namespace + SUB_TOPIC}: {msg} [TOPIC WARNING]")
     
@@ -57,14 +61,14 @@ class Lite_Simulator():
             for neighbor in self.NEIGHBOR_IPS:
                 # Use same port as local listener
                 if neighbor != ip:
-                    did_sync = await client.sync(neighbor, port)
+                    did_sync = await client.sync(neighbor, port, role=self.role)
                     if did_sync:
                         debug(self.debug, f"Synchronizer merged with neighbor {neighbor} [SUCCESS]")
             await trio.sleep(2)
  
     async def _listener(self) -> None:
         ip, port = self.LISTEN_ADDRESS
-        server = Server(ip, port, self.debug, self.namespace)
+        server = Server(ip, port, self.debug, self.namespace, self.role)
         await server.serve()
 
     async def _nearby_pinger(self) -> None:
