@@ -171,10 +171,6 @@ def add_padding(data: str) -> bytes:
     padding = CHUNK_SIZE - len(data)
     return (data + PADDING_CHAR * padding).encode(ENCODING)
 
-def add_padding(data: str) -> bytes:
-    padding = CHUNK_SIZE - len(data)
-    return (data + PADDING_CHAR * padding).encode(ENCODING)
-
 def read_id_chunk(chunk: bytes) -> int:
     block = chunk.decode(ENCODING)
     block = block.replace(PADDING_CHAR, "")

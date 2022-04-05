@@ -64,6 +64,7 @@ add_service_files(
    FILES
    MergeMap.srv
    TriggerMerge.srv
+   ReadyToMeet.srv
 )
 
 ## Generate actions in the 'action' folder
