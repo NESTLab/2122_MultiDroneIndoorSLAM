@@ -6,6 +6,7 @@ from coms.p2p import Server, Client
 from coms.constants import PUB_TOPIC, DEBUG_TOPIC, SUB_TOPIC
 from coms.utils import publish_nearby_robots, debug
 from std_msgs.msg import String
+from coms.srv import NextMeeting, NextMeetingResponse, NextMeetingRequest
 from coms.msg import nearby
 
 class Lite_Simulator():
@@ -18,6 +19,7 @@ class Lite_Simulator():
         self.RUNNING = Lock()
         self.namespace = namespace
         self.role = role
+        self.next_meeting_service = rospy.Service("send_next_meeting", NextMeeting, self.send_next_meeting)
         self.sub = rospy.Subscriber(
             name=namespace + SUB_TOPIC,
             data_class=String,
@@ -30,6 +32,14 @@ class Lite_Simulator():
             name=namespace + DEBUG_TOPIC,
             data_class=String,
             queue_size=20)
+    
+    def send_next_meeting(self, req: NextMeetingRequest) -> NextMeetingResponse:
+        local_ip, port = self.LISTEN_ADDRESS
+        neighbor: str = req.robot_ip
+        point: Tuple[int, int, int] = req.point
+        time_to_meet: float = req.time
+        client = Client(local_ip, self.debug, self.namespace)
+        return trio.run(client.next_meeting, neighbor, port, point, time_to_meet)
     
     def sub_handler(self, str_struct, cb_args=None) -> None:
         """

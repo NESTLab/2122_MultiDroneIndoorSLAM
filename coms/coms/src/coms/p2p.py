@@ -1,9 +1,10 @@
 import trio
 import numpy as np
 from rospy import Publisher
-from coms.utils import debug, get_map, map_to_chunks, decompress_map, pack_bytes, read_id_chunk, gen_id_chunk, read_all_chunks
-from coms.constants import MAP_MSG_ID, PING_MSG_ID, CHUNK_SIZE
-from coms.messages import gen_sync_msg_chunks, read_sync_msg_data
+from typing import Tuple
+from coms.utils import debug, get_map, add_padding, map_to_chunks, decompress_map, pack_bytes, read_id_chunk, gen_id_chunk, read_all_chunks
+from coms.constants import MAP_MSG_ID, PING_MSG_ID, CHUNK_SIZE, NEXT_MEETING_MSG_ID
+from coms.messages import gen_sync_msg_chunks, read_sync_msg_data, gen_next_meeting_message, read_next_meeting_message
 from itertools import count
 from typing import List
 
@@ -14,6 +15,40 @@ class Client():
         self.LOCAL_IP = ip
         self.DEBUGGER = debug_pub
         self.namespace = namespace
+
+    async def next_meeting(self, ip: str, port: int, point: Tuple[int, int, int], time_to_meet: float) -> bool:
+        chunks: List[bytes] = gen_next_meeting_message(point, time_to_meet)
+        try:
+            msg_id = -1
+            raw_resp: bytes = b''
+            client_stream = await trio.open_tcp_stream(host=ip, port=port, local_address=self.LOCAL_IP)
+            async with client_stream:
+                # write
+                for chunk in chunks:
+                    await client_stream.send_all(chunk)
+                await client_stream.send_eof()
+                # read
+                msg_id, raw_resp = await read_all_chunks(client_stream)
+
+            if msg_id != NEXT_MEETING_MSG_ID:
+                debug(self.DEBUGGER, f"Client {self.LOCAL_IP} encountered unexpected message id {msg_id} from {ip} [ERROR]")
+                return False
+
+            if raw_resp == b'':
+                return False
+
+            msg: dict = await read_next_meeting_message(raw_resp)
+            accepted = msg['accepted']
+            s = 'DENY'
+            if accepted:
+                s = 'ACCEPT'
+            debug(self.DEBUGGER, f"Client {self.LOCAL_IP} saw robot {ip} {s} the next meeting [NEXT_MEETING]")
+            return accepted
+
+        except Exception as e:
+            debug(self.DEBUGGER, f"Client {self.LOCAL_IP} closed connection with {ip} [ERROR] {e}")
+            return False
+   
 
     # Send and recieve map data
     async def sync(self, ip: str, port: int, role: str, attempts: int = 1) -> bool:
@@ -106,6 +141,12 @@ class Server():
             elif msg_id == PING_MSG_ID:
                 chunks = [gen_id_chunk(PING_MSG_ID), b'ping']
                 debug(self.DEBUGGER, f"Server {self.LOCAL_IP} got PING from {client_ip} [ID #{ident} PING]")
+            elif msg_id == NEXT_MEETING_MSG_ID:
+                next_meeting = read_next_meeting_message(raw_bytes)
+                point = next_meeting['point']
+                time_to_meet = next_meeting['time_to_meet']
+                chunks = [gen_id_chunk(PING_MSG_ID), add_padding('true')]
+                debug(self.DEBUGGER, f"Server {self.LOCAL_IP} got NEXT_MEETING from {client_ip} with point: {point} [ID #{ident} NEXT_MEETING]")
             else:
                 debug(self.DEBUGGER, f"Server {self.LOCAL_IP} encountered unexpected message id {msg_id} from {client_ip} [ID #{ident} ERROR]")
             
@@ -116,8 +157,6 @@ class Server():
         except Exception as e:
             debug(self.DEBUGGER, f"Server {self.LOCAL_IP} closed connection with {client_ip} [ID #{ident} ERROR] {e}")
         
-        
-
     
     async def serve(self):
         print(f"Serving -> {self.LOCAL_IP}:{self.LOCAL_PORT}")

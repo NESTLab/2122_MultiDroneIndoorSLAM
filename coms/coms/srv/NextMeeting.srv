@@ -1,0 +1,5 @@
+string robot_ip
+int64[] point
+float64 time
+---
+bool accepted
