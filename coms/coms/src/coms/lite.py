@@ -7,6 +7,7 @@ from coms.constants import PUB_TOPIC, DEBUG_TOPIC, SUB_TOPIC
 from coms.srv import ReadyToMeet, ReadyToMeetRequest, ReadyToMeetResponse
 from coms.utils import publish_nearby_robots, debug
 from std_msgs.msg import String
+from coms.srv import NextMeeting, NextMeetingResponse, NextMeetingRequest
 from coms.msg import nearby
 
 class Lite_Simulator():
@@ -19,6 +20,7 @@ class Lite_Simulator():
         self.RUNNING = Lock()
         self.namespace = namespace
         self.role = role
+        self.next_meeting_service = rospy.Service("send_next_meeting", NextMeeting, self.send_next_meeting)
         self.get_ready_to_meet = rospy.Service("ready_to_meet", ReadyToMeet, self.get_ready_to_meet_status)
         self.sub = rospy.Subscriber(
             name=namespace + SUB_TOPIC,
@@ -33,7 +35,16 @@ class Lite_Simulator():
             data_class=String,
             queue_size=20)
     
-    def sub_handler(self, str_struct, cb_args=None) -> bool:
+    def send_next_meeting(self, req: NextMeetingRequest) -> NextMeetingResponse:
+        local_ip, port = self.LISTEN_ADDRESS
+        neighbor: str = req.robot_ip
+        point: Tuple[int, int, int] = req.point
+        time_to_meet: float = req.time
+        debug(self.debug, f'Call to send_next_meeting ros service "robot_ip: {neighbor} | point: {point} | time: {time_to_meet}" [SERVICE SEND_NEXT_MEETING]')
+        client = Client(local_ip, self.debug, self.namespace)
+        return trio.run(client.next_meeting, neighbor, port, point, time_to_meet)
+    
+    def sub_handler(self, str_struct, cb_args=None) -> None:
         """
         We can do so many things with this topic.
         In order to trigger specific logic, we follow this message schema:
