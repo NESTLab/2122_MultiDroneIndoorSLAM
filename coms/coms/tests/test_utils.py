@@ -5,7 +5,7 @@ import numpy as np
 import sys
 from typing import List
 from subprocess import check_output, call
-from coms.utils import pack_bytes, map_to_chunks, gen_id_chunk, decompress_map, compress_map, readable, writable, get_ip_list, get_interface_from_ip, get_device_numbers, gen_bound_socket, start_roscore, stop_roscore, addr_to_str # noqa: E501
+from coms.utils import pack_bytes, add_padding, map_to_chunks, gen_id_chunk, decompress_map, compress_map, readable, writable, get_ip_list, get_interface_from_ip, get_device_numbers, gen_bound_socket, start_roscore, stop_roscore, addr_to_str # noqa: E501
 from coms.constants import PADDING_CHAR, CHUNK_SIZE, CATKIN_WS, ENCODING
 from numcompress import compress_ndarray
 from roslaunch.parent import ROSLaunchParent
@@ -131,8 +131,8 @@ class TestUtils(unittest.TestCase):
     def test_map_to_chunks(self: unittest.TestCase) -> None:
         map = np.random.randint(9999, size=(300,300))
         id = 4
-        ref_chunks: List[bytes] = map_to_chunks(map, id)
-        chunks: List[bytes] = [gen_id_chunk(id)] + pack_bytes(compress_ndarray(map, precision=0).encode(ENCODING))
+        ref_chunks: List[bytes] = map_to_chunks(map, id, 'explorer')
+        chunks: List[bytes] = [gen_id_chunk(id), add_padding('explorer')] + pack_bytes(compress_ndarray(map, precision=0).encode(ENCODING))
         self.assertEqual(len(chunks), len(ref_chunks))
         for idx, ref_chunk in enumerate(ref_chunks):
             real_chunk = chunks[idx]

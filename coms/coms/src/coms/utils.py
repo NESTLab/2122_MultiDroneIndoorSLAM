@@ -167,15 +167,23 @@ def gen_id_chunk(id: np.uint) -> bytes:
     padding = CHUNK_SIZE - len(result)
     return (result + PADDING_CHAR * padding).encode(ENCODING)
 
+def add_padding(data: str) -> bytes:
+    padding = CHUNK_SIZE - len(data)
+    return (data + PADDING_CHAR * padding).encode(ENCODING)
+
+def add_padding(data: str) -> bytes:
+    padding = CHUNK_SIZE - len(data)
+    return (data + PADDING_CHAR * padding).encode(ENCODING)
+
 def read_id_chunk(chunk: bytes) -> int:
     block = chunk.decode(ENCODING)
     block = block.replace(PADDING_CHAR, "")
     return int(block, 10)
 
-def map_to_chunks(map: np.ndarray, id: int = MAP_MSG_ID) -> List[bytes]:
+def map_to_chunks(map: np.ndarray, id: int = MAP_MSG_ID, role: str = 'relay') -> List[bytes]:
     m: str = compress_ndarray(map, precision=0)
     raw_data = m.encode(ENCODING)
-    return [gen_id_chunk(id)] + pack_bytes(raw_data)
+    return [gen_id_chunk(id), add_padding(role)] + pack_bytes(raw_data)
 
 def pack_bytes(raw_data: bytes) -> List[bytes]:
     result = []

@@ -8,6 +8,7 @@
   <arg name='map_service' default='dynamic_map'/>
 
   <arg name='ip_address' default=''/>
+  <arg name='role_name' default=''/>
 
   <arg name="tb3_x_pos" default="-7.0"/>
   <arg name="tb3_y_pos" default="-1.0"/>
@@ -46,6 +47,7 @@
         <param name="ip" value="$(arg ip_address)" />
         <param name="launch" value="$(arg launch_file)"/>
         <param name="config" value="$(arg config_file)"/>
+        <param name="role" value="$(arg role_name)"/>
     </node>
   </group>
   
