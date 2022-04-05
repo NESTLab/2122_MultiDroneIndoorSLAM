@@ -30,6 +30,10 @@ sim-gazebo:
 	$(SETUP); \
 	roslaunch turtlebot3_gazebo multi_turtlebot3_all.launch
 
+debug-coms:
+	$(SETUP); \
+	rostopic echo /tb3_0/coms_debug
+
 check-health:
 	source $(WORKDIR)/health-check.sh
 

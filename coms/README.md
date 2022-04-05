@@ -75,3 +75,22 @@ data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #36 OPEN]"
 data: "Synchronizer merged with neighbor 192.168.0.2 [SUCCESS]" <--------------- WIN
 
 ```
+
+## Ready
+A ROS service is available at `/tb3_X/ready_to_meet`, defined within `coms/coms/srv/ReadyToMeet.srv`:
+```
+# ReadyToMeet.srv
+string robot_ip
+bool status
+---
+bool is_ready
+```
+
+This service asks the robot_ip if it's ready for a meeting, returning `bool is_ready`. If the robot is unreachable, an error will be logged in `/tb3_X/coms_debug` while returning `False`.
+
+You can also test this by running:
+```zsh
+$ rostopic pub /tb3_0/coms_listening std_msgs/String "ready|192.168.0.2|true"
+```
+> NOTE: This will not change any state, but only probe the other robot in the the logs.
+

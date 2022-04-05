@@ -4,6 +4,7 @@ from typing import List, Tuple
 from threading import Lock
 from coms.p2p import Server, Client
 from coms.constants import PUB_TOPIC, DEBUG_TOPIC, SUB_TOPIC
+from coms.srv import ReadyToMeet, ReadyToMeetRequest, ReadyToMeetResponse
 from coms.utils import publish_nearby_robots, debug
 from std_msgs.msg import String
 from coms.srv import NextMeeting, NextMeetingResponse, NextMeetingRequest
@@ -20,6 +21,7 @@ class Lite_Simulator():
         self.namespace = namespace
         self.role = role
         self.next_meeting_service = rospy.Service("send_next_meeting", NextMeeting, self.send_next_meeting)
+        self.get_ready_to_meet = rospy.Service("ready_to_meet", ReadyToMeet, self.get_ready_to_meet_status)
         self.sub = rospy.Subscriber(
             name=namespace + SUB_TOPIC,
             data_class=String,
@@ -38,6 +40,7 @@ class Lite_Simulator():
         neighbor: str = req.robot_ip
         point: Tuple[int, int, int] = req.point
         time_to_meet: float = req.time
+        debug(self.debug, f'Call to send_next_meeting ros service "robot_ip: {neighbor} | point: {point} | time: {time_to_meet}" [SERVICE SEND_NEXT_MEETING]')
         client = Client(local_ip, self.debug, self.namespace)
         return trio.run(client.next_meeting, neighbor, port, point, time_to_meet)
     
@@ -47,7 +50,10 @@ class Lite_Simulator():
         In order to trigger specific logic, we follow this message schema:
         Message                     Action                  Params
         sync|192.168.0.4|role       Performs map sync       role = relay | explorer
+        ready|192.168.0.4|status    Query ready to meet     status = true | false
         """
+        local_ip, port = self.LISTEN_ADDRESS
+        client = Client(local_ip, self.debug, self.namespace)
         msg:str = str_struct.data
         debug(self.debug, f"Recieving message from topic {self.namespace + SUB_TOPIC}: {msg} [TOPIC]")
         parts = msg.split('|')
@@ -58,12 +64,23 @@ class Lite_Simulator():
             if role != self.role:
                 debug(self.debug, f"Incorrect role. You gave {role} but the robot is {self.role} [TOPIC ERROR]")
                 return
-            local_ip, port = self.LISTEN_ADDRESS
-            client = Client(local_ip, self.debug, self.namespace)
-            trio.run(client.sync, neighbor, port, role)
+            return trio.run(client.sync, neighbor, port, role)
+        elif parts[0] == 'ready':
+            debug(self.debug, f"Recieving message from topic {self.namespace + SUB_TOPIC}: {msg} to ready [TOPIC]")
+            neighbor = parts[1]
+            status = (parts[2]).lower() == 'true'
+            trio.run(client.ready_to_meet, neighbor, port, status)
         else:
             debug(self.debug, f"Malformed topic message {self.namespace + SUB_TOPIC}: {msg} [TOPIC WARNING]")
     
+    def get_ready_to_meet_status(self, req: ReadyToMeetRequest):
+        ip, port = self.LISTEN_ADDRESS
+        remote_ip = str(req.robot_ip)
+        status = bool(req.status)
+        debug(self.debug, f'Call to ready_to_meet ros service "robot_ip: {remote_ip}" [SERVICE READY_TO_MEET]')
+        client = Client(ip, self.debug, self.namespace)
+        return trio.run(client.ready_to_meet, remote_ip, port, status)
+
     async def _synchronizer(self) -> None:
         ip, port = self.LISTEN_ADDRESS
         client = Client(ip, self.debug, self.namespace)
