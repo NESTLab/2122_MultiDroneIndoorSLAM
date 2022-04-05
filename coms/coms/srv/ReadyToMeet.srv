@@ -1,0 +1,4 @@
+string robot_ip
+bool status
+---
+bool is_ready

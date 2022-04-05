@@ -8,6 +8,7 @@ build/
 .installed.cfg
 *.egg
 *.py[cod]
+venv/
 
 
 *~
