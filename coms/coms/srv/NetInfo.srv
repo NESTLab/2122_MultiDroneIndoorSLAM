@@ -1,0 +1,11 @@
+string remote_ip
+string state
+string parent_ip
+string child_ip
+string role
+---
+string ip
+string state
+string parent_ip
+string child_ip
+string role

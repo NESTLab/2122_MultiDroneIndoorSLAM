@@ -3,8 +3,8 @@ import numpy as np
 from rospy import Publisher
 from typing import Tuple
 from coms.utils import debug, get_map, add_padding, map_to_chunks, decompress_map, pack_bytes, read_id_chunk, gen_id_chunk, read_all_chunks
-from coms.constants import MAP_MSG_ID, PING_MSG_ID, CHUNK_SIZE, NEXT_MEETING_MSG_ID, READY_TO_MEET_ID
-from coms.messages import gen_sync_msg_chunks, read_sync_msg_data, gen_next_meeting_message, read_next_meeting_message, gen_ready_to_meet_chunks, read_ready_to_meet_data
+from coms.constants import MAP_MSG_ID, PING_MSG_ID, CHUNK_SIZE, NEXT_MEETING_MSG_ID, READY_TO_MEET_ID, INFO_MSG_ID
+from coms.messages import gen_sync_msg_chunks, read_sync_msg_data, gen_next_meeting_message, read_next_meeting_message, gen_ready_to_meet_chunks, read_ready_to_meet_data, gen_info_msg_chunks, read_info_msg_data
 from itertools import count
 from typing import List
 
@@ -15,6 +15,34 @@ class Client():
         self.LOCAL_IP = ip
         self.DEBUGGER = debug_pub
         self.namespace = namespace
+
+    async def info(self, ip: str, port: int, state: str, address: str, parent: str, child: str, role: str) -> dict:
+        chunks = gen_info_msg_chunks(state, address, parent, child, role)
+        try:
+            msg_id = -1
+            raw_resp: bytes = b''
+            client_stream = await trio.open_tcp_stream(host=ip, port=port, local_address=self.LOCAL_IP)
+            async with client_stream:
+                # write
+                for chunk in chunks:
+                    await client_stream.send_all(chunk)
+                await client_stream.send_eof()
+                # read
+                msg_id, raw_resp = await read_all_chunks(client_stream)
+
+            if msg_id != INFO_MSG_ID:
+                debug(self.DEBUGGER, f"Client {self.LOCAL_IP} encountered unexpected message id {msg_id} from {ip} [ERROR]")
+                return False
+
+            if raw_resp == b'':
+                return False
+
+            info_dict: dict = read_info_msg_data(raw_resp)
+            debug(self.DEBUGGER, f'Client {self.LOCAL_IP} got info "state: {info_dict["state"]}, address: {info_dict["address"]}, parent: {info_dict["parent"]}, child: {info_dict["child"]}, role: {info_dict["role"]}" from {ip} [INFO]')
+            return info_dict
+        except Exception as e:
+            debug(self.DEBUGGER, f"Client {self.LOCAL_IP} closed connection with {ip} [ERROR] {e}")
+            return False    
     
     async def ready_to_meet(self, ip: str, port: int, status: bool) -> bool:
         chunks = gen_ready_to_meet_chunks(status)
@@ -37,7 +65,7 @@ class Client():
             if raw_resp == b'':
                 return False
 
-            ready_to_meet_msg: dict = await read_ready_to_meet_data(raw_resp)
+            ready_to_meet_msg: dict = read_ready_to_meet_data(raw_resp)
             resp_status = bool(ready_to_meet_msg['status'])
             s = 'READY'
             if not resp_status:
@@ -70,7 +98,7 @@ class Client():
             if raw_resp == b'':
                 return False
 
-            msg: dict = await read_next_meeting_message(raw_resp)
+            msg: dict = read_next_meeting_message(raw_resp)
             accepted = msg['accepted']
             s = 'DENY'
             if accepted:
@@ -106,7 +134,7 @@ class Client():
             if raw_resp == b'':
                 return False
 
-            map_msg: dict = await read_sync_msg_data(raw_resp)
+            map_msg: dict = read_sync_msg_data(raw_resp)
             # TODO: Call map merge service
             map = map_msg['map']
             role = map_msg['role']
@@ -166,7 +194,7 @@ class Server():
             # write
             chunks = []
             if msg_id == MAP_MSG_ID:
-                map_msg: dict = await read_sync_msg_data(raw_bytes)
+                map_msg: dict = read_sync_msg_data(raw_bytes)
                 map = map_msg['map']
                 role = map_msg['role']
                 chunks = gen_sync_msg_chunks(map, self.role)
@@ -175,13 +203,13 @@ class Server():
                 chunks = [gen_id_chunk(PING_MSG_ID), b'ping']
                 debug(self.DEBUGGER, f"Server {self.LOCAL_IP} got PING from {client_ip} [ID #{ident} PING]")
             elif msg_id == NEXT_MEETING_MSG_ID:
-                next_meeting: dict = await read_next_meeting_message(raw_bytes)
+                next_meeting: dict = read_next_meeting_message(raw_bytes)
                 point = next_meeting['point']
                 time_to_meet = next_meeting['time_to_meet']
                 chunks = [gen_id_chunk(NEXT_MEETING_MSG_ID), add_padding('true')]
                 debug(self.DEBUGGER, f"Server {self.LOCAL_IP} got NEXT_MEETING from {client_ip} with point: {point} [ID #{ident} NEXT_MEETING]")
             elif msg_id == READY_TO_MEET_ID:
-                ready_to_meet_msg: dict = await read_ready_to_meet_data(raw_bytes)
+                ready_to_meet_msg: dict = read_ready_to_meet_data(raw_bytes)
                 client_status = ready_to_meet_msg['status']
                 s = 'READY'
                 if not client_status:
@@ -189,6 +217,10 @@ class Server():
                 # TODO: Change to current status
                 chunks = gen_ready_to_meet_chunks(client_status)
                 debug(self.DEBUGGER, f"Server {self.LOCAL_IP} got {s} from {client_ip} [ID #{ident} READY_TO_MEET]")
+            elif msg_id == INFO_MSG_ID:
+                info_dict: dict = read_info_msg_data(raw_bytes)
+                debug(self.DEBUGGER, f'Server {self.LOCAL_IP} got info "state: {info_dict["state"]}, address: {info_dict["address"]}, parent: {info_dict["parent"]}, child: {info_dict["child"]}, role: {info_dict["role"]}" from {client_ip} [ID #{ident} INFO]')
+                chunks = gen_info_msg_chunks('CURRENT_STATE', self.LOCAL_IP, 'IDK', 'IDK', self.role)
             else:
                 debug(self.DEBUGGER, f"Server {self.LOCAL_IP} encountered unexpected message id {msg_id} from {client_ip} [ID #{ident} ERROR]")
             
