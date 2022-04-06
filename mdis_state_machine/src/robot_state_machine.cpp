@@ -416,7 +416,12 @@ TEAM_STATES MergeMap::transition()
     if(robot_role == EXPLORER)
       return DECIDE_NEXT_MEETING;
     else
-      return RECEIVE_NEXT_MEETING;
+    {
+      if (connected_robot_name == data_center_name)
+        return END_MEETING;
+      else
+        return RECEIVE_NEXT_MEETING;
+    }
   }
   return MERGE_MAP;
 }
@@ -632,7 +637,12 @@ TEAM_STATES EndMeeting::transition()
       if(robot_role == EXPLORER)
         return GO_TO_EXPLORE;
       else
-        return GO_TO_DUMP_DATA;
+      {
+        if (connected_robot_name == data_center_name)
+          return GO_TO_MEET;
+        else        
+          return GO_TO_DUMP_DATA;
+      }
    }
    
    return END_MEETING;
@@ -676,79 +686,110 @@ void EndMeeting::publishConnectionRequest()
    connection_request_pub.publish(data);
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////// G O  T O  D U M P   S T A T E   C L A S S ////////////////////////////////////
+///////////////////////////////////// G O   T O   D U M P   S T A T E   C L A S S ////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool GoToDumpData::entryPoint()
 {
-   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Entering the state GO_TO_DUMP");
-   ROS_INFO_STREAM("["<<robot_name<<"] "<< "Going to Dump Data at"<<data_dump_location);
-   connected = false;
-   explore_interface->goToPoint(data_dump_location, false);
-   ros::Duration(1).sleep();
+   printMessage("Entering the state GO_TO_DUMP_DATA");
+   connection_request_received = false;
+   send_once = true;
    return true;
 }
 
 bool GoToDumpData::isDone()
 {
-   ROS_INFO_STREAM("["<<robot_name<<"] "<<"Going to Dump Data at"<<data_dump_location);
- 
-   if(RobotState::testing_mode)
-   {
-      int i = 0;
-      int rate = 5;
-      
-      // Hardcoded publish for 5 seconds
-      while(i++ < testing_waiting_time*rate)
-      {
-        ros::Rate(rate).sleep();
-      }
-
-      return true;
-   }
-   if(connected){
-      ROS_INFO("Dump Connection Made");
-      return true;
-   }
-   return false;
-  
-  //  explore_interface->goToPoint(data_dump_location, true);
-  //  return true;
+   return explore_interface->navigationDone();
 }
+
 
 TEAM_STATES GoToDumpData::transition()
 {
-  if(isDone())
-    return DUMP_DATA;
-  else
-    return GO_TO_DUMP_DATA;
+   if (connection_request_received)
+      return TRANSIT_TO_MEET;
+
+   if(isDone())
+   {
+      if(!explore_interface->navigationSucceeded())
+         return ERROR_STATE;
+   }
+   
+   return GO_TO_DUMP_DATA;
 }
 
 void GoToDumpData::step()
 {
-  ROS_INFO_THROTTLE(10, "Going to dump data");
+   if(send_once)
+      sendRobotToLocation();
+
   ros::Duration time_since_connection = ros::Time::now() - time_of_last_conn;
   if(time_since_connection>wait_time_for_conn)
     connected = false;
 
+   if(connected)
+      publishConnectionRequest();
+
+  publishRobotState();
+  printMessageThrottled("Executing the step for GO_TO_MEET");
+}
+
+void GoToDumpData::publishConnectionRequest()
+{
+   mdis_state_machine::ConnectionRequest data;
+   data.robot_name.data = robot_name;
+   data.connection_to.data = connected_robot_name;
+   data.robot_state = (int)(m_unId);
+   connection_request_pub.publish(data);
+}
+
+void GoToDumpData::sendRobotToLocation()
+{
+   geometry_msgs::Point nav_point = getCurrentMeetingPoint();
+   explore_interface->goToPoint(nav_point);
+   send_once = false;
 }
 
 void GoToDumpData::exitPoint()
 {
-  ROS_INFO_STREAM("["<<robot_name<<"] "<< "Exiting the state GO_TO_DUMP");
-  if(!RobotState::testing_mode)
-    explore_interface->stopRobot();
+   send_once = false;
+   connected = false;
+   connection_request_received = false;
+   explore_interface->stopRobot();
+
+   last_robot_state = (TEAM_STATES)(m_unId);
+   printMessage("Exiting the state GO_TO_MEET");
 }
+
 
 void GoToDumpData::connCB(const mdis_state_machine::Connection::ConstPtr msg)
 {
-  if(msg->connection_to.data == "data_center")
+  if(getRobotOfInterestName() == (msg->connection_to.data))
   {
     connected = true;
+    connected_robot_name = msg->connection_to.data;
     time_of_last_conn = ros::Time::now();
   }
 }
+
+void GoToDumpData::connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg)
+{
+  if(connected_robot_name == "")
+      return;
+
+  std::string conn_robot_name = msg->robot_name.data;
+  std::string conn_robot_request_name = msg->connection_to.data;
+  if (connected_robot_name == (conn_robot_name) && conn_robot_request_name == robot_name){
+    connection_request_received = true;
+  }
+}
+
+std::string GoToDumpData::getRobotOfInterestName()
+{
+  return parent_robot_name;  
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// D U M P   S T A T E   C L A S S ////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////

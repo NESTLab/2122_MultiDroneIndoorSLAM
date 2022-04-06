@@ -20,7 +20,7 @@
 enum ROLE{
   RELAY,
   EXPLORER,
-  RELAY_BETN_ROBOTS,
+  DATA_CENTER,
 };
 
 enum TEAM_STATES{
@@ -67,6 +67,7 @@ protected:
    // ros::Subscriber interest_sub;
    std::string m_strName;
    std::string robot_name;
+   std::string data_center_name = "data_center";
    static float curr_meet_x, curr_meet_y, next_meet_x, next_meet_y;
    static float time_for_exploration;
    static std::string connected_robot_name;
@@ -370,19 +371,34 @@ private:
 class GoToDumpData: public RobotState{
 public:
    GoToDumpData(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_DUMP_DATA, "GoToDumpData", nh, testing){
-   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);
-   conn_sub = nh.subscribe(nh.getNamespace() + "/connection_check", 1000, &GoToDumpData::connCB, this);     
+      connection_request_sub = nh.subscribe("/connection_request", 1000, &GoToDumpData::connectionRequestCB, this);
+      connection_request_pub = nh.advertise<mdis_state_machine::ConnectionRequest>("/connection_request", 1000);     
+      conn_sub = nh.subscribe(nh.getNamespace() + "/connection_check", 1000, &GoToDumpData::connCB, this);  
    }
    bool isDone() override ;
+
    TEAM_STATES transition() override;
+   
    bool entryPoint() override;
    void step() override;
    void exitPoint() override;
+
 private:
-   ros::Subscriber conn_sub;
-   std::string conn_robot;
    bool connected;
+   bool connection_request_received;
+   bool send_once;
+
+   std::string conn_robot;
+   ros::Publisher connection_request_pub;
+   ros::Subscriber connection_request_sub;
+   ros::Subscriber conn_sub;
+
    void connCB(const mdis_state_machine::Connection::ConstPtr msg);
+   void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
+
+   void publishConnectionRequest();
+   void sendRobotToLocation();
+   std::string getRobotOfInterestName();
 
    ros::Time time_of_last_conn;
    ros::Duration wait_time_for_conn = ros::Duration(2.0);
