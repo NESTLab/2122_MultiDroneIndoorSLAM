@@ -66,7 +66,7 @@ rostopic pub /tb3_0/coms_listening std_msgs/String "sync|192.168.0.2|role"
 
 ## Next Meeting 🤝
 About: Explorers tell relays where the next meeting will be. Relays either accept or deny the request.
-Message:
+Message: `coms/coms/srv/NextMeeting.srv`:
 ```
 string robot_ip
 int64[] point
@@ -107,7 +107,7 @@ rostopic pub /tb3_0/coms_listening std_msgs/String "ready|remote_ip|status"
 > NOTE: This will not change any state, but only probe the other robot in the the logs.
 
 ## Info ℹ
-About:
+About: Ask neighbor for all network information
 Message: `coms/coms/srv/NetInfo.srv`
 ```
 string remote_ip
