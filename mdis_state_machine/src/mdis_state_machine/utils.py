@@ -5,6 +5,8 @@ from mdis_state_machine.msg import Connection
 from mdis_state_machine.msg import ConnectionRequest
 from mdis_state_machine.msg import Location
 from geometry_msgs.msg import Point
+from geometry_msgs.msg import PoseArray
+from geometry_msgs.msg import Pose
 from std_msgs.msg import String
 from std_msgs.msg import Empty
 from typing import List
@@ -26,7 +28,7 @@ ERROR_STATE = 11
 
 
 
-max_attempts_for_robot_message = 10
+max_attempts_for_robot_message = 3
 ideal_state_change_duration = 5
 headstart_to_check = 3
 max_time_to_wait_to_change_state = 1
@@ -34,6 +36,8 @@ message_wait_timeout = 1
 robot_state_topic = "/robots_state"
 connection_check_topic = "/connection_check"
 testing_switch_trigger_topic = "/testing_switch_trigger"
+testing_frontier_publish_topic = "/frontier_list"
+testing_frontier_request_topic = "/frontier_request"
 connection_request_topic = "/connection_request"
 
 def gen_topic_name(lst: List[str]) -> str:
@@ -43,35 +47,14 @@ def gen_topic_name(lst: List[str]) -> str:
 	return result
 
 
-def verifyInitState(init_state, robot_name):
+def listenStateChange(init_state, robot_name):
 	topic_name = gen_topic_name([robot_name, robot_state_topic])
-	for i in range(max_attempts_for_robot_message):
-		msg = rospy.wait_for_message(topic_name, RobotsState, timeout=message_wait_timeout)
-		return msg.robot_state == init_state
-	return False
-
-
-def verifyTimedStateChange(init_state, change_state, robot_name):
-	rospy.sleep(ideal_state_change_duration - headstart_to_check)
-	time_start = rospy.get_rostime().secs
-	init_state_sucs = False
-	topic_name = gen_topic_name([robot_name, robot_state_topic])
-	while rospy.get_rostime().secs < time_start + max_time_to_wait_to_change_state:
-		msg = rospy.wait_for_message(topic_name, RobotsState, timeout=message_wait_timeout)
-		if msg.robot_name.data == robot_name:
-			if msg.robot_state == init_state:
-				init_state_sucs = True
-			if msg.robot_state == change_state:
-				return True and init_state_sucs
-	return False
+	msg = rospy.wait_for_message(topic_name, RobotsState, timeout=message_wait_timeout)
+	return msg.robot_state == init_state
 
 
 def verifyConnStateChange(init_state, change_state, robot_name, robot_partner):
-	init_state_sucs = False
-	state_topic_name = gen_topic_name([robot_name, robot_state_topic])
-	msg = rospy.wait_for_message(state_topic_name, RobotsState, timeout=message_wait_timeout)
-	if msg.robot_state == init_state:
-		init_state_sucs = True
+	init_state_sucs = listenStateChange(init_state, robot_name)
 
 	parent_name = String(data=robot_partner)
 	conn_robot_name = String(data=robot_name)
@@ -91,17 +74,11 @@ def verifyConnStateChange(init_state, change_state, robot_name, robot_partner):
 	rospy.sleep(0.2)
 	conn_req_pub.publish(robot_conn_request_msg)
 	rospy.sleep(0.2)
-	msg = rospy.wait_for_message(state_topic_name, RobotsState, timeout=message_wait_timeout)	
-	if msg.robot_state == change_state:
-		return True and init_state_sucs
-	return False
+	final_state_sucs = listenStateChange(change_state, robot_name)
+	return final_state_sucs and init_state_sucs
 
 def verifyTransitStateChange(init_state, change_state, robot_name, robot_partner):
-	init_state_sucs = False
-	state_topic_name = gen_topic_name([robot_name, robot_state_topic])
-	msg = rospy.wait_for_message(state_topic_name, RobotsState, timeout=message_wait_timeout)
-	if msg.robot_state == init_state:
-		init_state_sucs = True
+	init_state_sucs = listenStateChange(init_state, robot_name)
 
 	parent_name = String(data=robot_partner)
 	conn_robot_name = String(data=robot_name)
@@ -115,20 +92,13 @@ def verifyTransitStateChange(init_state, change_state, robot_name, robot_partner
 	conn_req_pub.publish(robot_conn_request_msg)
 	rospy.sleep(1)
 	
-	msg = rospy.wait_for_message(state_topic_name, RobotsState, timeout=message_wait_timeout)	
-	if msg.robot_state == change_state:
-		return True and init_state_sucs
-	return False
+	final_state_sucs = listenStateChange(change_state, robot_name)
+	return final_state_sucs and init_state_sucs
 
 
 
 def verifyStateChange(init_state, change_state, robot_name):
-	init_state_sucs = False
-	# while rospy.get_rostime().secs < time_start+max_time_to_wait_to_change_state:
-	state_topic_name = gen_topic_name([robot_name, robot_state_topic])  
-	msg = rospy.wait_for_message(state_topic_name, RobotsState, timeout=message_wait_timeout)	
-	if msg.robot_state == init_state:
-		init_state_sucs = True
+	init_state_sucs = listenStateChange(init_state, robot_name)
 
 	trig_switch_msg = Empty()
 	
@@ -137,9 +107,28 @@ def verifyStateChange(init_state, change_state, robot_name):
 	rospy.sleep(0.5)
 	pub.publish(trig_switch_msg)
 	rospy.sleep(0.5)
-	msg = rospy.wait_for_message(state_topic_name, RobotsState, timeout=message_wait_timeout)
-	if msg.robot_state == change_state:
-		return True and init_state_sucs
+
+	final_state_sucs = listenStateChange(change_state, robot_name)
+	return final_state_sucs and init_state_sucs
+
+def verifyMeetingLocCalcStateChange(init_state, change_state, robot_name):
+	init_state_sucs = listenStateChange(init_state, robot_name)
+	
+	topic_name = gen_topic_name([robot_name, testing_frontier_request_topic])
+	msg = rospy.wait_for_message(topic_name, String, timeout=message_wait_timeout)
+	if(msg.data == robot_name):
+		frontier_publish_topic = gen_topic_name([robot_name, testing_frontier_publish_topic])
+		pub = rospy.Publisher(frontier_publish_topic, PoseArray, queue_size=10)
+		rospy.sleep(0.5)
+
+		data = PoseArray()
+		zero_pose = Pose()
+		data.poses.append(zero_pose)
+		pub.publish(data)
+		rospy.sleep(1)
+
+		final_state_sucs = listenStateChange(change_state, robot_name)
+		return final_state_sucs and init_state_sucs
 
 	return False
 
