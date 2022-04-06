@@ -68,7 +68,7 @@ protected:
    std::string m_strName;
    std::string robot_name;
    std::string data_center_name = "data_center";
-   static float curr_meet_x, curr_meet_y, next_meet_x, next_meet_y;
+   static float meet_loc_x, meet_loc_y;
    static float time_for_exploration;
    static std::string connected_robot_name;
    static std::string parent_robot_name, child_robot_name;
@@ -94,35 +94,20 @@ protected:
      robot_state_pub.publish(state_pub_data);
    }
 
-   void setCurrentMeetingPoint(const geometry_msgs::Point& meeting)
+   void setMeetingPoint(const geometry_msgs::Point& meeting)
    {
-     curr_meet_x = meeting.x;
-     curr_meet_y = meeting.y;
+     meet_loc_x = meeting.x;
+     meet_loc_y = meeting.y;
    }
-   void setNextMeetingPoint(const geometry_msgs::Point& meeting)//not being used now. This was to set meeting point as the one from which explorer returned
-   {
-     next_meet_x = meeting.x;
-     next_meet_y = meeting.y;
-   }
-   geometry_msgs::Point getCurrentMeetingPoint()
+
+   geometry_msgs::Point getMeetingPoint()
    {
      geometry_msgs::Point point;
-     point.x = curr_meet_x;
-     point.y = curr_meet_y;
+     point.x = meet_loc_x;
+     point.y = meet_loc_y;
      return point;
    }
-   geometry_msgs::Point getNextMeetingPoint()
-   {
-     geometry_msgs::Point point;
-     point.x = next_meet_x;
-     point.y = next_meet_y;
-     return point;
-   }
-   void setCurrAsNextMeeting()
-   {
-     curr_meet_x = next_meet_x;
-     curr_meet_y = next_meet_y;
-   }
+
    inline bool isConnDirectRelated(const std::string& conn_robot)
    {
      bool conn_parent = (conn_robot == parent_robot_name) && (conn_robot != "");
@@ -403,17 +388,3 @@ private:
    ros::Time time_of_last_conn;
    ros::Duration wait_time_for_conn = ros::Duration(2.0);
 };
-class DumpData: public RobotState{
-public:
-   DumpData(ros::NodeHandle &nh, bool testing):RobotState(DUMP_DATA, "DumpData", nh, testing){
-   }
-   bool isDone() override ;
-   TEAM_STATES transition() override;
-   bool entryPoint() override;
-   void step() override;
-   void exitPoint() override;
-private:
-};
-
-
-

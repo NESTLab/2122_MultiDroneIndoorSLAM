@@ -35,7 +35,6 @@ void TeamScheduler::addStates()
     addState(new ReceiveNextMeeting(nh_, testing_mode_));
     addState(new EndMeeting(nh_, testing_mode_));
     addState(new GoToDumpData(nh_, testing_mode_));
-    addState(new DumpData(nh_, testing_mode_));
     addState(new ErrorState(nh_, testing_mode_));
 }
 
@@ -144,10 +143,11 @@ int main(int argc, char** argv)
    {
      ROS_WARN("TESTING MODE ACTIVE!");
      testing = true;
-     role = std::stoi(argv[1]) == 5 ? EXPLORER : RELAY;
+     role = (ROLE)(std::stoi(argv[1])-5);
    }
 
-   parent_name = argv[2];
+   if(role != DATA_CENTER)
+     parent_name = argv[2];
    if(role != EXPLORER)
      child_name = argv[3];
 
