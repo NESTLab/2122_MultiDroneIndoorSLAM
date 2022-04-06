@@ -123,6 +123,7 @@ def verifyMeetingLocCalcStateChange(init_state, change_state, robot_name):
 
 		data = PoseArray()
 		zero_pose = Pose()
+		zero_pose.position.x = 10
 		data.poses.append(zero_pose)
 		pub.publish(data)
 		rospy.sleep(1)
