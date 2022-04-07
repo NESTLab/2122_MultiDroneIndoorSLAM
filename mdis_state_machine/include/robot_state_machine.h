@@ -35,7 +35,7 @@ enum TEAM_STATES{
    END_MEETING,
    GO_TO_DUMP_DATA,
    DATA_CENTER_READY_TO_MEET,
-   ERROR_STATE,
+   ERROR_STATE=99,
 };
 
 class RobotState {
@@ -67,7 +67,7 @@ protected:
    // ros::Subscriber interest_sub;
    std::string m_strName;
    std::string robot_name;
-   std::string data_center_name = "data_center";
+   std::string data_center_name = "tb3_0";
    static float meet_loc_x, meet_loc_y;
    static float time_for_exploration;
    static std::string connected_robot_name;
@@ -96,6 +96,8 @@ protected:
 
    void setMeetingPoint(const geometry_msgs::Point& meeting)
    {
+      std::string message = getFormattedMessage("Meeting point setting to: ");
+      ROS_ERROR_STREAM(message<<meeting);
      meet_loc_x = meeting.x;
      meet_loc_y = meeting.y;
    }
@@ -221,6 +223,7 @@ private:
    bool connected;
    bool connection_request_received;
    bool send_once;
+   bool this_state;
 
    std::string conn_robot;
    ros::Publisher connection_request_pub;
@@ -252,6 +255,7 @@ public:
    void exitPoint() override;
 
 private:
+   bool this_state;
    bool connection_request_received;
    int current_publishing_counter;
    const int LEAST_PUBLISH_COUNT = 5;
@@ -299,6 +303,7 @@ public:
 
 private:
    bool updated_meeting_location;
+   bool this_state;
    bool frontier_received;
 
    ros::Publisher frontier_req_pub;
@@ -323,6 +328,7 @@ public:
    void exitPoint() override;
 
 private:
+   bool this_state;
    bool connection_request_received;
    ros::Subscriber connection_request_sub;
    void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
@@ -342,6 +348,7 @@ public:
    void exitPoint() override;
 
 private:
+   bool this_state;
    bool once;
    bool connection_request_received;
    int current_publishing_counter;
@@ -370,6 +377,7 @@ public:
    void exitPoint() override;
 
 private:
+   bool this_state;
    bool connected;
    bool connection_request_received;
    bool send_once;
@@ -405,6 +413,7 @@ public:
    void exitPoint() override;
 
 private:
+   bool this_state;
    bool connection_request_received;
 
    int downtime_counter;

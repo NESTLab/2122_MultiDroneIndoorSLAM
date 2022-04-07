@@ -38,6 +38,7 @@
 
     <node pkg="mdis_state_machine" type="connection_check" name="connection_check" args="4"/>
 
+	  <node pkg="multi_map_ros" name="find_fontier" type="frontier_clustering.py" output="screen"/>
   </group>
   
   <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_slam.launch">
@@ -55,7 +56,6 @@
     <arg name="ns" value="$(arg ns)"/>
   </include>
   
-	<node pkg="multi_map_ros" name="find_fontier_$(arg ns)" type="frontier_clustering.py" output="screen"/>
 
   <include file="$(find explore_lite)/launch/explore.launch">
     <arg name="ns" value="$(arg ns)"/>

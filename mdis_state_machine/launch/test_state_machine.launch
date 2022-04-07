@@ -6,11 +6,11 @@
 
   <!-- The argument 6 is to notify the code that it is in testing mode for the robot Relay -->
   <group ns = "test_robot_2">
-    <node pkg="mdis_state_machine" type="team_scheduler" name="team_scheduler" args="5 data_center test_robot_1" output="screen"/>
+    <node pkg="mdis_state_machine" type="team_scheduler" name="team_scheduler" args="5 tb3_0 test_robot_1" output="screen"/>
   </group>
 
   <!-- The argument 6 is to notify the code that it is in testing mode for the robot Relay -->
-  <group ns = "data_center">
+  <group ns = "tb3_0">
     <node pkg="mdis_state_machine" type="team_scheduler" name="team_scheduler" args="7 dummy_parent dummy_child" output="screen"/>
   </group>
 </launch>

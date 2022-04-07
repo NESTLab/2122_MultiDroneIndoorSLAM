@@ -9,39 +9,39 @@
 
   <!-- Launch three robots in the house -->
   <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">
-    <arg name="ns" value="tb3_0"/>
+    <arg name="ns" value="tb3_1"/>
     <arg name="tb3_x_pos" value="-9.0"/>
     <arg name="tb3_y_pos" value="-3.0"/>
     <arg name="tb3_z_pos" value="0.0"/>
     <arg name="tb3_yaw" value="0.0"/>  
     <arg name="role" value="1"/>
-    <arg name="parent_name" value="tb3_1"/>
+    <arg name="parent_name" value="tb3_2"/>
     <arg name="child_name" value=""/>
   </include>  
   
   <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">
-    <arg name="ns" value="tb3_1"/>
+    <arg name="ns" value="tb3_2"/>
     <arg name="tb3_x_pos" value="-10.0"/>
     <arg name="tb3_y_pos" value="-3.0"/>
     <arg name="tb3_z_pos" value="0.0"/>
     <arg name="tb3_yaw" value="0.0"/>
     <arg name="role" value="0"/>
-    <arg name="parent_name" value="data_center"/>
-    <arg name="child_name" value="tb3_0"/>
+    <arg name="parent_name" value="tb3_0"/>
+    <arg name="child_name" value="tb3_1"/>
   </include>  
   
   <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">
-    <arg name="ns" value="tb3_2"/>
-    <arg name="tb3_x_pos" value="-9.5"/>
-    <arg name="tb3_y_pos" value="-3.5"/>
+    <arg name="ns" value="tb3_0"/>
+    <arg name="tb3_x_pos" value="-6"/>
+    <arg name="tb3_y_pos" value="-5"/>
     <arg name="tb3_z_pos" value="0.0"/>
     <arg name="tb3_yaw" value="0.0"/>
-    <arg name="role" value="1"/>
-    <arg name="parent_name" value="tb3_3"/>
-    <arg name="child_name" value=""/>
+    <arg name="role" value="2"/>
+    <arg name="parent_name" value="dummy_1"/>
+    <arg name="child_name" value="dummy_2"/>
   </include>  
   
-  <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">
+  <!-- <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">
     <arg name="ns" value="tb3_3"/>
     <arg name="tb3_x_pos" value="-10.5"/>
     <arg name="tb3_y_pos" value="-3.5"/>
@@ -50,7 +50,7 @@
     <arg name="role" value="0"/>
     <arg name="parent_name" value="data_center"/>
     <arg name="child_name" value="tb3_2"/>
-  </include>
+  </include> -->
   
   <!-- Launch multi map merge -->
   <!-- <include file="$(find turtlebot3_gazebo)/launch/multi_map_merge.launch"/> -->

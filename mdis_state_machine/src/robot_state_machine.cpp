@@ -2,7 +2,7 @@
 
 float RobotState::meet_loc_x = 0.0;
 float RobotState::meet_loc_y = 0.0;
-float RobotState::time_for_exploration = 40.0;
+float RobotState::time_for_exploration = 5.0;
 TEAM_STATES RobotState::last_robot_state = IDLE;
 
 std::string RobotState::parent_robot_name = "";
@@ -22,9 +22,8 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   robot_name = ros::this_node::getNamespace();
   robot_name.erase(robot_name.begin());
   
-  int robot_num = (int)(robot_name.back())-48;
   geometry_msgs::Point current_pose = explore_interface->getRobotCurrentPose().pose.position;
-  meet_loc_x = current_pose.x+3;
+  meet_loc_x = current_pose.x+7;
   meet_loc_y = current_pose.y;
 
   data_dump_location.x = -6;
@@ -93,6 +92,7 @@ TEAM_STATES ErrorState::transition()
 
 void ErrorState::step()
 {
+  publishRobotState();
   twist_msg.angular.z = direction;
   direction *= -1;
   robot_cmd_vel.publish(twist_msg);
@@ -149,6 +149,8 @@ void GoToExplore::step()
    explore_interface->goToPoint(nav_point);
    send_once = false;
   }
+  std::string message = getFormattedMessage("Robot Going to: ");
+  ROS_INFO_STREAM(message<<getMeetingPoint());
 }
 
 void GoToExplore::exitPoint()
@@ -223,6 +225,7 @@ bool GoToMeet::entryPoint()
    printMessage("Entering the state GO_TO_MEET");
    connection_request_received = false;
    send_once = true;
+   this_state = true;
    return true;
 }
 
@@ -265,6 +268,9 @@ void GoToMeet::step()
 
   publishRobotState();
   printMessageThrottled("Executing the step for GO_TO_MEET");
+
+  std::string message = getFormattedMessage("Robot Going to: ");
+  ROS_INFO_STREAM(message<<getMeetingPoint());
 }
 
 void GoToMeet::publishConnectionRequest()
@@ -285,6 +291,7 @@ void GoToMeet::sendRobotToLocation()
 
 void GoToMeet::exitPoint()
 {
+   this_state = false;
    send_once = false;
    connected = false;
    connection_request_received = false;
@@ -297,6 +304,9 @@ void GoToMeet::exitPoint()
 
 void GoToMeet::connCB(const mdis_state_machine::Connection::ConstPtr msg)
 {
+  if(!this_state)
+    return;
+
   if(getRobotOfInterestName() == (msg->connection_to.data))
   {
     connected = true;
@@ -307,6 +317,9 @@ void GoToMeet::connCB(const mdis_state_machine::Connection::ConstPtr msg)
 
 void GoToMeet::connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg)
 {
+  if(!this_state)
+    return;
+    
   if(connected_robot_name == "")
       return;
 
@@ -335,6 +348,7 @@ bool TransitToMeet::entryPoint()
    printMessage("Entrypoint for TransitToMeet");
    connection_request_received = false;
    current_publishing_counter = 0;
+   this_state = true;
    return true;
 }
 
@@ -369,12 +383,16 @@ void TransitToMeet::step()
 void TransitToMeet::exitPoint()
 {
   last_robot_state = (TEAM_STATES)(m_unId);
+  this_state = false;
   printMessage("Exitpoint for TransitToMeet");
 }
 
 
 void TransitToMeet::connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg)
 {
+  if(!this_state)
+    return;
+    
   std::string conn_robot_name = msg->robot_name.data;
   std::string conn_robot_request_name = msg->connection_to.data;
   if (connected_robot_name == (conn_robot_name) && conn_robot_request_name == robot_name){
@@ -482,6 +500,7 @@ bool DecideNextMeeting::entryPoint()
 {
    printMessage("Entrypoint for DecideNextMeeting");
    updated_meeting_location = false;
+   this_state = true;
    return true;
 }
 
@@ -522,6 +541,9 @@ void DecideNextMeeting::requestFrontiers()
 
 void DecideNextMeeting::getBestFrontiersCB(const geometry_msgs::PoseArray::ConstPtr msg)
 {
+  if(!this_state)
+    return;
+    
    for (int i=0;i<msg->poses.size();i++){
      frontiers_list.push_back(msg->poses.at(i).position);
   }
@@ -546,6 +568,7 @@ void DecideNextMeeting::updateNextMeetingPoint()
     
     float self_distance_from_frontier = explore_interface->getDistancePrediction(temp);
     
+    ROS_ERROR_STREAM("Analyzing frontier point:   "<<frontier);
     float other_distance_from_frontier = 0.0;
     /* This might be redundant 
     **  The relay will go to the data center and then will come to meet. 
@@ -556,7 +579,7 @@ void DecideNextMeeting::updateNextMeetingPoint()
     
     total_distance_from_frontier = self_distance_from_frontier + other_distance_from_frontier;
   
-    if (total_distance_from_frontier>max_dis){
+    if (total_distance_from_frontier>=max_dis){
       max_dis = total_distance_from_frontier;
       point.x=frontier.x;
       point.y=frontier.y;
@@ -569,6 +592,7 @@ void DecideNextMeeting::exitPoint()
 {
    printMessage("Exitpoint for DecideNextMeeting");
    updated_meeting_location = false;
+   this_state = false;
    frontier_received = false;
 }
 
@@ -581,6 +605,7 @@ void DecideNextMeeting::exitPoint()
 bool ReceiveNextMeeting::entryPoint()
 {
    connection_request_received = false;
+   this_state = true;
    return true;
 }
 
@@ -605,6 +630,7 @@ void ReceiveNextMeeting::step()
 
 void ReceiveNextMeeting::exitPoint()
 {
+   this_state = false;
   last_robot_state = (TEAM_STATES)(m_unId);
   printMessage("Exitpoint for ReceiveNextMeeting");
 }
@@ -612,6 +638,9 @@ void ReceiveNextMeeting::exitPoint()
 
 void ReceiveNextMeeting::connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg)
 {
+  if(!this_state)
+    return;
+    
   std::string conn_robot_name = msg->robot_name.data;
   std::string conn_robot_request_name = msg->connection_to.data;
   if (connected_robot_name == (conn_robot_name) && conn_robot_request_name == robot_name)
@@ -629,6 +658,7 @@ bool EndMeeting::entryPoint()
 {
    connection_request_received = false;
    current_publishing_counter = 0;
+   this_state = true;
    return true;
 }
 
@@ -678,11 +708,15 @@ void EndMeeting::exitPoint()
   last_robot_state = (TEAM_STATES)(m_unId);
   printMessage("Exitpoint for EndMeeting");
   connected_robot_name = "";
+   this_state = false;
 }
 
 
 void EndMeeting::connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg)
 {
+  if(!this_state)
+    return;
+    
   std::string conn_robot_name = msg->robot_name.data;
   std::string conn_robot_request_name = msg->connection_to.data;
   if (connected_robot_name == (conn_robot_name) && conn_robot_request_name == robot_name)
@@ -714,6 +748,7 @@ bool GoToDumpData::entryPoint()
    printMessage("Entering the state GO_TO_DUMP_DATA");
    connection_request_received = false;
    send_once = true;
+   this_state = true;
    return true;
 }
 
@@ -764,8 +799,7 @@ void GoToDumpData::publishConnectionRequest()
 
 void GoToDumpData::sendRobotToLocation()
 {
-   geometry_msgs::Point nav_point = getMeetingPoint();
-   explore_interface->goToPoint(nav_point);
+   explore_interface->goToPoint(data_dump_location);
    send_once = false;
 }
 
@@ -774,6 +808,7 @@ void GoToDumpData::exitPoint()
    send_once = false;
    connected = false;
    connection_request_received = false;
+   this_state = false;
    explore_interface->stopRobot();
 
    last_robot_state = (TEAM_STATES)(m_unId);
@@ -783,6 +818,9 @@ void GoToDumpData::exitPoint()
 
 void GoToDumpData::connCB(const mdis_state_machine::Connection::ConstPtr msg)
 {
+  if(!this_state)
+    return;
+    
   if(getRobotOfInterestName() == (msg->connection_to.data))
   {
     connected = true;
@@ -793,6 +831,9 @@ void GoToDumpData::connCB(const mdis_state_machine::Connection::ConstPtr msg)
 
 void GoToDumpData::connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg)
 {
+  if(!this_state)
+    return;
+    
   if(connected_robot_name == "")
       return;
 
@@ -818,6 +859,7 @@ bool DataCenterReadyToMeet::entryPoint()
    printMessage("Entering the state DATA_CENTER_READY_TO_MEET");
    connection_request_received = false;
    downtime_counter = 0;
+   this_state = true;
    return true;
 }
 
@@ -848,6 +890,7 @@ void DataCenterReadyToMeet::step()
 void DataCenterReadyToMeet::exitPoint()
 {
    connection_request_received = false;
+   this_state = false;
    explore_interface->stopRobot();
 
    last_robot_state = (TEAM_STATES)(m_unId);
@@ -856,6 +899,9 @@ void DataCenterReadyToMeet::exitPoint()
 
 void DataCenterReadyToMeet::connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg)
 {
+  if(!this_state)
+    return;
+    
   if(connection_request_received)
       return;
 

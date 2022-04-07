@@ -11,7 +11,7 @@ LAUNCH_DIR = os.path.join(TEST_DIR.parent.absolute(), 'launch')
 LAUNCH_FILE = os.path.join(LAUNCH_DIR, 'test_state_machine.launch')
 EXPLORER_NAME = "test_robot_1"
 RELAY_NAME = "test_robot_2"
-DATA_CENTER = "data_center"
+DATA_CENTER = "tb3_0"
 
 
 class TestStateShiftExplorer(unittest.TestCase):
