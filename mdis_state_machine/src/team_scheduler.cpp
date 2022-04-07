@@ -7,6 +7,8 @@ TeamScheduler::TeamScheduler(ros::NodeHandle &nh, const std::string& robot_name,
       setInitialState(GO_TO_EXPLORE);
     else if (role == RELAY)
       setInitialState(GO_TO_MEET);
+    else
+      setInitialState(DATA_CENTER_READY_TO_MEET);
 
     current_state_ptr->setParent(parent_name);
     current_state_ptr->setChild(child_name);
@@ -35,6 +37,7 @@ void TeamScheduler::addStates()
     addState(new ReceiveNextMeeting(nh_, testing_mode_));
     addState(new EndMeeting(nh_, testing_mode_));
     addState(new GoToDumpData(nh_, testing_mode_));
+    addState(new DataCenterReadyToMeet(nh_, testing_mode_));
     addState(new ErrorState(nh_, testing_mode_));
 }
 
@@ -156,7 +159,9 @@ int main(int argc, char** argv)
 
     
    std::string robot_name = ros::this_node::getNamespace();
+   ROS_INFO_STREAM(robot_name);
    robot_name.erase(robot_name.begin());
+   ROS_INFO_STREAM(robot_name);
 
    TeamScheduler team(nh, robot_name, role, parent_name, child_name, testing);
    

@@ -34,7 +34,7 @@ enum TEAM_STATES{
    RECEIVE_NEXT_MEETING,
    END_MEETING,
    GO_TO_DUMP_DATA,
-   DUMP_DATA,
+   DATA_CENTER_READY_TO_MEET,
    ERROR_STATE,
 };
 
@@ -255,6 +255,7 @@ private:
    bool connection_request_received;
    int current_publishing_counter;
    const int LEAST_PUBLISH_COUNT = 5;
+   const int MAX_PUBLISH_COUNT = 50;
 
    ros::Publisher connection_request_pub;
    ros::Subscriber connection_request_sub;
@@ -377,6 +378,41 @@ private:
    ros::Publisher connection_request_pub;
    ros::Subscriber connection_request_sub;
    ros::Subscriber conn_sub;
+
+   void connCB(const mdis_state_machine::Connection::ConstPtr msg);
+   void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
+
+   void publishConnectionRequest();
+   void sendRobotToLocation();
+   std::string getRobotOfInterestName();
+
+   ros::Time time_of_last_conn;
+   ros::Duration wait_time_for_conn = ros::Duration(2.0);
+};
+
+class DataCenterReadyToMeet: public RobotState{
+public:
+   DataCenterReadyToMeet(ros::NodeHandle &nh, bool testing):RobotState(DATA_CENTER_READY_TO_MEET, "DataCenterReadyToMeet", nh, testing){
+      connection_request_sub = nh.subscribe("/connection_request", 1000, &DataCenterReadyToMeet::connectionRequestCB, this);
+      connection_request_pub = nh.advertise<mdis_state_machine::ConnectionRequest>("/connection_request", 1000);     
+   }
+   bool isDone() override ;
+
+   TEAM_STATES transition() override;
+   
+   bool entryPoint() override;
+   void step() override;
+   void exitPoint() override;
+
+private:
+   bool connection_request_received;
+
+   int downtime_counter;
+   const int MAX_DOWNTIME = 10;
+
+   std::string conn_robot;
+   ros::Publisher connection_request_pub;
+   ros::Subscriber connection_request_sub;
 
    void connCB(const mdis_state_machine::Connection::ConstPtr msg);
    void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);

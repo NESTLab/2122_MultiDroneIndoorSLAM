@@ -332,6 +332,7 @@ std::string GoToMeet::getRobotOfInterestName()
 
 bool TransitToMeet::entryPoint()
 {
+   printMessage("Entrypoint for TransitToMeet");
    connection_request_received = false;
    current_publishing_counter = 0;
    return true;
@@ -348,6 +349,11 @@ TEAM_STATES TransitToMeet::transition()
 {
    if(isDone())
       return MERGE_MAP;
+
+   if(current_publishing_counter > MAX_PUBLISH_COUNT)
+      return ERROR_STATE;
+    
+   ROS_WARN_STREAM(current_publishing_counter);
    
    return TRANSIT_TO_MEET;
 }
@@ -409,13 +415,21 @@ TEAM_STATES MergeMap::transition()
   if(isDone())
   {
     if(robot_role == EXPLORER)
+    {
       return DECIDE_NEXT_MEETING;
-    else
+    }
+
+    else if(robot_role == RELAY)
     {
       if (connected_robot_name == data_center_name)
         return END_MEETING;
       else
         return RECEIVE_NEXT_MEETING;
+    }
+
+    else
+    {
+        return END_MEETING;
     }
   }
   return MERGE_MAP;
@@ -630,13 +644,21 @@ TEAM_STATES EndMeeting::transition()
    if(isDone())
    {
       if(robot_role == EXPLORER)
+      {
         return GO_TO_EXPLORE;
-      else
+      }
+
+      else if(robot_role == RELAY)
       {
         if (connected_robot_name == data_center_name)
           return GO_TO_MEET;
         else        
           return GO_TO_DUMP_DATA;
+      }
+
+      else
+      {
+        return DATA_CENTER_READY_TO_MEET;
       }
    }
    
@@ -655,6 +677,7 @@ void EndMeeting::exitPoint()
 {
   last_robot_state = (TEAM_STATES)(m_unId);
   printMessage("Exitpoint for EndMeeting");
+  connected_robot_name = "";
 }
 
 
@@ -781,6 +804,73 @@ void GoToDumpData::connectionRequestCB(const mdis_state_machine::ConnectionReque
 }
 
 std::string GoToDumpData::getRobotOfInterestName()
+{
+  return parent_robot_name;  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////// D.  C.   R E A D Y   T O   M E E T   S T A T E   C L A S S ////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool DataCenterReadyToMeet::entryPoint()
+{
+   printMessage("Entering the state DATA_CENTER_READY_TO_MEET");
+   connection_request_received = false;
+   downtime_counter = 0;
+   return true;
+}
+
+bool DataCenterReadyToMeet::isDone()
+{
+  if(downtime_counter++>MAX_DOWNTIME)
+     return connection_request_received;
+  
+  return false;
+}
+
+
+TEAM_STATES DataCenterReadyToMeet::transition()
+{
+   if(isDone())
+      return TRANSIT_TO_MEET;
+   
+   return DATA_CENTER_READY_TO_MEET;
+}
+
+void DataCenterReadyToMeet::step()
+{
+
+  publishRobotState();
+  printMessageThrottled("Executing the step for DATA_CENTER_READY_TO_MEET");
+}
+
+void DataCenterReadyToMeet::exitPoint()
+{
+   connection_request_received = false;
+   explore_interface->stopRobot();
+
+   last_robot_state = (TEAM_STATES)(m_unId);
+   printMessage("Exiting the state DATA_CENTER_READY_TO_MEET");
+}
+
+void DataCenterReadyToMeet::connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg)
+{
+  if(connection_request_received)
+      return;
+
+  if(downtime_counter <= MAX_DOWNTIME)
+     return;
+
+  std::string conn_robot_name = msg->robot_name.data;
+  std::string conn_robot_request_name = msg->connection_to.data;
+  if (conn_robot_request_name == robot_name){
+    connection_request_received = true;
+    connected_robot_name = conn_robot_name;
+  }
+}
+
+std::string DataCenterReadyToMeet::getRobotOfInterestName()
 {
   return parent_robot_name;  
 }
