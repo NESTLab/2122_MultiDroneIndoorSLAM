@@ -17,23 +17,23 @@ The broadcaster subscribes to a given `/robot<num>/line-of-site` topic and re-br
 ## Debugging 🔧
 We expose the topic: `/tb3_0/coms_debug` to see what's going on in the coms node. You can see sync and ping requests from neighbors and watch connections open & close. If you send a trigger to the topic: `/tb3_0/coms_listening`, you can see that too!
 
-### Try it out
-
 ```zsh
 # Start the simulation
-$ roslaunch turtlebot3_gazebo multi_turtlebot3_all.launch
+roslaunch turtlebot3_gazebo multi_turtlebot3_all.launch
 ```
 
 ```zsh
 # Listen to the coms debugging channel 
-$ rostopic echo /tb3_0/coms_debug
+rostopic echo /tb3_0/coms_debug
 ```
+
+The above topic will show you all incoming, outgoing, and error messages within the coms node.
 
 ```zsh
 # Ask coms to invoke a sync
 # NOTE: tb3_0 is bound to 192.168.0.1
 #       tb3_1 is bound to 192.168.0.2
-$ rostopic pub /tb3_0/coms_listening std_msgs/String "sync|192.168.0.2|"
+rostopic pub /tb3_0/coms_listening std_msgs/String "sync|192.168.0.2|explorer"
 ```
 
 The result:
@@ -44,31 +44,9 @@ data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #31 OPEN]"
 ---
 data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #32 OPEN]"
 ---
-data: "Server 192.168.0.1 got PING from 192.168.0.2 [ID #32 PING]"
----
-data: "Server 192.168.0.1 closed connection with 192.168.0.2 [ID #32 CLOSED]"
----
-data: "Server 192.168.0.1 got SYNC from 192.168.0.2 [ID #31 SYNC]"
----
-data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #33 OPEN]"
----
-data: "Server 192.168.0.1 got PING from 192.168.0.2 [ID #33 PING]"
----
-data: "Server 192.168.0.1 closed connection with 192.168.0.2 [ID #33 CLOSED]"
----
-data: "Server 192.168.0.1 closed connection with 192.168.0.2 [ID #31 CLOSED]"
----
-data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #34 OPEN]"
----
-data: "Server 192.168.0.1 got PING from 192.168.0.2 [ID #34 PING]"
----
-data: "Server 192.168.0.1 closed connection with 192.168.0.2 [ID #34 CLOSED]"
----
-data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #35 OPEN]"
----
-data: "Server 192.168.0.1 got PING from 192.168.0.2 [ID #35 PING]"
----
-data: "Server 192.168.0.1 closed connection with 192.168.0.2 [ID #35 CLOSED]"
+.
+.
+.
 ---
 data: "Server 192.168.0.1 connected to 192.168.0.2 [ID #36 OPEN]"
 ---
@@ -76,8 +54,37 @@ data: "Synchronizer merged with neighbor 192.168.0.2 [SUCCESS]" <---------------
 
 ```
 
-## Ready
-A ROS service is available at `/tb3_X/ready_to_meet`, defined within `coms/coms/srv/ReadyToMeet.srv`:
+# Message Specs
+
+## Sync 🔁
+About: Attempt an on-the-fly syncronization with a neighbor
+### Triggers(s)
+Topic: `/tb3_X/coms_listening`
+```zsh
+rostopic pub /tb3_0/coms_listening std_msgs/String "sync|192.168.0.2|role"
+```
+
+## Next Meeting 🤝
+About: Explorers tell relays where the next meeting will be. Relays either accept or deny the request.
+Message: `coms/coms/srv/NextMeeting.srv`:
+```
+string robot_ip
+int64[] point
+float64 time
+---
+bool accepted
+```
+
+### Trigger(s)
+Service: `/tb3_X/send_next_meeting`
+```zsh
+rosservice call /tb3_0/send_next_meeting {"robot_ip: '192.168.0.2', point: [23,9,1], time: 0.0"}
+```
+
+
+## Ready 🚦
+About: Ask a neighbor if they are ready to start or stop a meeting.
+Message: `coms/coms/srv/ReadyToMeet.srv`:
 ```
 # ReadyToMeet.srv
 string robot_ip
@@ -85,12 +92,48 @@ bool status
 ---
 bool is_ready
 ```
+### Trigger(s)
 
-This service asks the robot_ip if it's ready for a meeting, returning `bool is_ready`. If the robot is unreachable, an error will be logged in `/tb3_X/coms_debug` while returning `False`.
-
-You can also test this by running:
+Service: `/tb3_X/ready_to_meet`
 ```zsh
-$ rostopic pub /tb3_0/coms_listening std_msgs/String "ready|192.168.0.2|true"
+rosservice call /tb3_0/ready_to_meet "robot_ip: '192.168.0.2'
+status: false"
+```
+
+Topic: `/tb3_X/coms_listening`
+```zsh
+rostopic pub /tb3_0/coms_listening std_msgs/String "ready|remote_ip|status"
 ```
 > NOTE: This will not change any state, but only probe the other robot in the the logs.
+
+## Info ℹ
+About: Ask neighbor for all network information
+Message: `coms/coms/srv/NetInfo.srv`
+```
+string remote_ip
+string state
+string parent_ip
+string child_ip
+string role
+---
+string ip
+string state
+string parent_ip
+string child_ip
+string role
+```
+
+### Trigger(s)
+
+Service: `/tb3_X/ready_to_meet`
+```zsh
+rosservice call /tb3_0/get_info "{remote_ip: '192.168.0.2',
+state: 'you_choose', parent_ip: 'you_choose', child_ip: 'you_choose', role: 'explorer'}"
+```
+
+Topic: `/tb3_X/coms_listening`
+```zsh
+rostopic pub /tb3_0/coms_listening std_msgs/String "info|remote_ip|state|parent_ip|child_ip|role"
+```
+
 

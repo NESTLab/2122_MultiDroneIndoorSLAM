@@ -4,10 +4,9 @@ from typing import List, Tuple
 from threading import Lock
 from coms.p2p import Server, Client
 from coms.constants import PUB_TOPIC, DEBUG_TOPIC, SUB_TOPIC
-from coms.srv import ReadyToMeet, ReadyToMeetRequest, ReadyToMeetResponse
 from coms.utils import publish_nearby_robots, debug
 from std_msgs.msg import String
-from coms.srv import NextMeeting, NextMeetingResponse, NextMeetingRequest
+from coms.srv import NextMeeting, NextMeetingResponse, NextMeetingRequest, ReadyToMeet, ReadyToMeetRequest, ReadyToMeetResponse, NetInfo, NetInfoRequest, NetInfoResponse
 from coms.msg import nearby
 
 class Lite_Simulator():
@@ -22,6 +21,7 @@ class Lite_Simulator():
         self.role = role
         self.next_meeting_service = rospy.Service("send_next_meeting", NextMeeting, self.send_next_meeting)
         self.get_ready_to_meet = rospy.Service("ready_to_meet", ReadyToMeet, self.get_ready_to_meet_status)
+        self.info_service = rospy.Service("get_info", NetInfo, self.get_info)
         self.sub = rospy.Subscriber(
             name=namespace + SUB_TOPIC,
             data_class=String,
@@ -35,6 +35,24 @@ class Lite_Simulator():
             data_class=String,
             queue_size=20)
     
+    def get_info(self, req: NetInfoRequest) -> NetInfoResponse:
+        local_ip, port = self.LISTEN_ADDRESS
+        remote_ip: str = req.remote_ip
+        state: str = req.state
+        parent_ip: str = req.parent_ip
+        child_ip: str = req.child_ip
+        role: str = req.role
+        debug(self.debug, f'Call to send_next_meeting ros service "{req}" [SERVICE INFO]')
+        client = Client(local_ip, self.debug, self.namespace)
+        info_dict = trio.run(client.info, remote_ip, port, state, local_ip, parent_ip, child_ip, role)
+        response = NetInfoResponse()
+        response.state = info_dict['state']
+        response.ip = info_dict['address']
+        response.parent_ip = info_dict['parent']
+        response.child_ip = info_dict['child']
+        response.role = info_dict['role']
+        return response
+
     def send_next_meeting(self, req: NextMeetingRequest) -> NextMeetingResponse:
         local_ip, port = self.LISTEN_ADDRESS
         neighbor: str = req.robot_ip
@@ -48,9 +66,17 @@ class Lite_Simulator():
         """
         We can do so many things with this topic.
         In order to trigger specific logic, we follow this message schema:
-        Message                     Action                  Params
-        sync|192.168.0.4|role       Performs map sync       role = relay | explorer
-        ready|192.168.0.4|status    Query ready to meet     status = true | false
+
+        PARAMS (all strings)
+        role = relay | explorer
+        status = true | false
+        *ip* = 192.168.0.4 or any IP
+        state = <undecided> # TODO: Select which states to broadcast
+
+        MESSAGE                                         ACTION                  
+        sync|remote_ip|role                             Performs map sync
+        ready|remote_ip|status                          Query ready to meet
+        info|remote_ip|state|parent_ip|child_ip|role    Retrieve robot information
         """
         local_ip, port = self.LISTEN_ADDRESS
         client = Client(local_ip, self.debug, self.namespace)
@@ -58,7 +84,7 @@ class Lite_Simulator():
         debug(self.debug, f"Recieving message from topic {self.namespace + SUB_TOPIC}: {msg} [TOPIC]")
         parts = msg.split('|')
         if parts[0] == 'sync':
-            debug(self.debug, f"Recieving message from topic {self.namespace + SUB_TOPIC}: {msg} to sync [TOPIC]")
+            # sync|remote_ip|role
             neighbor = parts[1]
             role = parts[2]
             if role != self.role:
@@ -66,14 +92,25 @@ class Lite_Simulator():
                 return
             return trio.run(client.sync, neighbor, port, role)
         elif parts[0] == 'ready':
-            debug(self.debug, f"Recieving message from topic {self.namespace + SUB_TOPIC}: {msg} to ready [TOPIC]")
+            # ready|remote_ip|status
             neighbor = parts[1]
             status = (parts[2]).lower() == 'true'
             trio.run(client.ready_to_meet, neighbor, port, status)
+        elif parts[0] == 'info':
+            # info|remote_ip|state|parent_ip|child_ip|role
+            remote_ip = parts[1]
+            state = parts[2]
+            parent_ip = parts[3]
+            child_ip = parts[4]
+            role = parts[5]
+            if role != self.role:
+                debug(self.debug, f"Incorrect role. You gave {role} but the robot is {self.role} [TOPIC ERROR]")
+                return
+            trio.run(client.info, remote_ip, port, state, local_ip, parent_ip, child_ip, role)
         else:
             debug(self.debug, f"Malformed topic message {self.namespace + SUB_TOPIC}: {msg} [TOPIC WARNING]")
     
-    def get_ready_to_meet_status(self, req: ReadyToMeetRequest):
+    def get_ready_to_meet_status(self, req: ReadyToMeetRequest) -> ReadyToMeetResponse:
         ip, port = self.LISTEN_ADDRESS
         remote_ip = str(req.robot_ip)
         status = bool(req.status)
