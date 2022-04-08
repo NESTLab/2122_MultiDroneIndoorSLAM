@@ -60,9 +60,16 @@ RUN apt-get install -y libgsl-dev cmake libfreeimage-dev libfreeimageplus-dev \
   echo "sudo ldconfig" >> ~/.bashrc; \
   make install
 
-# Install kheperaiv robot to ARGos3
+# Install kheperaiv robot
 RUN git clone https://github.com/ilpincy/argos3-kheperaiv.git; \
   cd argos3-kheperaiv && mkdir build_sim && cd build_sim; \
+  cmake -DCMAKE_BUILD_TYPE=Release ../src; \
+  make; \
+  sudo make install
+
+# Install Kilobot robot
+RUN git clone https://github.com/ilpincy/argos3-kilobot.git; \
+  cd argos3-kilobot && mkdir build && cd build; \
   cmake -DCMAKE_BUILD_TYPE=Release ../src; \
   make; \
   sudo make install
