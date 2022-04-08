@@ -95,6 +95,12 @@ RUN rosdep init; \
   echo "export ARGOS_PLUGIN_PATH=$HOME/catkin_ws/src/argos_bridge/ros_lib_links" >> ~/.bashrc; \
   echo "export ARGOS_PLUGIN_PATH=$ARGOS_PLUGIN_PATH:$HOME/catkin_ws/devel/lib" >> ~/.bashrc
 
+# Install BUZZ Language
+RUN git clone https://github.com/buzz-lang/Buzz.git buzz; \
+  cd buzz && mkdir build && cd build; \
+  cmake ../src; \
+  make; \
+  sudo make install
 
 # Permissions
 RUN sudo chmod a+rwx /root -R
