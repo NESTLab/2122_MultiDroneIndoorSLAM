@@ -71,6 +71,7 @@ RUN git clone https://github.com/ilpincy/argos3-kheperaiv.git; \
 RUN git clone https://github.com/ilpincy/argos3-kilobot.git; \
   cd argos3-kilobot && mkdir build && cd build; \
   cmake -DCMAKE_BUILD_TYPE=Release ../src; \
+  make; \
   sudo make install
 
 # Install extra dependencies
