@@ -46,8 +46,8 @@ ros::NodeHandle *CKheperaIVRos::nodeHandle = initROS();
 CKheperaIVRos::CKheperaIVRos() : m_pcWheels(NULL),
                                  m_pcProximity(NULL),
                                  m_fWheelVelocity(2.5f),
-                                 m_pcRABA(NULL),
-                                 m_pcRABS(NULL),
+                                //  m_pcRABA(NULL),
+                                //  m_pcRABS(NULL),
                                  m_pcLIDAR(NULL)
 {
   odom_broadcaster = std::make_unique<tf::TransformBroadcaster>();
@@ -59,22 +59,21 @@ void CKheperaIVRos::Init(TConfigurationNode &t_node)
 {
   // Create the topics to publish
   stringstream proximityTopic;
-  // proximityTopic << "/" << GetId() << "/proximity";
-  proximityTopic << "/proximity";
+  proximityTopic << "/" << GetId() << "/proximity";
   proximityPub = nodeHandle->advertise<ProximityList>(proximityTopic.str(), 1);
   stringstream losTopic;
   losTopic << "/" << GetId() << "/lineOfSight";
   losPub = nodeHandle->advertise<losList>(losTopic.str(), 1);
   stringstream odomTopic;
-  odomTopic << "/odom";
+  odomTopic << "/" << GetId() << "/odom";
   odomPub = nodeHandle->advertise<nav_msgs::Odometry>(odomTopic.str(), 1);
   stringstream laserScanTopic;
-  laserScanTopic << "/scan";
+  laserScanTopic << "/" << GetId()  << "/scan";
   laserScanPub = nodeHandle->advertise<sensor_msgs::LaserScan>(laserScanTopic.str(), 1);
 
   // Create the subscribers
   stringstream cmdVelTopic;
-  cmdVelTopic << "/cmd_vel";
+  cmdVelTopic << "/" << GetId() << "/cmd_vel";
   cmdVelSub = nodeHandle->subscribe(cmdVelTopic.str(), 1, &CKheperaIVRos::cmdVelCallback, this);
 
   // time
@@ -84,15 +83,15 @@ void CKheperaIVRos::Init(TConfigurationNode &t_node)
   m_pcWheels = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
   m_pcEncoder = GetSensor<CCI_DifferentialSteeringSensor>("differential_steering");
   m_pcProximity = GetSensor<CCI_KheperaIVProximitySensor>("kheperaiv_proximity");
-  m_pcRABA = GetActuator<CCI_RangeAndBearingActuator>("range_and_bearing");
-  m_pcRABS = GetSensor<CCI_RangeAndBearingSensor>("range_and_bearing");
+  // m_pcRABA = GetActuator<CCI_RangeAndBearingActuator>("range_and_bearing");
+  // m_pcRABS = GetSensor<CCI_RangeAndBearingSensor>("range_and_bearing");
   m_pcLIDAR = GetSensor<CCI_KheperaIVLIDARSensor>("kheperaiv_lidar");
 }
 
 void CKheperaIVRos::ControlStep()
 {
   this->updateTime();
-  this->publishLineOfSight();
+  // this->publishLineOfSight();
   this->publishProximity();
   this->publishLIDAR();
   this->publishOdometry();
@@ -107,13 +106,9 @@ void CKheperaIVRos::debug(bool debug)
   {
     return;
   }
-  RLOG << time.toSec() << std::endl;
-  /* Print encoder values */
-  RLOG << "Encoder values: "
-       << "VL=" << m_pcEncoder->GetReading().VelocityLeftWheel << ", "
-       << "VR=" << m_pcEncoder->GetReading().VelocityRightWheel << ", "
-       //    << "DL=" << m_pcEncoder->GetReading().CoveredDistanceLeftWheel << ", "
-       //    << "DR=" << m_pcEncoder->GetReading().CoveredDistanceRightWheel
+  RLOG << "robot_id=" << GetId() << ", "
+       << "wheel_vel_l" << m_pcEncoder->GetReading().VelocityLeftWheel << ", "
+       << "wheel_vel_r" << m_pcEncoder->GetReading().VelocityRightWheel << ", "
        << std::endl;
 }
 
@@ -299,9 +294,6 @@ void CKheperaIVRos::cmdVelCallback(const geometry_msgs::Twist &twist)
   leftSpeed = (v - KHEPERAIV_BASE_RADIUS * w) * KHEPERAIV_WHEEL_RADIUS;
   rightSpeed = (v + KHEPERAIV_BASE_RADIUS * w) * KHEPERAIV_WHEEL_RADIUS;
   m_pcWheels->SetLinearVelocity(leftSpeed, rightSpeed);
-
-  std::cout << "LSpeed " << leftSpeed << std::endl;
-  std::cout << "RSpeed " << rightSpeed << std::endl;
 }
 
 /*

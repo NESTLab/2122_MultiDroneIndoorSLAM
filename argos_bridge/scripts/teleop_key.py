@@ -140,7 +140,7 @@ if __name__=="__main__":
 
 
     rospy.init_node('argos_teleop', anonymous=True)
-    pub = rospy.Publisher(f'/cmd_vel', Twist, queue_size=10)
+    pub = rospy.Publisher(f'{robot_name}/cmd_vel', Twist, queue_size=10)
 
     turtlebot3_model = robot_config
 
