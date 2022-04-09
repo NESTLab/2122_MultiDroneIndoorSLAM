@@ -113,13 +113,13 @@ RUN git clone https://github.com/buzz-lang/Buzz.git buzz; \
 # Install the Vicon [Platform Specific: Linux x86-64]
 COPY ./Vicon /root/vicon
 
-RUN cp /root/vicon/vicon_sdk/Linux64/libViconDataStreamSDK_CPP.so /lib/libViconDataStreamSDK_CPP.so; \
-  cp /root/vicon/vicon_sdk/Linux64/libboost_system-mt.so.1.58.0 /lib/libboost_system-mt.so.1.58.0; \
-  cp /root/vicon/vicon_sdk/Linux64/libboost_thread-mt.so.1.58.0 /lib/libboost_thread-mt.so.1.58.0; \
-  mkdir /root/vicon/build && cd /root/vicon/build; \
-  cmake ..; \
-  make; \
-  sudo make install
+# RUN cp /root/vicon/vicon_sdk/Linux64/libViconDataStreamSDK_CPP.so /lib/libViconDataStreamSDK_CPP.so; \
+#   cp /root/vicon/vicon_sdk/Linux64/libboost_system-mt.so.1.58.0 /lib/libboost_system-mt.so.1.58.0; \
+#   cp /root/vicon/vicon_sdk/Linux64/libboost_thread-mt.so.1.58.0 /lib/libboost_thread-mt.so.1.58.0; \
+#   mkdir /root/vicon/build && cd /root/vicon/build; \
+#   cmake ..; \
+#   make; \
+#   sudo make install
 
 # Permissions
 RUN sudo chmod a+rwx /root -R
@@ -130,5 +130,6 @@ RUN sudo chmod a+rwx /root -R
 # COPY . /root/catkin_ws/src
 
 EXPOSE 8080
+EXPOSE 22222
 
 CMD ["/root/catkin_ws/src/entrypoint.sh"]

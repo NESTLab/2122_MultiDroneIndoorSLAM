@@ -33,6 +33,9 @@
 #include "std_msgs/Bool.h"
 #include "math.h"
 
+#define DEG2RAD(x) (x * 0.01745329252) // *PI/180
+#define RAD2DEG(x) (x * 57.2957795131) // *180/PI
+
 using namespace argos;
 
 class CKheperaIVRos : public CCI_Controller {

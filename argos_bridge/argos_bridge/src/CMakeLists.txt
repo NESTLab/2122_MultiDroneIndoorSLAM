@@ -3,6 +3,9 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(argos3_bridge)
 
+# enable build arguments: TODO
+set(BUILD_TESTS TRUE)
+
 # Deactivate RPATH for MacOSX
 set(CMAKE_MACOSX_RPATH 0)
 
@@ -32,21 +35,11 @@ include_directories(${catkin_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR} ${ARGOS_INCLUDE_D
 # Set ARGoS link dir
 link_directories(${ARGOS_LIBRARY_DIRS})
 
-# Descend into the controllers directory
-#add_subdirectory(controllers)
+add_subdirectory(plugins)
 
-# Descend into the loop_functions directory
-#add_subdirectory(loop_functions)
-
-# Descend into the embedding directory
-#add_subdirectory(embedding)
-
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif(BUILD_TESTS)
 
 ### END
-
-
-include_directories(${CMAKE_SOURCE_DIR}/controllers)
-
-add_subdirectory(argos_ros_bot)
-add_subdirectory(kheperaiv_ros)
-add_subdirectory(clock_loop_functions)

@@ -122,7 +122,7 @@ catkin_package(
 ###########
 
 # Added for ARGoS
-add_subdirectory(plugin)
+add_subdirectory(src)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations

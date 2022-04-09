@@ -30,64 +30,67 @@ using namespace argos_bridge;
 
 // Initialize ROS node.  There will be only one ROS node no matter how many robots are created in
 // ARGoS.  However, we will have one instance of the CKheperaIVRos class for each ARGoS robot.
-ros::NodeHandle* initROS() {
+ros::NodeHandle *initROS()
+{
   int argc = 0;
-  char *argv = (char *) "";
+  char *argv = (char *)"";
   ros::init(argc, &argv, "argos_bridge");
   return new ros::NodeHandle();
 }
 
-ros::NodeHandle* CKheperaIVRos::nodeHandle = initROS();
+ros::NodeHandle *CKheperaIVRos::nodeHandle = initROS();
 
 /****************************************/
 /****************************************/
 
-CKheperaIVRos::CKheperaIVRos() :
-   m_pcWheels(NULL),
-   m_pcProximity(NULL),
-   m_fWheelVelocity(2.5f),
-   m_pcRABA(NULL),
-   m_pcRABS(NULL),
-   m_pcLIDAR(NULL)
+CKheperaIVRos::CKheperaIVRos() : m_pcWheels(NULL),
+                                 m_pcProximity(NULL),
+                                 m_fWheelVelocity(2.5f),
+                                 m_pcRABA(NULL),
+                                 m_pcRABS(NULL),
+                                 m_pcLIDAR(NULL)
 {
   odom_broadcaster = std::make_unique<tf::TransformBroadcaster>();
 }
 /****************************************/
 /****************************************/
 
-void CKheperaIVRos::Init(TConfigurationNode& t_node) {
+void CKheperaIVRos::Init(TConfigurationNode &t_node)
+{
   // Create the topics to publish
   stringstream proximityTopic;
-  proximityTopic << "/" << GetId() << "/proximity";
+  // proximityTopic << "/" << GetId() << "/proximity";
+  proximityTopic << "/proximity";
   proximityPub = nodeHandle->advertise<ProximityList>(proximityTopic.str(), 1);
   stringstream losTopic;
   losTopic << "/" << GetId() << "/lineOfSight";
   losPub = nodeHandle->advertise<losList>(losTopic.str(), 1);
   stringstream odomTopic;
-  odomTopic << "/" << GetId() << "/odom";
+  odomTopic << "/odom";
   odomPub = nodeHandle->advertise<nav_msgs::Odometry>(odomTopic.str(), 1);
   stringstream laserScanTopic;
-  laserScanTopic << "/" << GetId() << "/scan";
+  laserScanTopic << "/scan";
   laserScanPub = nodeHandle->advertise<sensor_msgs::LaserScan>(laserScanTopic.str(), 1);
-  
+
   // Create the subscribers
   stringstream cmdVelTopic;
-  cmdVelTopic << GetId() << "/cmd_vel";
+  cmdVelTopic << "/cmd_vel";
   cmdVelSub = nodeHandle->subscribe(cmdVelTopic.str(), 1, &CKheperaIVRos::cmdVelCallback, this);
 
   // time
   time = ros::Time(0.0);
 
   // Get sensor/actuator handles
-   m_pcWheels    = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
-   m_pcEncoder   = GetSensor  <CCI_DifferentialSteeringSensor  >("differential_steering");
-   m_pcProximity = GetSensor  <CCI_KheperaIVProximitySensor    >("kheperaiv_proximity"  );
-   m_pcRABA      = GetActuator<CCI_RangeAndBearingActuator     >("range_and_bearing"    );
-   m_pcRABS      = GetSensor  <CCI_RangeAndBearingSensor       >("range_and_bearing"    );
-   m_pcLIDAR     = GetSensor  <CCI_KheperaIVLIDARSensor        >("kheperaiv_lidar"      );
+  m_pcWheels = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
+  m_pcEncoder = GetSensor<CCI_DifferentialSteeringSensor>("differential_steering");
+  m_pcProximity = GetSensor<CCI_KheperaIVProximitySensor>("kheperaiv_proximity");
+  m_pcRABA = GetActuator<CCI_RangeAndBearingActuator>("range_and_bearing");
+  m_pcRABS = GetSensor<CCI_RangeAndBearingSensor>("range_and_bearing");
+  m_pcLIDAR = GetSensor<CCI_KheperaIVLIDARSensor>("kheperaiv_lidar");
 }
 
-void CKheperaIVRos::ControlStep() {
+void CKheperaIVRos::ControlStep()
+{
   this->updateTime();
   this->publishLineOfSight();
   this->publishProximity();
@@ -98,31 +101,35 @@ void CKheperaIVRos::ControlStep() {
   ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
 }
 
-void CKheperaIVRos::debug(bool debug){
-  if (!debug){
+void CKheperaIVRos::debug(bool debug)
+{
+  if (!debug)
+  {
     return;
   }
   RLOG << time.toSec() << std::endl;
   /* Print encoder values */
   RLOG << "Encoder values: "
-    << "VL=" << m_pcEncoder->GetReading().VelocityLeftWheel << ", "
-    << "VR=" << m_pcEncoder->GetReading().VelocityRightWheel << ", "
-//    << "DL=" << m_pcEncoder->GetReading().CoveredDistanceLeftWheel << ", "
-//    << "DR=" << m_pcEncoder->GetReading().CoveredDistanceRightWheel
-    << std::endl;
+       << "VL=" << m_pcEncoder->GetReading().VelocityLeftWheel << ", "
+       << "VR=" << m_pcEncoder->GetReading().VelocityRightWheel << ", "
+       //    << "DL=" << m_pcEncoder->GetReading().CoveredDistanceLeftWheel << ", "
+       //    << "DR=" << m_pcEncoder->GetReading().CoveredDistanceRightWheel
+       << std::endl;
 }
 
-void CKheperaIVRos::updateTime(){
+void CKheperaIVRos::updateTime()
+{
   // updates rostime to sync all ros processes to argos clock
   time += ros::Duration(timestep);
 }
 
-void CKheperaIVRos::publishLIDAR(){
+void CKheperaIVRos::publishLIDAR()
+{
   sensor_msgs::LaserScan scan;
   scan.header.stamp = time;
-  string frame = GetId() + "/base_footprint";
+  string frame = "base_footprint";
   scan.header.frame_id = frame;
-  scan.angle_min = -KHEPERAIV_LIDAR_ANGLE_SPAN.GetValue()* 0.5;
+  scan.angle_min = -KHEPERAIV_LIDAR_ANGLE_SPAN.GetValue() * 0.5;
   scan.angle_max = KHEPERAIV_LIDAR_ANGLE_SPAN.GetValue() * 0.5;
   scan.angle_increment = KHEPERAIV_LIDAR_ANGLE_SPAN.GetValue() / m_pcLIDAR->GetNumReadings();
   scan.time_increment = timestep;
@@ -131,14 +138,16 @@ void CKheperaIVRos::publishLIDAR(){
   scan.range_max = KHEPERAIV_LIDAR_SENSORS_FAN_RADIUS + KHEPERAIV_LIDAR_SENSORS_RING_RANGE.GetMax();
 
   vector<float> lidarReadings;
-  for(size_t j = 0; j < m_pcLIDAR->GetNumReadings(); ++j ){
-    lidarReadings.push_back((float)m_pcLIDAR->GetReading(j)/100);
+  for (size_t j = 0; j < m_pcLIDAR->GetNumReadings(); ++j)
+  {
+    lidarReadings.push_back((float)m_pcLIDAR->GetReading(j) / 100);
   }
   scan.ranges = lidarReadings;
   laserScanPub.publish(scan);
 }
 
-void CKheperaIVRos::publishLineOfSight(){
+void CKheperaIVRos::publishLineOfSight()
+{
   // broadcast current robot to all LOS
   int msgCap = 10;
   // char payload[msgCap];
@@ -148,16 +157,14 @@ void CKheperaIVRos::publishLineOfSight(){
   // Get local id
 
   char nulls[2] = {'0', '0'};
-  uint8_t* empty = reinterpret_cast<uint8_t*>(&nulls);
+  uint8_t *empty = reinterpret_cast<uint8_t *>(&nulls);
 
-
-
-  const char* id = GetId().c_str();
+  const char *id = GetId().c_str();
   // Copy id to payload
   // strcpy(&payload, id);
   // memcpy(&payload,strlen(id))
   // Convert c_string to bytes
-  uint8_t* data = reinterpret_cast<uint8_t*>(const_cast<char*>(id));
+  uint8_t *data = reinterpret_cast<uint8_t *>(const_cast<char *>(id));
 
   // argos::CByteArray buff = argos::CByteArray((size_t) msgCap - , (UInt8) '\0');
   CByteArray buff = CByteArray(data, 8);
@@ -166,83 +173,93 @@ void CKheperaIVRos::publishLineOfSight(){
   m_pcRABA->SetData(buff);
 
   // write all robot names within los to rosmsg
-  const CCI_RangeAndBearingSensor::TReadings& packets = m_pcRABS->GetReadings();
+  const CCI_RangeAndBearingSensor::TReadings &packets = m_pcRABS->GetReadings();
   losList loslist;
   loslist.n = packets.size();
-  for(size_t i = 0; i < packets.size(); ++i){
+  for (size_t i = 0; i < packets.size(); ++i)
+  {
     los losmsg;
 
     // I believe the packets are encoded in a non ASCII format.
     // Therefore, when converting to a string, we still see crazy characters.
-    // Question: Where is the data from m_pcRABS->GetReadings() comming from? 
+    // Question: Where is the data from m_pcRABS->GetReadings() comming from?
 
     // argos::CByteArray packets[i]
     // Docs: https://www.argos-sim.info/api/a02302.php
 
-    const unsigned char* data = packets[i].Data.ToCArray();
-    std::string s(reinterpret_cast<const char*>(data), packets[i].Data.Size());
+    const unsigned char *data = packets[i].Data.ToCArray();
+    std::string s(reinterpret_cast<const char *>(data), packets[i].Data.Size());
     losmsg.robotName = s;
     loslist.robots.push_back(losmsg);
   }
   losPub.publish(loslist);
 }
 
-char const* CKheperaIVRos::parse_id_number(const std::string data){
+char const *CKheperaIVRos::parse_id_number(const std::string data)
+{
   return data.c_str();
 }
 
-void CKheperaIVRos::publishProximity(){
-   /* Get readings from proximity sensor */
-   const CCI_KheperaIVProximitySensor::TReadings& tProxReads = m_pcProximity->GetReadings();
-	 ProximityList proxList;
-	 proxList.n = tProxReads.size();
-	 for (size_t i = 0; i < proxList.n; ++i) {
-			Proximity prox;
-			prox.value = tProxReads[i].Value;
-			prox.angle = tProxReads[i].Angle.GetValue();
-			proxList.proximities.push_back(prox);
-   }
-   proximityPub.publish(proxList);
+void CKheperaIVRos::publishProximity()
+{
+  /* Get readings from proximity sensor */
+  const CCI_KheperaIVProximitySensor::TReadings &tProxReads = m_pcProximity->GetReadings();
+  ProximityList proxList;
+  proxList.n = tProxReads.size();
+  for (size_t i = 0; i < proxList.n; ++i)
+  {
+    Proximity prox;
+    prox.value = tProxReads[i].Value;
+    prox.angle = tProxReads[i].Angle.GetValue();
+    proxList.proximities.push_back(prox);
+  }
+  proximityPub.publish(proxList);
 }
 
-void CKheperaIVRos::publishOdometry(){
-  odom_Vl = m_pcEncoder->GetReading().VelocityLeftWheel;
-  odom_Vr = m_pcEncoder->GetReading().VelocityRightWheel;
-  odom_w = (odom_Vr - odom_Vl)/2*KHEPERAIV_BASE_RADIUS;
+void CKheperaIVRos::publishOdometry()
+{
+  odom_Vl = m_pcEncoder->GetReading().VelocityLeftWheel * KHEPERAIV_WHEEL_RADIUS / 100.0f;
+  odom_Vr = m_pcEncoder->GetReading().VelocityRightWheel * KHEPERAIV_WHEEL_RADIUS / 100.0f;
 
   /*
    * Update forward kinematic model of differental drive robot.
    */
-  
-  if (abs(odom_w) < goStraightConstant*2*KHEPERAIV_BASE_RADIUS){
-    // R is infinte so manually set x,y translations to drive straight
+  if (abs(odom_Vr - odom_Vl) < goStraightConstant)
+  {
+    // Vl = Vr # drive in a straight line
     odom_w = 0.0;
-    odom_x += ((odom_Vl + odom_Vr)/2)*cos(odom_yaw)*timestep;
-    odom_dx = ((odom_Vl + odom_Vr)/2)*cos(odom_yaw);  
-    odom_y += ((odom_Vl + odom_Vr)/2)*sin(odom_yaw)*timestep; 
-    odom_dy = ((odom_Vl + odom_Vr)/2)*sin(odom_yaw);  
-  }else if ((odom_Vr - odom_Vl) < goStraightConstant){
-    // R is zero so manually set the yaw translation to drive in a circle
-    odom_yaw += ((odom_Vl+odom_Vr)*timestep)/KHEPERAIV_BASE_RADIUS;
-    odom_dx = 0.0;
-    odom_dy = 0.0;
-  }else{
-    // set x,y and yaw as normal
-    double R = KHEPERAIV_BASE_RADIUS *((odom_Vr + odom_Vl)/(odom_Vr - odom_Vl));
-    double ICCx = odom_x -  R*sin(odom_yaw);
-    double ICCy = odom_y +  R*cos(odom_yaw);
-    odom_x += cos(odom_w*timestep)*(odom_x - ICCx) - sin(odom_w*timestep)*(odom_y - ICCy) + ICCx;
-    odom_dx = (cos(odom_w*timestep)*(odom_x - ICCx) - sin(odom_w*timestep)*(odom_y - ICCy) + ICCx)/timestep;
-    odom_y += sin(odom_w*timestep)*(odom_x - ICCx) + cos(odom_w*timestep)*(odom_y - ICCy) + ICCy;
-    odom_dy = (sin(odom_w*timestep)*(odom_x - ICCx) + cos(odom_w*timestep)*(odom_y - ICCy) + ICCy)/timestep;
-    odom_yaw += odom_w*timestep;
+    odom_x += odom_Vl * cos(odom_yaw) * timestep;
+    odom_y += odom_Vl * sin(odom_yaw) * timestep;
+    odom_dx = odom_Vl * cos(odom_yaw);
+    odom_dy = odom_Vl * sin(odom_yaw);
+  }
+  else
+  {
+    double R = (KHEPERAIV_BASE_RADIUS / 100.0f) * ((odom_Vl + odom_Vr) / (odom_Vr - odom_Vl));
+
+    std::cout << "R " << R << std::endl;
+    odom_w = (odom_Vr - odom_Vl) / (KHEPERAIV_BASE_RADIUS * 2 / 100.0f);
+    double ICCx = odom_x - R * sin(odom_yaw);
+    double ICCy = odom_y + R * cos(odom_yaw);
+    double prev = odom_x;
+    odom_x = (odom_x - ICCx) * cos(odom_w * timestep) - (odom_y - ICCy) * sin(odom_w * timestep) + ICCx;
+    odom_dx = odom_x - prev / timestep;
+    prev = odom_y;
+    odom_y = (odom_x - ICCx) * sin(odom_w * timestep) + (odom_y - ICCy) * cos(odom_w * timestep) + ICCy;
+    odom_dy = odom_y - prev / timestep;
+    odom_yaw += odom_w * timestep;
+    if (abs(R) < goStraightConstant)
+    {
+      odom_dx = 0.0;
+      odom_dy = 0.0;
+    }
   }
 
   /*
    * publish odom messages and TF transform
    */
-  string header_frame_id = GetId() + "/odom";
-  string child_frame_id = GetId() + "/base_footprint";
+  string header_frame_id = "/odom";
+  string child_frame_id = "/base_footprint";
   geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(odom_yaw);
 
   geometry_msgs::TransformStamped odom_trans;
@@ -266,23 +283,25 @@ void CKheperaIVRos::publishOdometry(){
   odom.twist.twist.linear.x = odom_dx;
   odom.twist.twist.linear.y = odom_dy;
   odom.twist.twist.angular.z = odom_w;
-
   odomPub.publish(odom);
 }
 
-void CKheperaIVRos::cmdVelCallback(const geometry_msgs::Twist& twist) {
-  RLOG << "cmdVelCallback: " << GetId() << endl;
-
-  Real v = twist.linear.x;  // Forward speed
-  Real w = twist.angular.z; // Rotational speed
-  if (abs(w) < goStraightConstant*2*KHEPERAIV_BASE_RADIUS){
+void CKheperaIVRos::cmdVelCallback(const geometry_msgs::Twist &twist)
+{
+  Real v = twist.linear.x * 1000.0f;  // Forward speed
+  Real w = twist.angular.z * 1000.0f; // Rotational speed
+  if (abs(w) < goStraightConstant)
+  {
     w = 0.0;
   }
   // Use the kinematics of a differential-drive robot to derive the left
   // and right wheel speeds.
-  leftSpeed = (v - KHEPERAIV_BASE_RADIUS * w) / KHEPERAIV_WHEEL_RADIUS;
-  rightSpeed = (v + KHEPERAIV_BASE_RADIUS * w) / KHEPERAIV_WHEEL_RADIUS;
+  leftSpeed = (v - KHEPERAIV_BASE_RADIUS * w) * KHEPERAIV_WHEEL_RADIUS;
+  rightSpeed = (v + KHEPERAIV_BASE_RADIUS * w) * KHEPERAIV_WHEEL_RADIUS;
   m_pcWheels->SetLinearVelocity(leftSpeed, rightSpeed);
+
+  std::cout << "LSpeed " << leftSpeed << std::endl;
+  std::cout << "RSpeed " << rightSpeed << std::endl;
 }
 
 /*
