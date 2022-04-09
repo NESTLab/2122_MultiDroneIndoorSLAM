@@ -1,0 +1,158 @@
+# Use Shift + Click to select a robot
+# When a robot is selected, its variables appear in this editor
+
+# Use Ctrl + Click (Cmd + Click on Mac) to move a selected robot to a different location
+
+# Put your global variables here
+include "string.bzz"
+
+prox_check = {.0=1, .1=1.5, .2=1, .6=1.5, .7=1}
+hard_turn_angle_threshold=90
+soft_turn_angle_threshold=20
+hard_reset_angle_threshold=60
+no_turn_angle_threshold=10
+
+NO_TURN = 0
+SOFT_TURN = 1
+HARD_TURN = 2
+state = NO_TURN
+
+MAX_SPEED = 5.0 #must be float
+NUM_TUPLES = 5
+NUM_REQUESTERS = 5
+VS_GET_PROB = 50
+
+
+# This function is executed every time you press the 'execute' button
+function init() {
+	#chrash()
+
+	# Setup Virtual Stigmergy.
+	vs = stigmergy.create(1)
+	#vs.onconflict(function(key, local, remote){	
+	#	log("conflict")
+	#})
+	rng.setseed(id)
+	if(id < NUM_TUPLES)
+		vs.put(id, id)
+	
+	debug.print("Tuples:", vs.size(), "/",NUM_TUPLES)
+}
+
+# This function is executed at each time step
+# It must contain the logic of your controller
+function step() {
+	if(id >= NUM_TUPLES and id < NUM_TUPLES+NUM_REQUESTERS){
+		var i = 0
+		var rand = 0
+		while(i < NUM_TUPLES){
+			rand = rng.uniform(0, 99)
+			if(rand < VS_GET_PROB){
+				#log("Robot ", id, " is getting tuple ", i)
+				vs.get(i)
+			}
+			i = i + 1
+		}
+	}
+
+	# Reset to purple if our tuple is lost.
+	debug.print("Tuples:", vs.size(), "/",NUM_TUPLES)
+
+	# Diffuse
+	var obs = get_obstacles_vector()
+	obs.x = 0.1 - obs.x
+	set_wheel_speeds_from_vector(obs, 0)
+}
+
+function set_wheel_speeds_from_vector(vector, diffuse){
+	angle = math.atan(vector.y, vector.x) * 180/3.14
+	length = math.sqrt(vector.x*vector.x + vector.y*vector.y)
+	wrap_value(angle, -180, 180)
+	
+	var ref_speed = MAX_SPEED
+	if(diffuse != 0)
+		ref_speed = math.min(ref_speed, length)
+
+	set_turning_state(angle)
+
+	var outer_speed = 0
+	var inner_speed = 0
+
+	if(state == NO_TURN){
+		outer_speed = ref_speed
+		inner_speed = ref_speed
+	}else if(state == SOFT_TURN){
+		var speed_factor = (hard_turn_angle_threshold - math.abs(angle))/hard_turn_angle_threshold
+		outer_speed = ref_speed + ref_speed * (1 - speed_factor)
+		inner_speed = ref_speed - ref_speed * (1 - speed_factor)
+	}else if(state == HARD_TURN){
+		outer_speed = ref_speed
+		inner_speed = -ref_speed
+	}
+	
+	#log("[", id, "] ","state: ", state, ", angle: ", angle, ", ref: ", ref_speed, ", inner: ", inner_speed, ", outer: ", outer_speed)
+	if(angle > 0) #turn left
+		set_wheels(outer_speed, inner_speed)
+	else # turn right
+		set_wheels(inner_speed, outer_speed)
+
+}
+
+function wrap_value(value, min, max){
+  var span = max - min
+	while(value > max) value = value - span
+	while(value < min) value = value + span
+}
+
+function set_turning_state(angle){
+	if(math.abs(angle) <= no_turn_anlge_threashold) {
+      # No Turn, heading angle very small
+      state = NO_TURN;
+   }
+   else if(math.abs(angle) > hard_turn_angle_threshold) {
+      # Hard Turn, heading angle very large
+      state = HARD_TURN;
+   }
+   else if(state == HARD_TURN and math.abs(angle) <= hard_turn_angle_threshold){
+      # Soft Turn 
+      state = SOFT_TURN;
+   }
+   else if(state == NO_TURN and math.abs(angle) > soft_turn_angle_threshold) {
+      # Soft Turn, heading angle in between the two cases
+      state = SOFT_TURN;
+   }
+}
+
+function get_obstacles_vector(){
+	var a = {.x=0., .y=0., .size=0}
+	foreach(prox_check, function(sensor, weight){
+		var data = proximity[sensor]
+		a.x = a.x + math.cos(data.angle) * data.value * weight
+	  a.y = a.y + math.sin(data.angle) * data.value * weight
+		a.size = a.size + 1
+	})
+	
+	a.x = a.x / 3
+	a.y = a.y / 3
+
+	return a
+}
+
+
+
+# This function is executed every time you press the 'reset'
+# button in the GUI. It is supposed to restore the state
+# of the controller to whatever it was right after init() was
+# called. The state of sensors and actuators is reset
+# automatically by ARGoS.
+function reset() {
+   # put your code here
+}
+
+
+
+# This function is executed only once, when the robot is removed
+# from the simulation
+function destroy() {
+   # put your code here
+}

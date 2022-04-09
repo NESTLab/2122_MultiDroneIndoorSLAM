@@ -104,8 +104,20 @@ RUN rosdep init; \
 
 # Install BUZZ Language
 RUN git clone https://github.com/buzz-lang/Buzz.git buzz; \
-  cd buzz && mkdir build && cd build; \
-  cmake ../src; \
+  mkdir buzz/build && cd buzz/build; \
+  cmake -DCMAKE_BUILD_TYPE=Release ../src; \
+  make; \
+  sudo make install; \
+  sudo ldconfig
+
+# Install the Vicon [Platform Specific: Linux x86-64]
+COPY ./Vicon /root/vicon
+
+RUN cp /root/vicon/vicon_sdk/Linux64/libViconDataStreamSDK_CPP.so /lib/libViconDataStreamSDK_CPP.so; \
+  cp /root/vicon/vicon_sdk/Linux64/libboost_system-mt.so.1.58.0 /lib/libboost_system-mt.so.1.58.0; \
+  cp /root/vicon/vicon_sdk/Linux64/libboost_thread-mt.so.1.58.0 /lib/libboost_thread-mt.so.1.58.0; \
+  mkdir /root/vicon/build && cd /root/vicon/build; \
+  cmake ..; \
   make; \
   sudo make install
 
