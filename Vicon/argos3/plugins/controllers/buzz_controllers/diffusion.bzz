@@ -1,0 +1,118 @@
+include "vec2.bzz"
+
+D_PREF = {
+	.HARD_THRESH=70,
+	.SOFT_THRESH=20,
+	.RESET_THRESH=60,
+	.NO_THRESH=10,
+	.MAX_SPEED = 5.0, #must be float
+	.GOAL_DISTANCE = 0.01
+}
+
+DS_ENUM= {
+	.NO_TURN   = 0,
+	.SOFT_TURN = 1,
+	.HARD_TURN = 2
+}
+
+state = DS_ENUM.NO_TURN
+
+diffusion = {}
+
+math.vec2.rotate = function(vec, angle){
+  var rot_pos = {}
+	rot_pos.x = vec.x*math.cos(-angle)-vec.y*math.sin(-angle)
+	rot_pos.y = vec.x*math.sin(-angle)+vec.y*math.cos(-angle)
+  return rot_pos
+}
+
+diffusion.convert_to_local_ref= function(global_pos, pose){
+	# translate in to rframe
+	var local_pos = math.vec2.sub(global_pos, pose.position)
+	#rotate into rframe
+  var rot_pos = {}
+	var angle = pose.orientation.yaw
+	rot_pos.x = local_pos.x*math.cos(-angle)-local_pos.y*math.sin(-angle)
+	rot_pos.y = local_pos.x*math.sin(-angle)+local_pos.y*math.cos(-angle)
+  return rot_pos
+}
+
+diffusion.wrap_value = function(value, min, max){
+  var span = max - min
+	while(value > max) value = value - span
+	while(value < min) value = value + span
+}
+
+diffusion.set_turning_state = function(angle){
+	if(math.abs(angle) <= D_PREF.NO_THRESH) {
+      # No Turn, heading angle very small
+      state = DS_ENUM.NO_TURN;
+   }
+   else if(math.abs(angle) > D_PREF.HARD_THRESH) {
+      # Hard Turn, heading angle very large
+      state = DS_ENUM.HARD_TURN;
+   }
+   else if(state == DS_ENUM.HARD_TURN and math.abs(angle) <= D_PREF.RESET_THRESH){
+      # Soft Turn 
+      state = DS_ENUM.SOFT_TURN;
+   }
+   else if(state == DS_ENUM.NO_TURN and math.abs(angle) > D_PREF.SOFT_THRESH) {
+      # Soft Turn, heading angle in between the two cases
+      state = DS_ENUM.SOFT_TURN;
+   }
+}
+
+diffusion.set_wheel_speeds_from_vector = function(vector, diffuse){
+	var angle = math.vec2.angle(vector) * 180.0/3.14
+	var length = math.vec2.length(vector)
+	diffusion.wrap_value(angle, -180, 180)
+	
+	var ref_speed = D_PREF.MAX_SPEED	 
+	if(diffuse != 0)
+		ref_speed = math.min(ref_speed, length)
+
+	diffusion.set_turning_state(angle)
+
+	var outer_speed = 0.0
+	var inner_speed = 0.0
+
+	if(length < D_PREF.GOAL_DISTANCE){
+		outer_speed = 0.0
+		inner_speed = 0.0
+	}else if(state == DS_ENUM.NO_TURN){
+		outer_speed = ref_speed
+		inner_speed = ref_speed
+	}else if(state == DS_ENUM.SOFT_TURN){
+		var speed_factor = (D_PREF.HARD_THRESH - math.abs(angle))/D_PREF.HARD_THRESH
+		outer_speed = ref_speed + ref_speed * (1 - speed_factor)
+		inner_speed = ref_speed - ref_speed * (1 - speed_factor)
+	}else if(state == DS_ENUM.HARD_TURN){
+		outer_speed = ref_speed
+		inner_speed = -ref_speed
+	}
+	if(angle > 0) #turn left
+		set_wheels(inner_speed, outer_speed)
+	else # turn right
+		set_wheels(outer_speed, inner_speed)
+}
+
+diffusion.sum_sensors_limited = function(sensors, white_list){
+	var a = {.vec=math.vec2.new(0,0), .total_weight=0.0}
+	foreach(white_list, function(sensor, weight){
+	  var data = proximity[sensor]
+		var new_vec = math.vec2.newp(data.value,data.angle)
+    a.vec = math.vec2.add(a.vec,math.vec2.scale(new_vec, weight))
+		a.total_weight = a.total_weight + weight
+	})
+	a.vec = math.vec2.scale(a.vec, 1/3.0)
+
+	return a.vec
+}
+
+diffusion.vector_bound = function(vector, max_length){
+	var length = math.vec2.length(vector)
+	if(length < max_length)
+		return vector
+	return math.vec2.scale(vector, max_length/length)
+
+}

@@ -1,0 +1,24 @@
+# Barrier functions
+
+function barrier_set(threshold, transf) {
+  statef = function() {
+    barrier_wait(threshold, transf);
+  }
+}
+
+function barrier_ready() {
+  barrier.put(id, 1)
+}
+
+function barrier_wait(threshold, transf) {
+  barrier.get(id)
+#  log("wait ", barrier.size())
+  if(barrier.size() >= threshold) {
+    barrier = nil
+		trigger = nil
+    barrier = stigmergy.create(BARRIER_VSTIG)
+    trigger = stigmergy.create(TRIGGER_VSTIG)
+    statef = transf
+  }
+}
+

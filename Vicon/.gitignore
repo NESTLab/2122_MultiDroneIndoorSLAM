@@ -1,0 +1,74 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# CMake
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+
+# Build Folder
+Build/
+build/
+
+# Mac trash
+.DS_Store
+
+# Exceptions
+!vicon_sdk/**/*.so
+!vicon_sdk/**/*.dylib
+
+*.gdb_history
+
+# Buzz
+*.bo
+*.bdb
+
+#Tags generated for cTags
+*.tags
+*.tags_sorted_by_file
+*.gemtags
+
+<<<<<<< HEAD
+#sublime
+*.sublime-project
+*.sublime-workspace
+
+#CLion project folder
+cmake-build-debug/
+.idea

@@ -1,0 +1,7 @@
+add_subdirectory(master_loop_functions)
+add_subdirectory(trajectory_loop_functions)
+add_subdirectory(trail_loop_functions)
+add_subdirectory(pheromone_visualizer)
+add_subdirectory(diffusion_visualizer)
+add_subdirectory(networking_loop_functions)
+add_subdirectory(pc_loop_functions)

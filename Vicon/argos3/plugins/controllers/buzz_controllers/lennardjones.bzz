@@ -1,0 +1,10 @@
+# Lennard-Jones interaction magnitude
+function lj_magnitude(dist, target, epsilon) {
+  return -(epsilon / dist) * ((target / dist)^4 - (target / dist)^2)
+}
+
+# Parent-son data to LJ interaction vector
+function lj_vector(rid, data) {
+  var angle = data.azimuth
+  return math.vec2.newp(lj_magnitude(data.distance, TARGET, EPSILON), angle)
+}
