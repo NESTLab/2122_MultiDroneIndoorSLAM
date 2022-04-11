@@ -2,7 +2,7 @@
 
 float RobotState::meet_loc_x = 0.0;
 float RobotState::meet_loc_y = 0.0;
-float RobotState::time_for_exploration = 5.0;
+float RobotState::time_for_exploration = 0.0;
 TEAM_STATES RobotState::last_robot_state = IDLE;
 
 std::string RobotState::parent_robot_name = "";
@@ -23,11 +23,13 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   robot_name.erase(robot_name.begin());
   
   geometry_msgs::Point current_pose = explore_interface->getRobotCurrentPose().pose.position;
-  meet_loc_x = current_pose.x+7;
+  meet_loc_x = current_pose.x+3;
   meet_loc_y = current_pose.y;
 
   data_dump_location.x = -6;
   data_dump_location.y = -5;
+
+  time_for_exploration = MIN_TIME_FOR_EXPLORATION;
 
   ros::Duration(0.050).sleep();
   
@@ -552,7 +554,7 @@ void DecideNextMeeting::getBestFrontiersCB(const geometry_msgs::PoseArray::Const
 
 void DecideNextMeeting::updateNextMeetingPoint()
 {
-  float max_dis = 0.0;
+  float min_dis = 1000.0;
   geometry_msgs::Point point;
   geometry_msgs::Point temp_pos;
 
@@ -579,8 +581,8 @@ void DecideNextMeeting::updateNextMeetingPoint()
     
     total_distance_from_frontier = self_distance_from_frontier + other_distance_from_frontier;
   
-    if (total_distance_from_frontier>=max_dis){
-      max_dis = total_distance_from_frontier;
+    if (total_distance_from_frontier<=min_dis){
+      min_dis = total_distance_from_frontier;
       point.x=frontier.x;
       point.y=frontier.y;
       setMeetingPoint(point);      
@@ -659,6 +661,7 @@ bool EndMeeting::entryPoint()
    connection_request_received = false;
    current_publishing_counter = 0;
    this_state = true;
+   meeting_in_time = 0;
    return true;
 }
 
@@ -697,10 +700,35 @@ TEAM_STATES EndMeeting::transition()
 
 void EndMeeting::step()
 {
+  if (robot_role == RELAY && meeting_in_time==0)
+    calculateTimeForMeeting();
+
+  if (robot_role == EXPLORER && meeting_in_time != 0)
+    calculateTimeForExploration();
+
   printMessageThrottled("Step for EndMeeting");
   publishRobotState();
   publishConnectionRequest();
   current_publishing_counter++;
+}
+
+void EndMeeting::calculateTimeForMeeting()
+{
+    geometry_msgs::Point meeting_point = getMeetingPoint();
+
+    float time_to_go_home = explore_interface->getTimePredictionForTravel(data_dump_location);
+    float time_to_meet_after_home = explore_interface->getTimePredictionForTravel(data_dump_location, meeting_point);
+
+    meeting_in_time = time_to_go_home + time_to_meet_after_home;
+}
+
+void EndMeeting::calculateTimeForExploration()
+{
+    geometry_msgs::Point meeting_point = getMeetingPoint();
+    float time_to_reach_exploration_site = explore_interface->getTimePredictionForTravel(meeting_point);
+    float expected_exploration_time = meeting_in_time - time_to_reach_exploration_site;
+    
+    time_for_exploration = expected_exploration_time > MIN_TIME_FOR_EXPLORATION ? expected_exploration_time : MIN_TIME_FOR_EXPLORATION;
 }
 
 void EndMeeting::exitPoint()
@@ -708,6 +736,7 @@ void EndMeeting::exitPoint()
   last_robot_state = (TEAM_STATES)(m_unId);
   printMessage("Exitpoint for EndMeeting");
   connected_robot_name = "";
+  meeting_in_time = 0;
    this_state = false;
 }
 
@@ -722,7 +751,11 @@ void EndMeeting::connectionRequestCB(const mdis_state_machine::ConnectionRequest
   if (connected_robot_name == (conn_robot_name) && conn_robot_request_name == robot_name)
   {
     if(msg->robot_state == END_MEETING)
+    {
         connection_request_received = true;
+        if(robot_role == EXPLORER)
+            meeting_in_time = msg->meeting_in_time;
+    }
   }
 }
 
@@ -734,6 +767,8 @@ void EndMeeting::publishConnectionRequest()
    data.robot_state = (int)(m_unId);
    if(robot_role == EXPLORER)
       data.next_meeting_point = getMeetingPoint();
+   if(robot_role == RELAY)
+      data.meeting_in_time = meeting_in_time;
 
    connection_request_pub.publish(data);
 }

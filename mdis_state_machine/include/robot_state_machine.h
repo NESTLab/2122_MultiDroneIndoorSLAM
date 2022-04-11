@@ -83,6 +83,7 @@ protected:
    bool interested;
    bool is_explorer;
    bool meeting_started, go_for_exploration;
+   const float MIN_TIME_FOR_EXPLORATION = 5;
 
    MoveBaseInterface *explore_interface;
    ros::Publisher robot_state_pub;
@@ -349,6 +350,7 @@ public:
 
 private:
    bool this_state;
+   float meeting_in_time;
    bool once;
    bool connection_request_received;
    int current_publishing_counter;
@@ -359,6 +361,8 @@ private:
    
    void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
    void publishConnectionRequest();
+   void calculateTimeForMeeting();
+   void calculateTimeForExploration();
 };
 
 class GoToDumpData: public RobotState{
