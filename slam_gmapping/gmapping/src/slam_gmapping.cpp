@@ -771,7 +771,6 @@ SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
         map_.map.data[MAP_IDX(map_.map.info.width, x, y)] = 0;
     }
   }
-  removeRobotsObstacles();
   got_map_ = true;
 
   //make sure to set the header information on the map
@@ -782,89 +781,7 @@ SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
   sstm_.publish(map_.map.info);
 }
 
-void SlamGMapping::removeRobotsObstacles()
-{
-  for(int robot_i=0; robot_i<NUMBER_OF_ROBOTS; robot_i++)
-  {
-    try
-    {
-      tf::StampedTransform t;
-      std::string robot_frame = "/tb3_"+(std::to_string(robot_i))+"/base_footprint";
-      tf_.lookupTransform(map_frame_, robot_frame, ros::Time(0), t);
-      addRobotLocationToHistory(t, robot_i);
-    }
-    // If tf does not have the data yet
-    catch(tf2::TransformException& e)
-    {
-      // Store the error to display it if we cannot process the data after some time
-      continue;
-    }
-  }
-  setRobotPixelFree();
-}
-
-void SlamGMapping::addRobotLocationToHistory(const tf::StampedTransform& t, int robot_number)
-{
-  float obx = (t.getOrigin().x() - map_.map.info.origin.position.x);
-  float oby = (t.getOrigin().y() - map_.map.info.origin.position.y);
-
-  geometry_msgs::Point point;
-  point.x = obx;
-  point.y = oby;
-
-  if (robots_past_locations[robot_number].size()>0)
-  {
-    if(isLocationFarEnough(point, robots_past_locations[robot_number].back()))
-    {
-      robots_past_locations[robot_number].push_back(point);
-    }
-  }
-  else
-  {
-    robots_past_locations[robot_number].push_back(point);
-  }
-
-}
-
-bool SlamGMapping::isLocationFarEnough(geometry_msgs::Point point_1, geometry_msgs::Point point_2)
-{
-  float x = point_1.x - point_2.x;
-  float y = point_1.y - point_2.y;
-
-  float dist = std::hypot(x,y);
-  return dist>robot_location_movement_threshold;
-}
-
-void SlamGMapping::setRobotPixelFree()
-{
-  for(int robot_i = 0; robot_i<NUMBER_OF_ROBOTS; robot_i ++)
-    for(int loc_j = 0; loc_j < robots_past_locations[robot_i].size(); loc_j++)
-    {
-      // ROS_INFO_STREAM("robot_i:"<<robot_i<<"   loc_j:"<<robots_past_locations[robot_i].size());
-      float obx = robots_past_locations[robot_i].at(loc_j).x;
-      float oby = robots_past_locations[robot_i].at(loc_j).y;
-      
-      float resolution = map_.map.info.resolution == 0 ? 0.05 : map_.map.info.resolution;
-
-      int obx_p = (obx/resolution);
-      int oby_p = (oby/resolution);
-      // ROS_INFO_STREAM("obx: "<<obx_p<<"   oby: "<<oby_p);
-      int orig_box_size = robot_location_movement_threshold/resolution/2;
-      int robot_ignore_box_dimention_ = orig_box_size == 0 ? 1 : orig_box_size;
-      
-
-      for (int i = -robot_ignore_box_dimention_; i<robot_ignore_box_dimention_; i++)
-        for (int j = -robot_ignore_box_dimention_; j<robot_ignore_box_dimention_; j++)
-        {
-          if(obx_p+i>map_.map.info.width || oby_p+j>map_.map.info.height)
-            continue;
-          map_.map.data[MAP_IDX(map_.map.info.width, obx_p+i, oby_p+j)] = 1;
-        }
-    }
-}
-
-bool 
-SlamGMapping::mapCallback(nav_msgs::GetMap::Request  &req,
+bool SlamGMapping::mapCallback(nav_msgs::GetMap::Request  &req,
                           nav_msgs::GetMap::Response &res)
 {
   boost::mutex::scoped_lock map_lock (map_mutex_);
