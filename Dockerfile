@@ -20,6 +20,7 @@ RUN set -ex; \
       lsb-core \
       gnupg2 \
       curl \
+      wget \
       bash \
       fluxbox \
       git \
@@ -95,7 +96,14 @@ RUN rosdep init; \
   echo "export ARGOS_PLUGIN_PATH=$HOME/catkin_ws/src/argos_bridge/ros_lib_links" >> ~/.bashrc; \
   echo "export ARGOS_PLUGIN_PATH=$ARGOS_PLUGIN_PATH:$HOME/catkin_ws/devel/lib" >> ~/.bashrc
 
-COPY . /root/catkin_ws/src
+
+# Permissions
+RUN sudo chmod a+rwx /root -R
+
+
+# NOTE: This is not neede when when using 'compose', as the docker-compose.yaml file specifies a systemlink (aka: volume)
+#       However, if you ONLY want to run the dockerfile, or build it with our work, uncomment the line below.
+# COPY . /root/catkin_ws/src
 
 EXPOSE 8080
 
