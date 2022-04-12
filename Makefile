@@ -16,6 +16,10 @@ test-state-machine-explorer: install-state-machine
 	$(SETUP); \
 	python3 -m unittest $(WORKDIR)/mdis_state_machine/tests/test_state_shift_explorer.py
 
+test-state-machine-team: install-state-machine
+	$(SETUP); \
+	python3 -m unittest $(WORKDIR)/mdis_state_machine/tests/test_state_shift_team.py
+
 test-state-machine-relay: install-state-machine
 	$(SETUP); \
 	python3 -m unittest $(WORKDIR)/mdis_state_machine/tests/test_state_shift_relay.py
