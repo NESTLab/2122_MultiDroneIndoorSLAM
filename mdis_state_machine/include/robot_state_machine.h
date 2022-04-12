@@ -224,7 +224,7 @@ private:
    bool connected;
    bool connection_request_received;
    bool send_once;
-   bool this_state;
+   bool this_state = false;
 
    std::string conn_robot;
    ros::Publisher connection_request_pub;
@@ -256,7 +256,7 @@ public:
    void exitPoint() override;
 
 private:
-   bool this_state;
+   bool this_state = false;
    bool connection_request_received;
    int current_publishing_counter;
    const int LEAST_PUBLISH_COUNT = 5;
@@ -304,7 +304,7 @@ public:
 
 private:
    bool updated_meeting_location;
-   bool this_state;
+   bool this_state = false;
    bool frontier_received;
 
    ros::Publisher frontier_req_pub;
@@ -329,7 +329,7 @@ public:
    void exitPoint() override;
 
 private:
-   bool this_state;
+   bool this_state = false;
    bool connection_request_received;
    ros::Subscriber connection_request_sub;
    void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
@@ -349,7 +349,7 @@ public:
    void exitPoint() override;
 
 private:
-   bool this_state;
+   bool this_state = false;
    float meeting_in_time;
    bool once;
    bool connection_request_received;
@@ -381,7 +381,7 @@ public:
    void exitPoint() override;
 
 private:
-   bool this_state;
+   bool this_state = false;
    bool connected;
    bool connection_request_received;
    bool send_once;
@@ -417,7 +417,7 @@ public:
    void exitPoint() override;
 
 private:
-   bool this_state;
+   bool this_state = false;
    bool connection_request_received;
 
    int downtime_counter;

@@ -24,7 +24,7 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   
   geometry_msgs::Point current_pose = explore_interface->getRobotCurrentPose().pose.position;
   meet_loc_x = current_pose.x+3;
-  meet_loc_y = current_pose.y;
+  meet_loc_y = current_pose.y-0.5;
 
   data_dump_location.x = -6;
   data_dump_location.y = -5;
@@ -502,15 +502,13 @@ bool DecideNextMeeting::entryPoint()
 {
    printMessage("Entrypoint for DecideNextMeeting");
    updated_meeting_location = false;
+   frontier_received = false;
    this_state = true;
    return true;
 }
 
 bool DecideNextMeeting::isDone()
 {
-   if(testing_mode)
-      return explore_interface->navigationDone();
-
    return updated_meeting_location;
 }
 

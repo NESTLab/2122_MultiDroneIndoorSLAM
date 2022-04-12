@@ -23,7 +23,7 @@
     <arg name="ns" value="tb3_2"/>
     <arg name="tb3_x_pos" value="-10.0"/>
     <arg name="tb3_y_pos" value="-3.0"/>
-    <arg name="tb3_z_pos" value="0.0"/>
+    <arg name="tb3_z_pos" value="3.60"/>
     <arg name="tb3_yaw" value="0.0"/>
     <arg name="role" value="0"/>
     <arg name="parent_name" value="tb3_0"/>
@@ -34,7 +34,7 @@
     <arg name="ns" value="tb3_0"/>
     <arg name="tb3_x_pos" value="-6"/>
     <arg name="tb3_y_pos" value="-5"/>
-    <arg name="tb3_z_pos" value="0.0"/>
+    <arg name="tb3_z_pos" value="3.60"/>
     <arg name="tb3_yaw" value="0.0"/>
     <arg name="role" value="2"/>
     <arg name="parent_name" value="dummy_1"/>
