@@ -20,7 +20,7 @@
 enum ROLE{
   RELAY,
   EXPLORER,
-  RELAY_BETN_ROBOTS,
+  DATA_CENTER,
 };
 
 enum TEAM_STATES{
@@ -34,8 +34,8 @@ enum TEAM_STATES{
    RECEIVE_NEXT_MEETING,
    END_MEETING,
    GO_TO_DUMP_DATA,
-   DUMP_DATA,
-   ERROR_STATE,
+   DATA_CENTER_READY_TO_MEET,
+   ERROR_STATE=99,
 };
 
 class RobotState {
@@ -67,7 +67,8 @@ protected:
    // ros::Subscriber interest_sub;
    std::string m_strName;
    std::string robot_name;
-   static float curr_meet_x, curr_meet_y, next_meet_x, next_meet_y;
+   std::string data_center_name = "tb3_0";
+   static float meet_loc_x, meet_loc_y;
    static float time_for_exploration;
    static std::string connected_robot_name;
    static std::string parent_robot_name, child_robot_name;
@@ -82,6 +83,7 @@ protected:
    bool interested;
    bool is_explorer;
    bool meeting_started, go_for_exploration;
+   const float MIN_TIME_FOR_EXPLORATION = 5;
 
    MoveBaseInterface *explore_interface;
    ros::Publisher robot_state_pub;
@@ -93,35 +95,22 @@ protected:
      robot_state_pub.publish(state_pub_data);
    }
 
-   void setCurrentMeetingPoint(const geometry_msgs::Point& meeting)
+   void setMeetingPoint(const geometry_msgs::Point& meeting)
    {
-     curr_meet_x = meeting.x;
-     curr_meet_y = meeting.y;
+      std::string message = getFormattedMessage("Meeting point setting to: ");
+      ROS_ERROR_STREAM(message<<meeting);
+     meet_loc_x = meeting.x;
+     meet_loc_y = meeting.y;
    }
-   void setNextMeetingPoint(const geometry_msgs::Point& meeting)//not being used now. This was to set meeting point as the one from which explorer returned
-   {
-     next_meet_x = meeting.x;
-     next_meet_y = meeting.y;
-   }
-   geometry_msgs::Point getCurrentMeetingPoint()
+
+   geometry_msgs::Point getMeetingPoint()
    {
      geometry_msgs::Point point;
-     point.x = curr_meet_x;
-     point.y = curr_meet_y;
+     point.x = meet_loc_x;
+     point.y = meet_loc_y;
      return point;
    }
-   geometry_msgs::Point getNextMeetingPoint()
-   {
-     geometry_msgs::Point point;
-     point.x = next_meet_x;
-     point.y = next_meet_y;
-     return point;
-   }
-   void setCurrAsNextMeeting()
-   {
-     curr_meet_x = next_meet_x;
-     curr_meet_y = next_meet_y;
-   }
+
    inline bool isConnDirectRelated(const std::string& conn_robot)
    {
      bool conn_parent = (conn_robot == parent_robot_name) && (conn_robot != "");
@@ -235,6 +224,7 @@ private:
    bool connected;
    bool connection_request_received;
    bool send_once;
+   bool this_state;
 
    std::string conn_robot;
    ros::Publisher connection_request_pub;
@@ -266,9 +256,11 @@ public:
    void exitPoint() override;
 
 private:
+   bool this_state;
    bool connection_request_received;
    int current_publishing_counter;
    const int LEAST_PUBLISH_COUNT = 5;
+   const int MAX_PUBLISH_COUNT = 50;
 
    ros::Publisher connection_request_pub;
    ros::Subscriber connection_request_sub;
@@ -312,6 +304,7 @@ public:
 
 private:
    bool updated_meeting_location;
+   bool this_state;
    bool frontier_received;
 
    ros::Publisher frontier_req_pub;
@@ -336,6 +329,7 @@ public:
    void exitPoint() override;
 
 private:
+   bool this_state;
    bool connection_request_received;
    ros::Subscriber connection_request_sub;
    void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
@@ -355,6 +349,8 @@ public:
    void exitPoint() override;
 
 private:
+   bool this_state;
+   float meeting_in_time;
    bool once;
    bool connection_request_received;
    int current_publishing_counter;
@@ -365,39 +361,79 @@ private:
    
    void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
    void publishConnectionRequest();
+   void calculateTimeForMeeting();
+   void calculateTimeForExploration();
 };
 
 class GoToDumpData: public RobotState{
 public:
    GoToDumpData(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_DUMP_DATA, "GoToDumpData", nh, testing){
-   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);
-   conn_sub = nh.subscribe(nh.getNamespace() + "/connection_check", 1000, &GoToDumpData::connCB, this);     
+      connection_request_sub = nh.subscribe("/connection_request", 1000, &GoToDumpData::connectionRequestCB, this);
+      connection_request_pub = nh.advertise<mdis_state_machine::ConnectionRequest>("/connection_request", 1000);     
+      conn_sub = nh.subscribe(nh.getNamespace() + "/connection_check", 1000, &GoToDumpData::connCB, this);  
    }
    bool isDone() override ;
+
    TEAM_STATES transition() override;
+   
    bool entryPoint() override;
    void step() override;
    void exitPoint() override;
+
 private:
-   ros::Subscriber conn_sub;
-   std::string conn_robot;
+   bool this_state;
    bool connected;
+   bool connection_request_received;
+   bool send_once;
+
+   std::string conn_robot;
+   ros::Publisher connection_request_pub;
+   ros::Subscriber connection_request_sub;
+   ros::Subscriber conn_sub;
+
    void connCB(const mdis_state_machine::Connection::ConstPtr msg);
+   void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
+
+   void publishConnectionRequest();
+   void sendRobotToLocation();
+   std::string getRobotOfInterestName();
 
    ros::Time time_of_last_conn;
    ros::Duration wait_time_for_conn = ros::Duration(2.0);
 };
-class DumpData: public RobotState{
+
+class DataCenterReadyToMeet: public RobotState{
 public:
-   DumpData(ros::NodeHandle &nh, bool testing):RobotState(DUMP_DATA, "DumpData", nh, testing){
+   DataCenterReadyToMeet(ros::NodeHandle &nh, bool testing):RobotState(DATA_CENTER_READY_TO_MEET, "DataCenterReadyToMeet", nh, testing){
+      connection_request_sub = nh.subscribe("/connection_request", 1000, &DataCenterReadyToMeet::connectionRequestCB, this);
+      connection_request_pub = nh.advertise<mdis_state_machine::ConnectionRequest>("/connection_request", 1000);     
    }
    bool isDone() override ;
+
    TEAM_STATES transition() override;
+   
    bool entryPoint() override;
    void step() override;
    void exitPoint() override;
+
 private:
+   bool this_state;
+   bool connection_request_received;
+
+   int downtime_counter;
+   const int MAX_DOWNTIME = 10;
+
+   std::string conn_robot;
+   ros::Publisher connection_request_pub;
+   ros::Subscriber connection_request_sub;
+
+   void connCB(const mdis_state_machine::Connection::ConstPtr msg);
+   void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
+
+   void publishConnectionRequest();
+   void sendRobotToLocation();
+   std::string getRobotOfInterestName();
+
+   ros::Time time_of_last_conn;
+   ros::Duration wait_time_for_conn = ros::Duration(2.0);
 };
-
-
-

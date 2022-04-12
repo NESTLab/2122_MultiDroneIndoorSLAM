@@ -17,12 +17,45 @@ MoveBaseInterface::MoveBaseInterface(ros::NodeHandle nh, bool testing): nh_(nh),
     namespace_prefix.erase(namespace_prefix.begin());
     map_frame = namespace_prefix+"/map";
     robot_frame = namespace_prefix+"/base_footprint";
+
+    vis_pub = nh.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
+    initiateMarkers();
   }
   else
   {
     MoveBaseInterface::testing_switch_trigger = false;
     testing_switch_trigger_sub = nh.subscribe(nh.getNamespace() + "/testing_switch_trigger", 1000, &MoveBaseInterface::testSwitchTrigCB, this);     
   }
+}
+
+void MoveBaseInterface::initiateMarkers()
+{
+  marker.header.frame_id = namespace_prefix+"/map";
+  marker.header.stamp = ros::Time();
+  marker.ns = namespace_prefix;
+  marker.id = 0;
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.position.x = 1;
+  marker.pose.position.y = 1;
+  marker.pose.position.z = 1;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.1;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
+  marker.color.a = 1.0; // Don't forget to set the alpha!
+  marker.color.r = 0.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
+}
+
+void MoveBaseInterface::publishRvizMarker(const geometry_msgs::Point& point)
+{
+  marker.pose.position = point;
+  vis_pub.publish(marker);
 }
 
 void MoveBaseInterface::testSwitchTrigCB(std_msgs::Empty msg)
@@ -37,6 +70,7 @@ bool MoveBaseInterface::goToPose(geometry_msgs::PoseStamped &goal_pose, bool wai
     
   move_base_action_goal_.target_pose = goal_pose;
   move_base_client_->sendGoal(move_base_action_goal_);
+  publishRvizMarker(goal_pose.pose.position);
   ROS_INFO_STREAM(logging_prefix_ << "Waiting");
   if(wait_for_result)
   {
@@ -59,6 +93,7 @@ bool MoveBaseInterface::goToPoint(geometry_msgs::Point &goal, bool wait_for_resu
   move_base_action_goal_.target_pose.header.frame_id = namespace_prefix+"/map";
   move_base_action_goal_.target_pose.header.stamp = ros::Time::now();
   move_base_client_->sendGoal(move_base_action_goal_);
+  publishRvizMarker(goal);
   ROS_INFO_STREAM(logging_prefix_ << "Waiting");
   if(wait_for_result)
   {

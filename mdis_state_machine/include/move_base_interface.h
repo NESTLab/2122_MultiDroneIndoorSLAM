@@ -7,7 +7,7 @@
 #include <nav_msgs/Path.h>
 #include <std_msgs/Empty.h>
 #include <tf/transform_listener.h>
-
+#include <visualization_msgs/Marker.h>
 
 class MoveBaseInterface
 {
@@ -128,6 +128,9 @@ class MoveBaseInterface
 
     ros::ServiceClient move_base_planning_client_;
     ros::Publisher debug_generated_path_pub;
+    ros::Publisher vis_pub;
+    visualization_msgs::Marker marker;
+
     ros::Subscriber testing_switch_trigger_sub;
     tf::TransformListener tf_listener_;
     
@@ -147,4 +150,6 @@ class MoveBaseInterface
     static bool testing_switch_trigger;
 
     geometry_msgs::PoseStamped transformTf2msg(const tf::StampedTransform& transform);
+    void initiateMarkers();
+    void publishRvizMarker(const geometry_msgs::Point& point);
 };

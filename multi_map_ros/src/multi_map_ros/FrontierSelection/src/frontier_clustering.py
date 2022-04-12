@@ -44,7 +44,7 @@ class find_frontier:
 
         self.curr_msg_count = 0
 
-        self.robot_namespace = '/tb3_0'
+        self.robot_namespace = rospy.get_namespace()
 
         self.publish_next_frontier = False
 
@@ -80,15 +80,15 @@ class find_frontier:
 
     def request_callback(self, msg):
 
-        ns = str(msg.data).replace("\"","")
+        # ns = str(msg.data).replace("\"","")
 
-        if self.robot_namespace != ns:
+        # if self.robot_namespace != ns:
 
-            self.robot_namespace = ns
+        #     self.robot_namespace = ns
 
-            self.init_subscribers_and_publishers(ns)
+        #     self.init_subscribers_and_publishers(ns)
 
-        self.publish_ns = ns
+        # self.publish_ns = ns
 
         self.publish_next_frontier = True
 
