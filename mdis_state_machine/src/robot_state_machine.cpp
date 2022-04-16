@@ -2,7 +2,9 @@
 
 float RobotState::meet_loc_x = 0.0;
 float RobotState::meet_loc_y = 0.0;
-float RobotState::time_for_exploration = 5.0;
+float RobotState::explore_loc_x = 0.0;
+float RobotState::explore_loc_y = 0.0;
+float RobotState::time_for_exploration = 45.0;
 TEAM_STATES RobotState::last_robot_state = IDLE;
 
 std::string RobotState::parent_robot_name = "";
@@ -555,21 +557,27 @@ void DecideNextMeeting::updateNextMeetingPoint()
   float max_dis = 0.0;
   geometry_msgs::Point point;
   geometry_msgs::Point temp_pos;
-
+  geometry_msgs::Point best_frontier_location;
+  best_frontier_location.x = frontiers_list.at(0).x;
+  best_frontier_location.y = frontiers_list.at(0).y;
+  setGoToExplorePoint(best_frontier_location);
   for (auto& frontier : frontiers_list)
   {
     //euclidean distance to frontier from explorer meeting point
     geometry_msgs::Point temp;
     geometry_msgs::Point other_robot_location;
     
+    
     temp.x=frontier.x;
     temp.y=frontier.y;
     float total_distance_from_frontier = 0;
     
-    float self_distance_from_frontier = explore_interface->getDistancePrediction(temp);
-    
+    // float self_distance_from_frontier = explore_interface->getDistancePrediction(temp); 
+    float self_distance_from_frontier = explore_interface->getDistancePrediction(frontiers_list.at(0), temp); //experimenting new method
+
     ROS_ERROR_STREAM("Analyzing frontier point:   "<<frontier);
-    float other_distance_from_frontier = 0.0;
+    // float other_distance_from_frontier = 0.0;
+    float other_distance_from_frontier = explore_interface->getDistancePrediction(data_dump_location, temp);
     /* This might be redundant 
     **  The relay will go to the data center and then will come to meet. 
     **  Hence, this fartherst logic does not make much sense in that context. 
