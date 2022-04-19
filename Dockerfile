@@ -60,9 +60,16 @@ RUN apt-get install -y libgsl-dev cmake libfreeimage-dev libfreeimageplus-dev \
   echo "sudo ldconfig" >> ~/.bashrc; \
   make install
 
-# Install kheperaiv robot to ARGos3
+# Install kheperaiv robot
 RUN git clone https://github.com/ilpincy/argos3-kheperaiv.git; \
   cd argos3-kheperaiv && mkdir build_sim && cd build_sim; \
+  cmake -DCMAKE_BUILD_TYPE=Release ../src; \
+  make; \
+  sudo make install
+
+# Install Kilobot robot
+RUN git clone https://github.com/ilpincy/argos3-kilobot.git; \
+  cd argos3-kilobot && mkdir build && cd build; \
   cmake -DCMAKE_BUILD_TYPE=Release ../src; \
   make; \
   sudo make install
@@ -96,6 +103,24 @@ RUN rosdep init; \
   echo "export ARGOS_PLUGIN_PATH=$HOME/catkin_ws/src/argos_bridge/ros_lib_links" >> ~/.bashrc; \
   echo "export ARGOS_PLUGIN_PATH=$ARGOS_PLUGIN_PATH:$HOME/catkin_ws/devel/lib" >> ~/.bashrc
 
+# Install BUZZ Language
+RUN git clone https://github.com/buzz-lang/Buzz.git buzz; \
+  mkdir buzz/build && cd buzz/build; \
+  cmake -DCMAKE_BUILD_TYPE=Release ../src; \
+  make; \
+  sudo make install; \
+  sudo ldconfig
+
+# Install the Vicon [Platform Specific: Linux x86-64]
+COPY ./Vicon /root/vicon
+
+RUN cp /root/vicon/vicon_sdk/Linux64/libViconDataStreamSDK_CPP.so /lib/libViconDataStreamSDK_CPP.so; \
+  cp /root/vicon/vicon_sdk/Linux64/libboost_system-mt.so.1.58.0 /lib/libboost_system-mt.so.1.58.0; \
+  cp /root/vicon/vicon_sdk/Linux64/libboost_thread-mt.so.1.58.0 /lib/libboost_thread-mt.so.1.58.0; \
+  mkdir /root/vicon/build && cd /root/vicon/build; \
+  cmake ..; \
+  make; \
+  sudo make install
 
 # Permissions
 RUN sudo chmod a+rwx /root -R
@@ -106,6 +131,7 @@ RUN sudo chmod a+rwx /root -R
 # COPY . /root/catkin_ws/src
 
 EXPOSE 8080
+EXPOSE 22222
 
 CMD ["chmod a+rwx /root -R"]
 

@@ -1,0 +1,171 @@
+include "vec2.bzz"
+include "string.bzz"
+
+TOLERANCE = 0.1
+
+persistant_coverage = {}
+
+persistant_coverage.create = function(table, max_energy, targets, depots){
+  var pc = {.dest = nil, 
+            .vs = stigmergy.create(table),
+            .prev_pos = nil,
+            .targets = targets,
+            .depots = depots,
+            .max_energy = max_energy,
+            .curr_energy = max_energy}
+	# targets contains a table where the key is the target id and the value is a table with 
+  # the following as key value pairs
+  #   pos           - math.vec2 => position of the target
+  #   nearest_depot - string    => id of the nearest depot
+	# targets contains a table where the key is the depot id and the value is a table with 
+  # the following as key value pairs
+  #   pos           - math.vec2 => position of the depot
+  # vs is the stigmergy table of that the swarm is using for coverage the value is a table
+  # with the following as key value pairs
+  #   being_accessed  - nil or string  => name of the robot moving towards the target
+  #   last_accessed   - int            => wall clock time in ticks of last 
+  #                                         access (should this be a float/seconds?)
+
+
+  # pc.gain can be overwriten after creation if other gain function is desired
+  # must take a vs entry, target entry, an xy postion, and the current wall clock time
+  # must return a gain(float)
+  pc.gain = function(vs_entry, target_entry, pos, time){
+    return 5*(time-vs_entry.last_accessed)
+  }
+
+  foreach(targets, function(target, t_tuple){
+    var vs_tuple = {}
+    vs_tuple.being_accessed = nil
+    vs_tuple.last_accessed = 0
+    pc.vs.put(target, vs_tuple)
+  })
+
+  return pc
+}
+
+persistant_coverage.update_energy = function(pc, curr_pos){
+  if(pc.prev_pos != nil){
+    var dist_traveled = math.vec2.length(math.vec2.sub(pc.prev_pos, curr_pos))  
+    pc.curr_energy = pc.curr_energy - dist_traveled
+  }
+  pc.prev_pos = curr_pos
+}
+
+persistant_coverage.get_local_pos_of_dest = function(pc, curr_pos){
+  if(pc.dest == nil){
+    # log("[",id,"]asking for pos of nil dest")
+    return math.vec2.new(curr_pos.x, curr_pos.y)
+  }
+  var pos = nil
+  var ttype = string.sub(pc.dest, 0, 1)
+  if(ttype == 't'){
+    pos = pc.targets[pc.dest].pos
+  }else if(ttype == 'd'){
+    pos = pc.depots[pc.dest].pos
+  }
+
+  if(pos == nil){
+    log("[",id,"]dest ", pc.dest," has nil pos")
+    return math.vec2.new(curr_pos.x, curr_pos.y)
+  }
+  return math.vec2.new(pos.x, pos.y)
+}
+
+persistant_coverage.at_dest = function(pc, curr_pos){
+  var pos = nil
+  var ttype = string.sub(pc.dest, 0, 1)
+  if(ttype == 't'){
+    pos = pc.targets[pc.dest].pos
+  }else if(ttype == 'd'){
+    pos = pc.depots[pc.dest].pos
+  }
+
+  var dist = math.vec2.length(math.vec2.sub(pos, curr_pos))
+  #log("[",id,"]",dist, " away from goal, tolerance is ", TOLERANCE)
+  return dist < TOLERANCE
+}
+
+persistant_coverage.decide_goal = function(pc, pos, time){
+  var accum = {.max_gain=0,.max_tuple=nil,.max_dest=nil}
+
+  var vs_tuple = nil
+  var curr_gain = 0
+
+  var energy_needed = 0
+  var nearest_depot = math.vec2.new(0,0)
+  # log("[",id,"]Choosing new dest ")
+  # get valid target with highest gain
+  foreach(pc.targets, function(target, t_tuple){  
+    vs_tuple = pc.vs.get(target)
+		if(vs_tuple.being_accessed == nil){
+      curr_gain = pc.gain(vs_tuple, t_tuple, pos, time)
+      nearest_depot = pc.depots[t_tuple.nearest_depot].pos
+      energy_needed = math.vec2.length(math.vec2.sub(t_tuple.pos, pos)) + math.vec2.length(math.vec2.sub(t_tuple.pos, nearest_depot))
+      if(curr_gain > accum.max_gain and energy_needed < pc.curr_energy){
+        accum.max_tuple = vs_tuple
+        accum.max_gain = curr_gain
+        accum.max_dest = target
+      }
+    }
+  })
+  # set dest and update table
+  if(accum.max_dest != nil){
+    accum.max_tuple.being_accessed = id
+    pc.vs.put(accum.max_dest,accum.max_tuple)
+  }else{
+    log("[",id,"]needs to recharge, has ", pc.curr_energy, " energy")
+    accum = {.max_dist=pc.curr_energy,.max_dest=nil}
+    foreach(pc.depots, function(depot, d_tuple){
+      energy_needed = math.vec2.length(math.vec2.sub(d_tuple.pos, pos))
+      if(energy_needed <= accum.max_dist){
+        accum.max_dist = curr_gain
+        accum.max_dest = depot
+      }
+    })
+  }
+
+  pc.dest = accum.max_dest
+  log("[",id,"]decided on dest: ", accum.max_dest)
+
+  return persistant_coverage.get_local_pos_of_dest(pc, pos)
+}
+
+persistant_coverage.update = function(pc, curr_pos, time){
+  persistant_coverage.update_energy(pc, curr_pos)
+  if(pc.dest == nil){
+    return persistant_coverage.decide_goal(pc, curr_pos, time)
+  }else{
+    var being_accessed = nil 
+	  var ttype = string.sub(pc.dest, 0, 1)
+		if(ttype == "t"){
+			being_accessed = pc.vs.get(pc.dest).being_accessed
+		}
+    if(being_accessed != nil and being_accessed != id){
+			# someone else is assigned to dest
+      log("[",id,"]", pc.dest," has be overclaimed by ",being_accessed)
+      return persistant_coverage.decide_goal(pc, curr_pos, time)
+    }else if(persistant_coverage.at_dest(pc, curr_pos)){
+			# at dest
+      log("[",id,"]arrived at ",pc.dest," at time ", time)
+      # arrived at destination
+      if(ttype == 't'){
+        var tuple = pc.vs.get(pc.dest)
+        tuple.last_accessed = time
+        tuple.being_accessed = nil
+        pc.vs.put(pc.dest, tuple)
+      }else if(ttype == 'd'){
+        pc.curr_energy = pc.max_energy
+      }
+
+      # reset dest and get new one
+      pc.dest = nil
+      return persistant_coverage.decide_goal(pc, curr_pos, time)
+    }else {
+			# not at dest
+      return persistant_coverage.get_local_pos_of_dest(pc, curr_pos)
+    }
+  }
+}
+
+

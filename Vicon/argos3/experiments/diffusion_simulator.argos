@@ -1,0 +1,92 @@
+<?xml version="1.0" ?>
+<argos-configuration>
+
+  <!-- ************************* -->
+  <!-- * General configuration * -->
+  <!-- ************************* -->
+  <framework>
+    <system threads="0" />
+    <experiment length="0"
+                ticks_per_second="10"
+                random_seed="125" />
+  </framework>
+
+  <!-- *************** -->
+  <!-- * Controllers * -->
+  <!-- *************** -->
+  <controllers>
+    <khepera_diffusion_controller id="diffusion"
+                                  library="build/lib/libkhepera_diffusion" >
+      <actuators>
+        <differential_steering implementation="default" />
+      </actuators>
+      <sensors>
+        <kheperaiv_proximity implementation="default" show_rays="true" />
+      </sensors>
+      <params>
+        <wheel_turning hard_turn_angle_threshold="90"
+                       soft_turn_angle_threshold="20"
+                       hard_reset_angle_threshold="60"
+                       no_turn_angle_threshold="10"
+                       max_speed="5" />
+      </params>
+    </khepera_diffusion_controller>
+  </controllers>
+
+  <!-- *********************** -->
+  <!-- * Arena configuration * -->
+  <!-- *********************** -->
+  <arena size="2.5, 2.5, 1" center="0,0,0.5" >
+    <box id="wall_north" size="2,0.1,0.5" movable="false">
+      <body position="0,1,0" orientation="0,0,0" />
+    </box>
+    <box id="wall_south" size="2,0.1,0.5" movable="false">
+      <body position="0,-1,0" orientation="0,0,0" />
+    </box>
+    <box id="wall_east" size="0.1,2,0.5" movable="false">
+      <body position="1,0,0" orientation="0,0,0" />
+    </box>
+    <box id="wall_west" size="0.1,2,0.5" movable="false">
+      <body position="-1,0,0" orientation="0,0,0" />
+    </box>
+
+    <distribute>
+      <position method="uniform" min="-1,-1,0" max="1,1,0" />
+      <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
+      <entity quantity="10" max_trials="100">
+        <kheperaiv id="kh">
+          <controller config="diffusion" />
+        </kheperaiv>
+      </entity>
+    </distribute>
+
+
+    <kheperaiv id="kh">
+      <body position="0,0,0" orientation="0,0,0" />
+      <controller config="diffusion" />
+    </kheperaiv>
+  </arena>
+
+  <!-- ******************* -->
+  <!-- * Physics engines * -->
+  <!-- ******************* -->
+  <physics_engines>
+    <dynamics2d id="dyn2d" />
+  </physics_engines>
+
+  <!-- ********* -->
+  <!-- * Media * -->
+  <!-- ********* -->
+  <media />
+
+  <!-- ****************** -->
+  <!-- * Visualization * -->
+  <!-- ****************** -->
+  <visualization>
+    <qt-opengl>
+      <user_functions label="diffusion_qtuser_functions"
+                      library="build/lib/libdiffusion_visualizer" />
+    </qt-opengl>
+  </visualization>
+
+</argos-configuration>

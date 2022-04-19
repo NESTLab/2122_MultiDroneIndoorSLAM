@@ -16,6 +16,10 @@ test-sim:
 	$(SETUP); \
 	python3 -m unittest $(WORKDIR)/coms/tests/test_sim.py
 
+test-utils:
+	$(SETUP); \
+	python3 -m unittest $(WORKDIR)/coms/tests/test_utils.py
+
 coverage:
 	$(SETUP); \
 	export COVERALLS_REPO_TOKEN=$(COVERALLS_REPO_TOKEN); \

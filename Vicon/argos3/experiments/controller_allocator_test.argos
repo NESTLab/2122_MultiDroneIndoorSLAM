@@ -1,0 +1,121 @@
+<?xml version="1.0" ?>
+<argos-configuration>
+
+  <!-- ************************* -->
+  <!-- * General configuration * -->
+  <!-- ************************* -->
+  <framework>
+    <!--
+        System configuration:
+        - threads: the number of slave threads to parallelize the
+          computation. For less than 100 robots thread management is not
+          beneficial, so here we set it to 0. When set to 0, it means that
+          the computation is not parallelized: the main thread does
+          everything.
+    -->
+    <system threads="0" />
+
+    <experiment length="0"
+                ticks_per_second="10"
+                random_seed="124" />
+  </framework>
+
+  <!-- *************** -->
+  <!-- * Controllers * -->
+  <!-- *************** -->
+  <controllers>
+    <khepera_diffusion_controller id="diffusion1"
+                                  library="build/lib/libkhepera_diffusion" >
+      <actuators>
+        <differential_steering implementation="default" />
+      </actuators>
+      <sensors>
+        <kheperaiv_proximity implementation="default" show_rays="true" />
+      </sensors>
+      <params>
+        <wheel_turning hard_turn_angle_threshold="90"
+                       soft_turn_angle_threshold="20"
+                       hard_reset_angle_threshold="60"
+                       no_turn_angle_threshold="10"
+                       max_speed="5" />
+      </params>
+    </khepera_diffusion_controller>
+
+    <khepera_diffusion_controller id="diffusion2"
+                                  library="build/lib/libkhepera_diffusion" >
+      <actuators>
+        <differential_steering implementation="default" />
+      </actuators>
+      <sensors>
+        <kheperaiv_proximity implementation="default" show_rays="true" />
+      </sensors>
+      <params>
+        <wheel_turning hard_turn_angle_threshold="90"
+                       soft_turn_angle_threshold="20"
+                       hard_reset_angle_threshold="60"
+                       no_turn_angle_threshold="10"
+                       max_speed="5" />
+      </params>
+    </khepera_diffusion_controller>
+
+    <khepera_diffusion_controller id="diffusion3"
+                                  library="build/lib/libkhepera_diffusion" >
+      <actuators>
+        <differential_steering implementation="default" />
+      </actuators>
+      <sensors>
+        <kheperaiv_proximity implementation="default" show_rays="true" />
+      </sensors>
+      <params>
+        <wheel_turning hard_turn_angle_threshold="90"
+                       soft_turn_angle_threshold="20"
+                       hard_reset_angle_threshold="60"
+                       no_turn_angle_threshold="10"
+                       max_speed="5" />
+      </params>
+    </khepera_diffusion_controller>
+  </controllers>
+
+  <!-- *********************** -->
+  <!-- * Arena configuration * -->
+  <!-- *********************** -->
+  <arena size="2.5, 2.5, 1" center="0,0,0.5" >
+    <box id="wall_north" size="2,0.1,0.5" movable="false">
+      <body position="0,1,0" orientation="0,0,0" />
+    </box>
+    <box id="wall_south" size="2,0.1,0.5" movable="false">
+      <body position="0,-1,0" orientation="0,0,0" />
+    </box>
+    <box id="wall_east" size="0.1,2,0.5" movable="false">
+      <body position="1,0,0" orientation="0,0,0" />
+    </box>
+    <box id="wall_west" size="0.1,2,0.5" movable="false">
+      <body position="-1,0,0" orientation="0,0,0" />
+    </box>
+  </arena>
+
+  <!-- ******************* -->
+  <!-- * Physics engines * -->
+  <!-- ******************* -->
+  <physics_engines>
+    <tracking>
+      <updaters>
+        <spam_updater robot="Khepera" limit="10"/>
+      </updaters>
+      <assigners>
+        <Khepera default="diffusion1">
+          <limited controller="diffusion1" limit="2" priority="2"/>
+          <limited controller="diffusion2" limit="4" priority="1"/>
+          <limited controller="diffusion3" limit="2" priority="0"/>
+        </Khepera>
+      </assigners>
+    </tracking>
+  </physics_engines>
+
+  <!-- ********* -->
+  <!-- * Media * -->
+  <!-- ********* -->
+  <media />
+  <visualization />
+
+</argos-configuration>

@@ -1,10 +1,13 @@
 import unittest
 import socket
 import rospy
+import numpy as np
+import sys
 from typing import List
 from subprocess import check_output, call
-from coms.utils import readable, writable, get_ip_list, get_interface_from_ip, get_device_numbers, gen_bound_socket, start_roscore, stop_roscore, addr_to_str # noqa: E501
-from coms.constants import CATKIN_WS, ENCODING
+from coms.utils import pack_bytes, add_padding, map_to_chunks, gen_id_chunk, decompress_map, compress_map, readable, writable, get_ip_list, get_interface_from_ip, get_device_numbers, gen_bound_socket, start_roscore, stop_roscore, addr_to_str # noqa: E501
+from coms.constants import PADDING_CHAR, CHUNK_SIZE, CATKIN_WS, ENCODING
+from numcompress import compress_ndarray
 from roslaunch.parent import ROSLaunchParent
 
 
@@ -82,6 +85,71 @@ class TestUtils(unittest.TestCase):
             got = addr_to_str(t[0])
             expects = t[1]
             self.assertEqual(got, expects)
+    
+    def test_compress_map(self: unittest.TestCase) -> None:
+        maps: List[np.ndarray] = [
+            np.random.randint(99999, size=(300,300)),
+            np.random.randint(9999, size=(1,900)),
+            np.random.randint(999999, size=(0,0)),
+            np.random.randint(sys.maxsize, size=(800,800))
+        ]
+        for map in maps:
+            raw_map: bytes = compress_map(map)
+            true_raw_map: str = compress_ndarray(map, precision=0)
+            real_map = decompress_map(raw_map)
+            self.assertEqual(raw_map, true_raw_map.encode(ENCODING), "Map compression bytes is not consistent")
+            self.assertEqual(raw_map.decode(ENCODING), true_raw_map, "Map compression is not consistent")
+            self.assertEqual(real_map.shape, map.shape, "Decompressed maps are not the same shape")
+            self.assertEqual((real_map == map).all(), True, "Decompressed maps are not equal")
+
+    def test_decompress_map(self: unittest.TestCase) -> None:
+        maps = [
+            np.random.randint(9999, size=(300,300)),
+            np.random.randint(999999, size=(1,900)),
+            np.random.randint(9999, size=(0,0)),
+            np.random.randint(sys.maxsize, size=(800,800))
+        ]
+        for map in maps:
+            raw_map: str = compress_ndarray(map, precision=0)
+            raw_map_bytes: bytes = raw_map.encode(ENCODING)
+            dec_map = decompress_map(raw_map_bytes)
+            self.assertEqual(dec_map.shape, map.shape, "Decompressed maps are not the same shape")
+            self.assertEqual((dec_map == map).all(), True, "Decompressed maps are not equal")
+
+    def test_gen_id_chunk(self: unittest.TestCase) -> None:
+        ids = [0, 1, 9, 10, -18392732, sys.maxsize]
+        for id in ids:
+            id_str: str = str(id)
+            pad: str = PADDING_CHAR * (CHUNK_SIZE - len(id_str))
+            chunk: str = id_str + pad
+            byte_chunk: bytes = chunk.encode(ENCODING)
+            ref: bytes = gen_id_chunk(id)
+            self.assertEqual(len(byte_chunk), len(ref), f"Bytes are different sizes. Should be CHUNK_SIZE: {CHUNK_SIZE}")
+            self.assertEqual(byte_chunk, ref, f"Unequal bytes for id: {id}")
+            self.assertEqual(chunk, ref.decode(ENCODING), f"Unequal bytes for id: {id}")
+
+    def test_map_to_chunks(self: unittest.TestCase) -> None:
+        map = np.random.randint(9999, size=(300,300))
+        id = 4
+        ref_chunks: List[bytes] = map_to_chunks(map, id, 'explorer')
+        chunks: List[bytes] = [gen_id_chunk(id), add_padding('explorer')] + pack_bytes(compress_ndarray(map, precision=0).encode(ENCODING))
+        self.assertEqual(len(chunks), len(ref_chunks))
+        for idx, ref_chunk in enumerate(ref_chunks):
+            real_chunk = chunks[idx]
+            self.assertEqual(real_chunk, ref_chunk)
+
+    def test_pack_bytes(self: unittest.TestCase) -> None:
+        odd_len_bytes = ("\0" * (CHUNK_SIZE + 3)).encode(ENCODING)
+        self.assertEqual(len(pack_bytes(odd_len_bytes)), 2)
+        odd_len_bytes = ("\0" * (CHUNK_SIZE * 729 + 3)).encode(ENCODING)
+        self.assertEqual(len(pack_bytes(odd_len_bytes)), 730)
+
+        map = np.random.randint(sys.maxsize, size=(300,300))
+        comp_map = compress_ndarray(map, precision=0)
+        raw_map = comp_map.encode(ENCODING)
+        ref_chunks = pack_bytes(raw_map)
+        for chunk in ref_chunks:
+            self.assertEqual((chunk in raw_map), True, "Raw chunk not found in raw map")
 
 
 if __name__ == '__main__':

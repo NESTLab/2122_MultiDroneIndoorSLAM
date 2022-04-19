@@ -1,3 +1,5 @@
+trio==0.20.0
+numcompress==0.1.2
 netifaces==0.11.0
 pyyaml==5.3.1
 scikit-image==0.18.3

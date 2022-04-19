@@ -1,0 +1,75 @@
+<?xml version="1.0" ?>
+<argos-configuration>
+
+  <!-- ************************* -->
+  <!-- * General configuration * -->
+  <!-- ************************* -->
+  <framework>
+    <!--
+        System configuration:
+        - threads: the number of slave threads to parallelize the
+          computation. For less than 100 robots thread management is not
+          beneficial, so here we set it to 0. When set to 0, it means that
+          the computation is not parallelized: the main thread does
+          everything.
+    -->
+    <system threads="0" />
+
+    <experiment length="0"
+                ticks_per_second="10"
+                random_seed="124" />
+  </framework>
+
+  <!-- *************** -->
+  <!-- * Controllers * -->
+  <!-- *************** -->
+  <controllers>
+    <kilobot_dummy_controller id="dummy"
+                              lib="build/lib/">
+     <actuators />
+      <sensors />
+      <params />
+    </kilobot_dummy_controller>
+  </controllers>
+
+  <!-- *********************** -->
+  <!-- * Arena configuration * -->
+  <!-- *********************** -->
+  <arena size="1.25, 2.05, 1" center="0.625,1.025,0.5" />
+
+  <!-- ******************* -->
+  <!-- * Physics engines * -->
+  <!-- ******************* -->
+  <physics_engines>
+    <tracking>
+      <updaters>
+        <kilotrack_updater port="1337"/>
+      </updaters>
+      <assigners>
+        <Kilobot default="dummy" />
+      </assigners>
+    </tracking>
+  </physics_engines>
+
+  <!-- ********* -->
+  <!-- * Media * -->
+  <!-- ********* -->
+  <media >
+  </media>
+
+
+  <visualization>
+    <qt-opengl>
+      <camera>
+        <placement idx="0" position="-0.546927,1.11053,1.00674" look_at="0.16718,1.10338,0.306741" up="0.699965,-0.00699989,0.714142" lens_focal_length="20" />
+      </camera>
+    </qt-opengl>
+  </visualization>
+
+
+<loop_functions label="MasterLoopFunctions">
+  <sub_loop_function label="BaseNetworking" />
+  <!-- <sub_loop_function label="pheromone_loop_functions" /> -->
+</loop_functions>
+
+</argos-configuration>

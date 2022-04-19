@@ -62,8 +62,11 @@ add_message_files(
 ## Generate services in the 'srv' folder
 add_service_files(
    FILES
+   NextMeeting.srv
    MergeMap.srv
    TriggerMerge.srv
+   ReadyToMeet.srv
+   NetInfo.srv
 )
 
 ## Generate actions in the 'action' folder

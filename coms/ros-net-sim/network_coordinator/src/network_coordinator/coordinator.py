@@ -72,7 +72,7 @@ class NetworkCoordinator:
                     continue
             except OSError:
                 self.run_event.clear()  # to end all threads
-                print("TUN " + str(i) + " seems to be gone, can't read from it")
+                # print("TUN " + str(i) + " seems to be gone, can't read from it")
                 break
 
             # identify IPs and save into buffer
@@ -83,10 +83,10 @@ class NetworkCoordinator:
                 ip_dst = int.from_bytes(data[16:20], byteorder="big")
                 with self.incoming_packet_buffer_busy:
                     self.incoming_packet_buffer[(self.packet_id.value, ip_src, ip_dst)] = data
-                    if self.config['print_debug']: print(f"Read {(self.packet_id.value, ip_src, ip_dst)} from TUN {i}")
+                    # if self.config['print_debug']: print(f"Read {(self.packet_id.value, ip_src, ip_dst)} from TUN {i}")
                     self.packet_id.increment()
 
-        print("TUN " + str(i) + " exiting")
+        # print("TUN " + str(i) + " exiting")
         tuns[i].close()
 
     def _run_protobuf_client_phy_coord(self: NetworkCoordinator):
@@ -209,13 +209,13 @@ class NetworkCoordinator:
                     for time_update_tuple in zip(time_update.pkt_id, time_update.src_ip, time_update.dst_ip,
                                                  time_update.ber, time_update.rx_ip):
                         if not self.run_event.is_set():
-                            print("Network simulator was asked to exit while writing data")
+                            # print("Network simulator was asked to exit while writing data")
                             break
                         ber = time_update_tuple[3]
                         key_tuple = time_update_tuple[:3]
                         if key_tuple not in self.outgoing_packet_buffer:
                             # The packet was already dropped, probably due to storage timeout
-                            print(f"Packet {key_tuple} to be delivered was already dropped")
+                            # print(f"Packet {key_tuple} to be delivered was already dropped")
                             continue
                         data = self.outgoing_packet_buffer[key_tuple]
 
@@ -238,7 +238,7 @@ class NetworkCoordinator:
 
                         try:
                             os.write(tuns[ip_to_tun_map[time_update_tuple[4]]].fileno(), data)
-                            if self.config['print_debug']: print(f"Wrote {key_tuple} to TUN {ip_to_tun_map[time_update_tuple[4]]}")
+                            # if self.config['print_debug']: print(f"Wrote {key_tuple} to TUN {ip_to_tun_map[time_update_tuple[4]]}")
                         except (OSError, KeyError, ValueError) as msg:
                             #print("Network simulator client: Error while writing to TUN. %s" % (msg,))
                             continue
