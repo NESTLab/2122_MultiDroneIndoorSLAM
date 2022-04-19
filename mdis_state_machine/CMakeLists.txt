@@ -100,6 +100,11 @@ add_executable(connection_check src/connection_check.cpp)
 add_dependencies(connection_check ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(connection_check ${PROJECT_NAME} ${catkin_LIBRARIES})
 
+add_executable(frontier_explore src/frontier_explore.cpp)
+add_dependencies(frontier_explore ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(frontier_explore ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+
 install(TARGETS move_base_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

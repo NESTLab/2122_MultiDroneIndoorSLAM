@@ -37,6 +37,9 @@
     </node>
 
     <node pkg="mdis_state_machine" type="connection_check" name="connection_check" args="4"/>
+    <node pkg="mdis_state_machine" type="frontier_explore" name="frontier_explore" output="screen">
+      <param name="robot_name" value="$(arg ns)"/>
+    </node>
 
 	  <node pkg="multi_map_ros" name="find_fontier" type="frontier_clustering.py" output="screen"/>
   </group>
@@ -57,8 +60,8 @@
   </include>
   
 
-  <include file="$(find explore_lite)/launch/explore.launch">
+  <!-- <include file="$(find explore_lite)/launch/explore.launch">
     <arg name="ns" value="$(arg ns)"/>
-  </include>
+  </include> -->
 
 </launch>

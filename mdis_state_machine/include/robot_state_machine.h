@@ -68,7 +68,9 @@ protected:
    std::string m_strName;
    std::string robot_name;
    std::string data_center_name = "tb3_0";
+   static float explore_loc_x, explore_loc_y;
    static float meet_loc_x, meet_loc_y;
+   
    static float time_for_exploration;
    static std::string connected_robot_name;
    static std::string parent_robot_name, child_robot_name;
@@ -95,12 +97,28 @@ protected:
      robot_state_pub.publish(state_pub_data);
    }
 
+   void setGoToExplorePoint(const geometry_msgs::Point& explore_point)
+   {
+      std::string message = getFormattedMessage("Exploration point setting to: ");
+      ROS_ERROR_STREAM(message<<explore_point);
+     explore_loc_x = explore_point.x;
+     explore_loc_y = explore_point.y;
+   }
+
    void setMeetingPoint(const geometry_msgs::Point& meeting)
    {
       std::string message = getFormattedMessage("Meeting point setting to: ");
       ROS_ERROR_STREAM(message<<meeting);
      meet_loc_x = meeting.x;
      meet_loc_y = meeting.y;
+   }
+
+   geometry_msgs::Point getExplorePoint()
+   {
+     geometry_msgs::Point point;
+     point.x = explore_loc_x;
+     point.y = explore_loc_y;
+     return point;
    }
 
    geometry_msgs::Point getMeetingPoint()
@@ -110,6 +128,8 @@ protected:
      point.y = meet_loc_y;
      return point;
    }
+
+
 
    inline bool isConnDirectRelated(const std::string& conn_robot)
    {
