@@ -4,9 +4,6 @@
 #include <std_msgs/Bool.h>
 #include <geometry_msgs/PoseArray.h>
 #include <mdis_state_machine/Connection.h>
-#include <mdis_state_machine/DataCommunication.h>
-#include <mdis_state_machine/Location.h>
-#include <mdis_state_machine/LocationAck.h>
 #include <mdis_state_machine/ConnectionRequest.h>
 #include <cmath>
 #include <explore_lite/FrontiersArray.h>
