@@ -31,6 +31,8 @@ class MergeHandler:
         if self.logging:
             self.bag = rosbag.Bag(f'{self.robot_name}_log.bag', 'w')
 
+        self.has_merged = False
+
         # map data
         self.seq = 0
         self.latest_map = np.array([])
@@ -72,7 +74,7 @@ class MergeHandler:
         MergeHandler.parse_and_save(msg, self.latest_map)
         # unpack gmapping
         new_map = ros_to_numpy(msg.data).reshape(-1,msg.info.width)
-        self.merge_map(new_map)
+        self.merge_map(new_map, gmap=True)
         # print("merge")
 
     @staticmethod
@@ -105,7 +107,7 @@ class MergeHandler:
             np.save(f, new_map)
         return self.merge_map(new_map)
 
-    def merge_map(self, new_map: np.array([])) -> bool:
+    def merge_map(self, new_map: np.array([]), gmap=False) -> bool:
         """
         merges a map.
         configurable number of retries and error catching
@@ -118,10 +120,11 @@ class MergeHandler:
         try:
             # print(new_map.shape)
             # print(self.latest_map.shape)
-
-            self.latest_map = mapmerge_pipeline(new_map, self.latest_map)
-            # TODO checks and maybe a lock? depends on the rospy callback threading
-            # self.latest_map = merged
+            if not self.has_merged and gmap:
+                self.latest_map = new_map
+            else:
+                self.latest_map = mapmerge_pipeline(new_map, self.latest_map)
+                self.has_merged = True
             return True
         except Exception as e:
             rospy.logerr(f"Could not merge maps: {e}")
