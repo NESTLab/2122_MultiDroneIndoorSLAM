@@ -19,6 +19,7 @@
   <arg name="role" default="1"/>
   <arg name="parent_name" default=""/>
   <arg name="child_name" default=""/>
+  <arg name='start_map' default='true'/>
 
   <group ns = "$(arg ns)">
     <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
@@ -58,7 +59,7 @@
     </node>
   </group>
   
-  <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_slam.launch">
+  <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_slam.launch" if="$(arg start_map)">
     <arg name="ns" value="$(arg ns)"/>
   </include>
   
