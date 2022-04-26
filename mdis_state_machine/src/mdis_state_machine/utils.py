@@ -3,7 +3,6 @@ from subprocess import Popen, DEVNULL
 from mdis_state_machine.msg import RobotsState
 from mdis_state_machine.msg import Connection
 from mdis_state_machine.msg import ConnectionRequest
-from mdis_state_machine.msg import Location
 from geometry_msgs.msg import Point
 from geometry_msgs.msg import PoseArray
 from geometry_msgs.msg import Pose
