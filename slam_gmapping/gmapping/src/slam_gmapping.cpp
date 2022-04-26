@@ -263,6 +263,8 @@ void SlamGMapping::init()
   if(!private_nh_.getParam("tf_delay", tf_delay_))
     tf_delay_ = transform_publish_period_;
 
+  std::string robot_name = ros::this_node::getNamespace();
+  robot_number_ = (int)(robot_name.at(robot_name.size()-1))- 48;
 }
 
 
@@ -777,6 +779,15 @@ SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
   map_.map.header.stamp = ros::Time::now();
   map_.map.header.frame_id = tf_.resolve( map_frame_ );
 
+  if(robot_number_!=0)
+    sst_.publish(map_.map);
+  else
+  {
+    map_.map.data.clear();
+    map_.map.data.resize(map_.map.info.width * map_.map.info.height);
+    for (int i=0;i<map_.map.data.size();i++)
+        map_.map.data.at(i)=-1.0;
+  }
   sst_.publish(map_.map);
   sstm_.publish(map_.map.info);
 }

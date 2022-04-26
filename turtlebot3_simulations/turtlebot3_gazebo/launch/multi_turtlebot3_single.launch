@@ -59,7 +59,7 @@
     </node>
   </group>
   
-  <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_slam.launch" if="$(arg start_map)">
+  <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_slam.launch">
     <arg name="ns" value="$(arg ns)"/>
   </include>
   

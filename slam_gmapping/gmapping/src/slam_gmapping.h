@@ -150,4 +150,6 @@ class SlamGMapping
     
     double transform_publish_period_;
     double tf_delay_;
+
+    int robot_number_;
 };

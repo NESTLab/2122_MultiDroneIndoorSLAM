@@ -49,6 +49,7 @@
     <arg name="parent_name" value="dummy_1"/>
     <arg name="child_name" value="dummy_2"/>
     <arg name="ip_address" value="192.168.0.3"/>
+    <arg name="role_name" value="relay"/>
   </include>  
   
   <!-- <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_single.launch">

@@ -18,12 +18,16 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
       // m_pcTeam(nullptr),
       m_unId(un_id), m_strName(str_name)
 {
-  explore_interface = new MoveBaseInterface(nh, testing);
-  robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
-
   robot_name = ros::this_node::getNamespace();
   robot_name.erase(robot_name.begin());
   
+  int robot_number = (int)(robot_name.at(robot_name.size()-1))- 48;
+  if(robot_number!=0)
+    explore_interface = new MoveBaseInterface(nh, testing);
+  else
+    explore_interface = new MoveBaseInterface(nh, true);
+  robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
+
   geometry_msgs::Point current_pose = explore_interface->getRobotCurrentPose().pose.position;
   meet_loc_x = current_pose.x+3;
   meet_loc_y = current_pose.y-0.5;
