@@ -26,6 +26,7 @@ class MergeHandler:
         self.map_publisher = rospy.Publisher("merged_map", OccupancyGrid, queue_size=10)
         self.gmapping_subscriber = rospy.Subscriber("map", OccupancyGrid, self.gmapping_cb)
         self.rate = rospy.Rate(10)  # 10hz
+        self.busy = False
 
         # logging
         if self.logging:
@@ -64,6 +65,8 @@ class MergeHandler:
             increase map update speed
             set map transform to remain the same after merges.
         """
+        if self.busy:
+          return
 
         if self.logging:
             self.bag.write('map', msg)
@@ -98,6 +101,7 @@ class MergeHandler:
         """
         Gonna just do a ros merge for now:
         """
+        self.busy=True
         name = req.robot_id
         new_map = self.get_map(name)
 
@@ -105,7 +109,9 @@ class MergeHandler:
             np.save(f, self.latest_map)
         with open(f'other{1}.npy', 'wb') as f:
             np.save(f, new_map)
-        return self.merge_map(new_map)
+        result = self.merge_map(new_map)
+        self.busy=False
+        return result
 
     def merge_map(self, new_map: np.array([]), gmap=False) -> bool:
         """

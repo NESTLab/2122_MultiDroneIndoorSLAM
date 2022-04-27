@@ -110,6 +110,7 @@ class SlamGMapping
     bool initMapper(const sensor_msgs::LaserScan& scan);
     bool addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoint& gmap_pose);
     double computePoseEntropy();
+    void mergedMapCallback(const nav_msgs::OccupancyGrid& msg);
     
     // Parameters used by GMapping
     double maxRange_;
@@ -145,6 +146,10 @@ class SlamGMapping
     double lasamplestep_;
     
     ros::NodeHandle private_nh_;
+    ros::Subscriber merged_map_sub_;
+
+    nav_msgs::OccupancyGrid merged_map_msg;
+    bool once=true;
     
     unsigned long int seed_;
     

@@ -275,6 +275,7 @@ void SlamGMapping::startLiveSlam()
   sstm_ = node_.advertise<nav_msgs::MapMetaData>("map_metadata", 1, true);
   ss_ = node_.advertiseService("dynamic_map", &SlamGMapping::mapCallback, this);
   scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node_, "scan", 5);
+  merged_map_sub_ = private_nh_.subscribe("merged_map", 1000, &SlamGMapping::mergedMapCallback, this);
   scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
   scan_filter_->registerCallback(boost::bind(&SlamGMapping::laserCallback, this, _1));
 
@@ -350,7 +351,11 @@ void SlamGMapping::startReplay(const std::string & bag_fname, std::string scan_t
 
   bag.close();
 }
-
+void SlamGMapping::mergedMapCallback(const nav_msgs::OccupancyGrid& msg)
+{
+  merged_map_msg=msg;
+  once = false;
+}
 void SlamGMapping::publishLoop(double transform_publish_period){
   if(transform_publish_period == 0)
     return;
@@ -783,10 +788,15 @@ SlamGMapping::updateMap(const sensor_msgs::LaserScan& scan)
     sst_.publish(map_.map);
   else
   {
-    map_.map.data.clear();
-    map_.map.data.resize(map_.map.info.width * map_.map.info.height);
-    for (int i=0;i<map_.map.data.size();i++)
-        map_.map.data.at(i)=-1.0;
+    if(once)
+    {
+      map_.map.data.clear();
+      map_.map.data.resize(map_.map.info.width * map_.map.info.height);
+      for (int i=0;i<map_.map.data.size();i++)
+          map_.map.data.at(i)=-1.0;
+    }
+    else
+      map_.map = merged_map_msg;
   }
   sst_.publish(map_.map);
   sstm_.publish(map_.map.info);
