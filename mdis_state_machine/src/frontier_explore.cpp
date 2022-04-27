@@ -17,6 +17,7 @@ bool explore = false;
 bool stop_explore = false;
 bool frontier_data_received_for_explore = false;
 geometry_msgs::Point frontier;
+MoveBaseInterface *explore_interface;
 // MoveBaseInterface *explore_interface;
 
 
@@ -36,10 +37,24 @@ void pauseExploreCB(const std_msgs::Bool::ConstPtr& msg)
 void getBestFrontiersCB(const geometry_msgs::PoseArray& msg)
 {
     ROS_INFO(" New Frontier Received");
-   if (msg.poses.size()>0)
+   if (msg.poses.size()==0)
+   {
+      ROS_WARN("Empty frontier list encountered");
+      return;
+   }
+
+  float min_dis=100000.0;
+  for (auto& curr_frontier : msg.poses)
+  {
+    //euclidean distance to frontier from explorer meeting point
+    float self_distance_from_frontier = explore_interface->getDistancePrediction(curr_frontier.position); //experimenting new method
+  
+    if (self_distance_from_frontier<=min_dis){
+      min_dis = self_distance_from_frontier;
+      frontier=curr_frontier.position;      
+    }
+  }
    frontier = msg.poses.at(0).position;
-   else
-   ROS_WARN("Empty frontier list encountered");
    
   frontier_data_received_for_explore = true;
 }
@@ -51,7 +66,7 @@ int main(int argc, char **argv)
     std::string robot_name = nh.getNamespace();
     robot_name.erase (0,1);
     
-    MoveBaseInterface *explore_interface = new MoveBaseInterface(nh, false);
+    explore_interface = new MoveBaseInterface(nh, false);
     
     ros::Subscriber sub = nh.subscribe(nh.getNamespace() + "/explore/pause_exploration", 1000, pauseExploreCB);
     ros::Subscriber frontier_data_sub_explore = nh.subscribe(nh.getNamespace() + "/frontier_list", 1000, getBestFrontiersCB);

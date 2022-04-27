@@ -82,7 +82,7 @@ protected:
    bool interested;
    bool is_explorer;
    bool meeting_started, go_for_exploration;
-   const float MIN_TIME_FOR_EXPLORATION = 5;
+   const float MIN_TIME_FOR_EXPLORATION = 45;
 
    MoveBaseInterface *explore_interface;
    ros::Publisher robot_state_pub;

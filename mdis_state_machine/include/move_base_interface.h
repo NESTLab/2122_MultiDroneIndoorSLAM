@@ -47,7 +47,7 @@ class MoveBaseInterface
      * @param end_pose 
      * @return float distance of the calculated trajectory
      */
-    float getDistancePrediction(geometry_msgs::Point &goal);
+    float getDistancePrediction(const geometry_msgs::Point &goal);
 
     /**
      * @brief Get the Time Prediction For Travel object

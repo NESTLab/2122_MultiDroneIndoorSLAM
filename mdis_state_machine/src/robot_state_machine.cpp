@@ -29,8 +29,8 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
 
   geometry_msgs::Point current_pose = explore_interface->getRobotCurrentPose().pose.position;
-  meet_loc_x = current_pose.x+3;
-  meet_loc_y = current_pose.y-0.5;
+  meet_loc_x = current_pose.x;
+  meet_loc_y = current_pose.y;
 
   data_dump_location.x = -6;
   data_dump_location.y = -5;
@@ -567,40 +567,41 @@ void DecideNextMeeting::updateNextMeetingPoint()
   geometry_msgs::Point best_frontier_location;
   best_frontier_location.x = frontiers_list.at(0).x;
   best_frontier_location.y = frontiers_list.at(0).y;
-  setGoToExplorePoint(best_frontier_location);
-  for (auto& frontier : frontiers_list)
-  {
-    //euclidean distance to frontier from explorer meeting point
-    geometry_msgs::Point temp;
-    geometry_msgs::Point other_robot_location;
-    
-    
-    temp.x=frontier.x;
-    temp.y=frontier.y;
-    float total_distance_from_frontier = 0;
-    
-    // float self_distance_from_frontier = explore_interface->getDistancePrediction(temp); 
-    float self_distance_from_frontier = explore_interface->getDistancePrediction(frontiers_list.at(0), temp); //experimenting new method
+  setMeetingPoint(best_frontier_location);      
 
-    ROS_ERROR_STREAM("Analyzing frontier point:   "<<frontier);
-    // float other_distance_from_frontier = 0.0;
-    float other_distance_from_frontier = explore_interface->getDistancePrediction(data_dump_location, temp);
-    /* This might be redundant 
-    **  The relay will go to the data center and then will come to meet. 
-    **  Hence, this fartherst logic does not make much sense in that context. 
-    ** 
-    */
-    // float other_distance_from_frontier = explore_interface->getDistancePrediction(other_robot_location, temp);
+  // for (auto& frontier : frontiers_list)
+  // {
+  //   //euclidean distance to frontier from explorer meeting point
+  //   geometry_msgs::Point temp;
+  //   geometry_msgs::Point other_robot_location;
     
-    total_distance_from_frontier = self_distance_from_frontier + other_distance_from_frontier;
+    
+  //   temp.x=frontier.x;
+  //   temp.y=frontier.y;
+  //   float total_distance_from_frontier = 0;
+    
+  //   // float self_distance_from_frontier = explore_interface->getDistancePrediction(temp); 
+  //   float self_distance_from_frontier = explore_interface->getDistancePrediction(frontiers_list.at(0), temp); //experimenting new method
+
+  //   ROS_ERROR_STREAM("Analyzing frontier point:   "<<frontier);
+  //   // float other_distance_from_frontier = 0.0;
+  //   float other_distance_from_frontier = explore_interface->getDistancePrediction(data_dump_location, temp);
+  //   /* This might be redundant 
+  //   **  The relay will go to the data center and then will come to meet. 
+  //   **  Hence, this fartherst logic does not make much sense in that context. 
+  //   ** 
+  //   */
+  //   // float other_distance_from_frontier = explore_interface->getDistancePrediction(other_robot_location, temp);
+    
+  //   total_distance_from_frontier = self_distance_from_frontier + other_distance_from_frontier;
   
-    if (total_distance_from_frontier<=min_dis){
-      min_dis = total_distance_from_frontier;
-      point.x=frontier.x;
-      point.y=frontier.y;
-      setMeetingPoint(point);      
-    }
-  }
+  //   if (total_distance_from_frontier<=min_dis){
+  //     min_dis = total_distance_from_frontier;
+  //     point.x=frontier.x;
+  //     point.y=frontier.y;
+  //     setMeetingPoint(point);      
+  //   }
+  // }
 }
 
 void DecideNextMeeting::exitPoint()

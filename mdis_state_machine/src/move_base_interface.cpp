@@ -152,7 +152,7 @@ float MoveBaseInterface::getDistancePrediction(geometry_msgs::Point &start_point
   return calculatePathLength(path);
 }
 
-float MoveBaseInterface::getDistancePrediction(geometry_msgs::Point &goal)
+float MoveBaseInterface::getDistancePrediction(const geometry_msgs::Point &goal)
 {
   if(testing_mode)
     return 0.0;
