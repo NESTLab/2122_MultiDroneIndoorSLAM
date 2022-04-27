@@ -52,7 +52,9 @@
   </node>
 <!-- ======================================================================================================================== -->
     
-    <include file="$(find explore_lite)/launch/explore.launch"/>
+    <include file="$(find explore_lite)/launch/explore.launch">
+        <arg name="ns" value="$(arg ns_0)"/>
+    </include> 
 <!-- ======================================================================================================================== -->
 <!-- Start rviz -->
 <group if="$(arg open_rviz)">
