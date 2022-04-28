@@ -12,7 +12,7 @@
   <!-- * Controllers * -->
   <!-- *************** -->
   <controllers>
-    <kheperaiv_ros_controller id="robot_" library="libkheperaiv_ros.so">
+    <kheperaiv_ros_controller id="tb3_" library="libkheperaiv_ros.so">
       <actuators>
         <differential_steering implementation="default" />
         <range_and_bearing implementation="default" />
@@ -23,7 +23,7 @@
         <range_and_bearing implementation="medium"
                                      medium="rab" />
         <kheperaiv_lidar implementation="default"
-               show_rays="false"
+               show_rays="true"
                noise_level="0.1"/>
       </sensors>
       <params alpha="7.5" delta="0.1" velocity="5" ticks_per_second="10"/>
@@ -126,8 +126,8 @@
       <orientation method="constant" values="0,0,0"/>
       <entity quantity="1" max_trials="100">
 
-        <kheperaiv id="robot_">
-          <controller config="robot_"/>
+        <kheperaiv id="tb3_">
+          <controller config="tb3_"/>
         </kheperaiv>
 
       </entity>

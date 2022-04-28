@@ -4,17 +4,22 @@
     <arg name="slam_methods" default="gmapping" doc="slam type [gmapping, cartographer, hector, karto, frontier_exploration]"/>
     <arg name="configuration_basename" default="turtlebot3_lds_2d.lua"/>
     <arg name="open_rviz" default="true"/>
-    <arg name="ns_0" value="robot_0"/>
+    <arg name="ns_0" value="tb3_0"/>
     <!-- <node pkg="tf" type="static_transform_publisher" name="world_to_bot_1_tf_broadcaster"  args="0 0 0 0 0 0 /map /$(arg ns_0)/map 100"/> -->
-    <node pkg="tf" type="static_transform_publisher" name="world_to_bot_1_tf_broadcaster"  args="0 0 0 0 0 0 /base_footprint /base_link 10"/>
+    <node pkg="tf" type="static_transform_publisher" name="world_to_bot_1_tf_broadcaster"  args="0 0 0 0 0 0 tb3_0/base_footprint tb3_0/base_link 1"/>
+    <node pkg="tf" type="static_transform_publisher" name="map_to_odom_1_tf_broadcaster"  args="0 0 0 0 0 0 tb3_0/map tb3_0/odom 1"/>
 <!-- ======================================================================================================================== -->
     <!-- TurtleBot3 and Gmapping -->
-    <include file="$(find turtlebot3_slam)/launch/turtlebot3_gmapping.launch">
+    <include file="$(find turtlebot3_slam)/launch/turtlebot3_gmapping.launch"  ns="$(arg ns_0)">
         <arg name="model" value="$(arg model)" />
-        <arg name="set_map_frame" value="/map" />
-        <arg name="set_odom_frame" value="/odom" />
-        <arg name="set_base_frame" value="/base_footprint" />
+        <arg name="set_map_frame" value="tb3_0/map" />
+        <arg name="set_odom_frame" value="tb3_0/odom" />
+        <arg name="set_base_frame" value="tb3_0/base_footprint" />
     </include>
+
+  <!-- <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_slam.launch">
+    <arg name="ns" value="$(arg ns_0)"/>
+  </include> -->
 <!-- ======================================================================================================================== -->
     <!-- AMCL -->
     <!-- <include file="$(find turtlebot3_navigation)/launch/amcl.launch"> -->
@@ -34,7 +39,7 @@
     <remap from="cmd_vel" to="/cmd_vel"/>
     <remap from="odom" to="/odom"/>
     </node> -->
-    <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <!-- <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
     <param name="global_costmap/global_frame" value="map"/>
     <param name="global_costmap/robot_base_frame" value="base_footprint"/>
@@ -46,15 +51,13 @@
     <rosparam file="$(find turtlebot3_navigation)/param/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find turtlebot3_navigation)/param/move_base_params.yaml" command="load" />
     <rosparam file="$(find turtlebot3_navigation)/param/dwa_local_planner_params_$(arg model).yaml" command="load" />
-    <!-- <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/> -->
-    <!-- <remap from="odom" to="$(arg odom_topic)"/> -->
     <param name="DWAPlannerROS/min_vel_x" value="0.0" if="true" />
-  </node>
+  </node> -->
 <!-- ======================================================================================================================== -->
     
-    <include file="$(find explore_lite)/launch/explore.launch">
+    <!-- <include file="$(find explore_lite)/launch/explore.launch">
         <arg name="ns" value="$(arg ns_0)"/>
-    </include> 
+    </include>  -->
 <!-- ======================================================================================================================== -->
 <!-- Start rviz -->
 <group if="$(arg open_rviz)">

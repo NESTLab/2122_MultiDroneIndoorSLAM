@@ -1,5 +1,5 @@
-add_library(differential_drive MODULE differential_drive.h differential_drive.cpp)
-target_link_libraries(differential_drive
+add_library(diffusion_ros MODULE diffusion_ros.h diffusion_ros.cpp)
+target_link_libraries(diffusion_ros
   argos3core_simulator
   argos3plugin_simulator_footbot
   argos3plugin_simulator_genericrobot

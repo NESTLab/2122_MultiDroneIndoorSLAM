@@ -10,6 +10,10 @@
 #include <argos3/core/control_interface/ci_controller.h>
 #include <argos3/plugins/robots/generic/control_interface/ci_differential_steering_actuator.h>
 #include <argos3/plugins/robots/generic/control_interface/ci_differential_steering_sensor.h>
+/* Definition of the kheperaiv measurements */
+#include <argos3/plugins/robots/kheperaiv/simulator/kheperaiv_measures.h>
+/* Logging */
+#include <argos3/core/utility/logging/argos_log.h>
 
 #include <ros/ros.h>
 #include <ros/time.h>
@@ -19,13 +23,16 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Quaternion.h>
 #include <nav_msgs/Odometry.h>
-
+#include <ros/callback_queue.h>
 #include <math.h>
 
 #define WHEEL_NUM 2
-
 #define LEFT 0
 #define RIGHT 1
+
+#define X 0
+#define Y 1
+#define Z 2
 
 #define DEG2RAD(x) (x * 0.01745329252) // *PI/180
 #define RAD2DEG(x) (x * 57.2957795131) // *180/PI
@@ -92,9 +99,10 @@ public:
     /**
      * @brief Reads latest velocity info from motor encoders
      *
-     * @return float* wheel_vel[WHEEL_NUM]
+     * @return double* wheel_vel[WHEEL_NUM]
      */
-    float *ReadMotorEncoders();
+    
+    double* ReadMotorEncoders();
 
     /**
      * @brief Updates the odometry arrays (odom_position, odom_velocity)
@@ -102,23 +110,21 @@ public:
      * @param timeDiff elapsed time from last update
      * @return * void
      */
-    void CalculateOdometry(double timeDiff);
+    void CalculateOdometry(ros::Duration timeDiff);
 
     /**
-     * @brief  Updates the odometry message object with the latest odom data
+     * @brief  publishes the odometry message object with the latest odom data
      *
-     * @param odom_msg pointer to the odometry message object
      * @return * void
      */
-    void UpdateOdometryMessage(const nav_msgs::Odometry &odom_msg);
+    void UpdateOdometryMessage();
 
     /**
-     * @brief Updates the odometry tf object with the latest odom data
+     * @brief publish the odometry tf object with the latest odom data
      *
-     * @param odom_tf pointer to odom tf transform
      * @return * void
      */
-    void UpdateOdometryTF(const geometry_msgs::TransformStamped &odom_tf);
+    void UpdateOdometryTF();
 
     /**
      * @brief Inits all the odom messages
@@ -131,15 +137,14 @@ private:
     /*********************************************************************
      * ROS NodeHandle
      ********************************************************************/
-    ros::NodeHandle nh;
-    ros::Time current_time;
+    ros::NodeHandle *nh;
     ros::Time previous_time;
 
     /*********************************************************************
      * ROS Parameters
      ********************************************************************/
-    char odom_header_frame_id[30];
-    char odom_child_frame_id[30];
+    std::string odom_header_frame_id;
+    std::string odom_child_frame_id;
     
     /*********************************************************************
      * ROS Subscribers
@@ -156,14 +161,14 @@ private:
      * Transform Broadcasters
      ********************************************************************/
     geometry_msgs::TransformStamped odom_tf;
-    tf::TransformBroadcaster tf_broadcaster;
+    tf::TransformBroadcaster* tf_broadcaster;
 
     /*********************************************************************
      * Params for SLAM and Naviagation
      ********************************************************************/
-    float odom_pose[3] = {0.0, 0.0, 0.0};
+    double goStraightConstant = 0.00001;
+    double odom_pos[3] = {0.0, 0.0, 0.0};
     double odom_vel[3] = {0.0, 0.0, 0.0};
-    double  last_velocity[WHEEL_NUM]  = {0.0, 0.0};
 
     /*********************************************************************
      * ARGOS Sensors and Actuators
@@ -177,6 +182,7 @@ private:
      * MISC
      ********************************************************************/
     std::string controller_name;
+    float speed_scaler = 1.0f;
 };
 
 #endif

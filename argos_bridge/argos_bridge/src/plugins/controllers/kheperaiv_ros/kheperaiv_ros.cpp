@@ -59,22 +59,21 @@ void CKheperaIVRos::Init(TConfigurationNode &t_node)
 {
   // Create the topics to publish
   stringstream proximityTopic;
-  // proximityTopic << "/" << GetId() << "/proximity";
-  proximityTopic << "/proximity";
+  proximityTopic << "/" << GetId() << "/proximity";
   proximityPub = nodeHandle->advertise<ProximityList>(proximityTopic.str(), 1);
   stringstream losTopic;
   losTopic << "/" << GetId() << "/lineOfSight";
   losPub = nodeHandle->advertise<losList>(losTopic.str(), 1);
   stringstream odomTopic;
-  odomTopic << "/odom";
+  odomTopic << "/" << GetId() << "/odom";
   odomPub = nodeHandle->advertise<nav_msgs::Odometry>(odomTopic.str(), 1);
   stringstream laserScanTopic;
-  laserScanTopic << "/scan";
+  laserScanTopic << "/" << GetId()  << "/scan";
   laserScanPub = nodeHandle->advertise<sensor_msgs::LaserScan>(laserScanTopic.str(), 1);
 
   // Create the subscribers
   stringstream cmdVelTopic;
-  cmdVelTopic << "/cmd_vel";
+  cmdVelTopic << "/" << GetId() << "/cmd_vel";
   cmdVelSub = nodeHandle->subscribe(cmdVelTopic.str(), 1, &CKheperaIVRos::cmdVelCallback, this);
 
   // time
@@ -107,13 +106,9 @@ void CKheperaIVRos::debug(bool debug)
   {
     return;
   }
-  RLOG << time.toSec() << std::endl;
-  /* Print encoder values */
-  RLOG << "Encoder values: "
-       << "VL=" << m_pcEncoder->GetReading().VelocityLeftWheel << ", "
-       << "VR=" << m_pcEncoder->GetReading().VelocityRightWheel << ", "
-       //    << "DL=" << m_pcEncoder->GetReading().CoveredDistanceLeftWheel << ", "
-       //    << "DR=" << m_pcEncoder->GetReading().CoveredDistanceRightWheel
+  RLOG << "robot_id=" << GetId() << ", "
+       << "wheel_vel_l" << m_pcEncoder->GetReading().VelocityLeftWheel << ", "
+       << "wheel_vel_r" << m_pcEncoder->GetReading().VelocityRightWheel << ", "
        << std::endl;
 }
 
@@ -121,13 +116,14 @@ void CKheperaIVRos::updateTime()
 {
   // updates rostime to sync all ros processes to argos clock
   time += ros::Duration(timestep);
+  // ros::Time new_time = 
 }
 
 void CKheperaIVRos::publishLIDAR()
 {
   sensor_msgs::LaserScan scan;
   scan.header.stamp = time;
-  string frame = "base_footprint";
+  string frame =  GetId() + "/base_footprint";
   scan.header.frame_id = frame;
   scan.angle_min = -KHEPERAIV_LIDAR_ANGLE_SPAN.GetValue() * 0.5;
   scan.angle_max = KHEPERAIV_LIDAR_ANGLE_SPAN.GetValue() * 0.5;
@@ -149,27 +145,19 @@ void CKheperaIVRos::publishLIDAR()
 void CKheperaIVRos::publishLineOfSight()
 {
   // broadcast current robot to all LOS
-  int msgCap = 10;
-  // char payload[msgCap];
-  // for (int i = 0; i < msgCap; i++) {
-  //   payload[i] = '\0';
-  // }
-  // Get local id
-
   char nulls[2] = {'0', '0'};
   uint8_t *empty = reinterpret_cast<uint8_t *>(&nulls);
 
   const char *id = GetId().c_str();
+  size_t id_len = strlen(id);
   // Copy id to payload
   // strcpy(&payload, id);
   // memcpy(&payload,strlen(id))
   // Convert c_string to bytes
   uint8_t *data = reinterpret_cast<uint8_t *>(const_cast<char *>(id));
-
-  // argos::CByteArray buff = argos::CByteArray((size_t) msgCap - , (UInt8) '\0');
-  CByteArray buff = CByteArray(data, 8);
-
-  buff.AddBuffer(empty, 2);
+  // TODO verify id length is less than the message size
+  CByteArray buff = CByteArray(data, id_len);
+  buff.AddBuffer(empty, m_pcRABA->GetSize() - id_len);
   m_pcRABA->SetData(buff);
 
   // write all robot names within los to rosmsg
@@ -188,8 +176,17 @@ void CKheperaIVRos::publishLineOfSight()
     // Docs: https://www.argos-sim.info/api/a02302.php
 
     const unsigned char *data = packets[i].Data.ToCArray();
+    // stringstream incoming_msg;
+    // for(int ii = 0; ii<packets[i].Data.Size(); i++){
+    //   incoming_msg << packets[i].Data[ii];
+    //   if(packets[i].Data[ii] == '\n'){
+    //     break;
+    //   }
+    // }
     std::string s(reinterpret_cast<const char *>(data), packets[i].Data.Size());
-    losmsg.robotName = s;
+    
+    // TODO add parsing for name length
+    losmsg.robotName = s; // incoming_msg.str();
     loslist.robots.push_back(losmsg);
   }
   losPub.publish(loslist);
@@ -258,8 +255,8 @@ void CKheperaIVRos::publishOdometry()
   /*
    * publish odom messages and TF transform
    */
-  string header_frame_id = "/odom";
-  string child_frame_id = "/base_footprint";
+  string header_frame_id =  GetId() + "/odom";
+  string child_frame_id =  GetId() + "/base_footprint";
   geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(odom_yaw);
 
   geometry_msgs::TransformStamped odom_trans;
@@ -299,9 +296,6 @@ void CKheperaIVRos::cmdVelCallback(const geometry_msgs::Twist &twist)
   leftSpeed = (v - KHEPERAIV_BASE_RADIUS * w) * KHEPERAIV_WHEEL_RADIUS;
   rightSpeed = (v + KHEPERAIV_BASE_RADIUS * w) * KHEPERAIV_WHEEL_RADIUS;
   m_pcWheels->SetLinearVelocity(leftSpeed, rightSpeed);
-
-  std::cout << "LSpeed " << leftSpeed << std::endl;
-  std::cout << "RSpeed " << rightSpeed << std::endl;
 }
 
 /*
