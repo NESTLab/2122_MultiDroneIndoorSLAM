@@ -48,7 +48,7 @@ RUN apt-get install -y libgsl-dev cmake libfreeimage-dev libfreeimageplus-dev \
   cd argos3; \
   mkdir build_simulator; \
   cd build_simulator; \
-  cmake ../src; \
+  cmake -DCMAKE_BUILD_TYPE=debug ../src; \
   make; \
   make doc; \
   echo '/usr/local/lib' >> /etc/ld.so.conf; \
@@ -61,6 +61,32 @@ RUN git clone https://github.com/ilpincy/argos3-kheperaiv.git; \
   cmake -DCMAKE_BUILD_TYPE=debug ../src; \
   make; \
   sudo make install
+
+# # Install Kilobot robot
+# RUN git clone https://github.com/ilpincy/argos3-kilobot.git; \
+#   cd argos3-kilobot && mkdir build && cd build; \
+#   cmake -DCMAKE_BUILD_TYPE=Release ../src; \
+#   make; \
+#   sudo make install
+
+# # Install BUZZ Language
+# RUN git clone https://github.com/buzz-lang/Buzz.git buzz; \
+#   mkdir buzz/build && cd buzz/build; \
+#   cmake -DCMAKE_BUILD_TYPE=Release ../src; \
+#   make; \
+#   sudo make install; \
+#   sudo ldconfig
+
+# # Install the Vicon [Platform Specific: Linux x86-64]
+# COPY ./Vicon /root/vicon
+
+# RUN cp /root/vicon/vicon_sdk/Linux64/libViconDataStreamSDK_CPP.so /lib/libViconDataStreamSDK_CPP.so; \
+#   cp /root/vicon/vicon_sdk/Linux64/libboost_system-mt.so.1.58.0 /lib/libboost_system-mt.so.1.58.0; \
+#   cp /root/vicon/vicon_sdk/Linux64/libboost_thread-mt.so.1.58.0 /lib/libboost_thread-mt.so.1.58.0; \
+#   mkdir /root/vicon/build && cd /root/vicon/build; \
+#   cmake ..; \
+#   make; \
+#   sudo make install
 
 # Install extra dependencies
 RUN sudo apt-get update; \
