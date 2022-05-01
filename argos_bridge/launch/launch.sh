@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # kill existing ecosystem
-killall.sh
+./killall.sh
 # run an argos environment with a ros launchfile
 ros_name=$2
 exp_name=$1

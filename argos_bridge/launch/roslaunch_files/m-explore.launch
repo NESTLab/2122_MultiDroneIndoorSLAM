@@ -1,9 +1,9 @@
 <arg name="ns" default="tb3_0"/>
 
 <node pkg="explore_lite" type="explore" respawn="false" name="explore" output="log"  ns="$(arg ns)">
-  <param name="robot_base_frame" value="$(arg ns)/base_link"/>
+  <param name="robot_base_frame" value="$(arg ns)/base_footprint"/>
   <param name="costmap_topic" value="$(arg ns)/map"/>
-  <param name="costmap_updates_topic" value="map_updates"/>
+  <param name="costmap_updates_topic" value="$(arg ns)/map_updates"/>
   <param name="visualize" value="true"/>
   <param name="planner_frequency" value="0.33"/>
   <param name="progress_timeout" value="30.0"/>
