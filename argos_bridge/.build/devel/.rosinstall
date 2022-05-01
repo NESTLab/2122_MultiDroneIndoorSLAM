@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/peter/src/argos_bridge/argos_bridge/.build/devel/setup.sh

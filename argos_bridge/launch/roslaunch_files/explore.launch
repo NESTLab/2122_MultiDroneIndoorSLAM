@@ -1,0 +1,5 @@
+<launch>
+    <include file="$(find argos_bridge)/launch/roslaunch_files/explore_single.launch">
+        <arg name="ns" value="robot_0"/>
+    </include>
+</launch>

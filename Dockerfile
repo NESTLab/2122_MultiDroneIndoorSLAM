@@ -42,8 +42,8 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
     apt-get install -y python3-rosdep python3-rosinstall ros-noetic-turtlebot3 ros-noetic-dwa-local-planner ros-noetic-gmapping ros-noetic-rviz python3-rosinstall-generator python3-wstool build-essential python3-rosdep;
 
 # Install Gazebo
-RUN wget -O /tmp/gazebo5_install.sh http://osrf-distributions.s3.amazonaws.com/gazebo/gazebo5_install.sh; sudo sh /tmp/gazebo5_install.sh; \
-    echo "export TURTLEBOT3_MODEL=burger" >> ~/.bashrc;
+# RUN wget -O /tmp/gazebo5_install.sh http://osrf-distributions.s3.amazonaws.com/gazebo/gazebo5_install.sh; sudo sh /tmp/gazebo5_install.sh; \
+#     echo "export TURTLEBOT3_MODEL=burger" >> ~/.bashrc;
 
 # Build ARGos3 from source
 RUN apt-get install -y libgsl-dev cmake libfreeimage-dev libfreeimageplus-dev \
@@ -63,7 +63,7 @@ RUN apt-get install -y libgsl-dev cmake libfreeimage-dev libfreeimageplus-dev \
 # Install kheperaiv robot
 RUN git clone https://github.com/ilpincy/argos3-kheperaiv.git; \
   cd argos3-kheperaiv && mkdir build_sim && cd build_sim; \
-  cmake -DCMAKE_BUILD_TYPE=Release ../src; \
+  cmake -DCMAKE_BUILD_TYPE=Debug ../src; \
   make; \
   sudo make install
 
@@ -101,7 +101,8 @@ RUN rosdep init; \
   echo "source /root/catkin_ws/devel/setup.bash;" >> ~/.bashrc; \
   echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/argos3:/opt/ros/noetic/lib" >> ~/.bashrc; \
   echo "export ARGOS_PLUGIN_PATH=$HOME/catkin_ws/src/argos_bridge/ros_lib_links" >> ~/.bashrc; \
-  echo "export ARGOS_PLUGIN_PATH=$ARGOS_PLUGIN_PATH:$HOME/catkin_ws/devel/lib" >> ~/.bashrc
+  echo "export ARGOS_PLUGIN_PATH=$ARGOS_PLUGIN_PATH:$HOME/catkin_ws/devel/lib" >> ~/.bashrc; \
+  echo "export TURTLEBOT3_MODEL=burger" >> ~/.bashrc
 
 # Install BUZZ Language
 RUN git clone https://github.com/buzz-lang/Buzz.git buzz; \
@@ -125,6 +126,26 @@ RUN cp /root/vicon/vicon_sdk/Linux64/libViconDataStreamSDK_CPP.so /lib/libViconD
 # Permissions
 RUN sudo chmod a+rwx /root -R
 
+# add ros packages 
+RUN git clone -b noetic-devel https://github.com/hrnr/m-explore.git; \
+  git clone -b noetic-devel https://github.com/ROBOTIS-GIT/turtlebot3_simulations.git; \
+  cd /root/catkin_ws/src; \
+  ln -s /m-explore .; \
+  cd /root/catkin_ws/src; \
+  ln -s /turtlebot3_simulations/ .; \ 
+  sudo apt-get install ros-noetic-joy ros-noetic-teleop-twist-joy \
+  ros-noetic-teleop-twist-keyboard ros-noetic-laser-proc \
+  ros-noetic-rgbd-launch ros-noetic-depthimage-to-laserscan \
+  ros-noetic-rosserial-arduino ros-noetic-rosserial-python \
+  ros-noetic-rosserial-server ros-noetic-rosserial-client \
+  ros-noetic-rosserial-msgs ros-noetic-amcl ros-noetic-map-server \
+  ros-noetic-move-base ros-noetic-urdf ros-noetic-xacro \
+  ros-noetic-compressed-image-transport ros-noetic-rqt* \
+  ros-noetic-frontier-exploration ros-noetic-navigation-stage \
+  ros-noetic-gmapping ros-noetic-navigation ros-noetic-interactive-markers; \
+  sudo apt-get install ros-noetic-dynamixel-sdk; \
+  sudo apt-get install ros-noetic-turtlebot3-msgs; \
+  sudo apt-get install ros-noetic-turtlebot3;
 
 # NOTE: This is not neede when when using 'compose', as the docker-compose.yaml file specifies a systemlink (aka: volume)
 #       However, if you ONLY want to run the dockerfile, or build it with our work, uncomment the line below.
