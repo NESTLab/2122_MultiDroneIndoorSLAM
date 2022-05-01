@@ -161,8 +161,10 @@ private:
 
   std::unique_ptr<tf::TransformBroadcaster> odom_broadcaster;
   /* physics info */
-  float timestep = 0.01; // time between updates in seconds
+  float timestep; // time between updates in seconds
   ros::Time time;
+  ros::Time prevtime;
+
   double odom_x = 0.0;
   double odom_y = 0.0;
   double odom_yaw = 0.0;

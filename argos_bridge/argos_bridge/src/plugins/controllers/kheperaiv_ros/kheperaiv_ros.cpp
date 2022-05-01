@@ -77,7 +77,7 @@ void CKheperaIVRos::Init(TConfigurationNode &t_node)
   cmdVelSub = nodeHandle->subscribe(cmdVelTopic.str(), 1, &CKheperaIVRos::cmdVelCallback, this);
 
   // time
-  time = ros::Time(0.0);
+  time = ros::Time::now();
 
   // Get sensor/actuator handles
   m_pcWheels = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
@@ -97,7 +97,7 @@ void CKheperaIVRos::ControlStep()
   this->publishOdometry();
   this->debug(true);
   // Wait for any callbacks to be called.
-  ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
+  ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0));
 }
 
 void CKheperaIVRos::debug(bool debug)
@@ -114,17 +114,18 @@ void CKheperaIVRos::debug(bool debug)
 
 void CKheperaIVRos::updateTime()
 {
-  // updates rostime to sync all ros processes to argos clock
-  time += ros::Duration(timestep);
-  // ros::Time new_time = 
+  prevtime = time;
+  time = ros::Time::now();
+  timestep = time.toSec() - prevtime.toSec();
 }
 
 void CKheperaIVRos::publishLIDAR()
 {
   sensor_msgs::LaserScan scan;
   scan.header.stamp = time;
-  string frame = "base_footprint";
-  scan.header.frame_id = frame;
+  stringstream frame;
+  frame << "/" << GetId() << "/base_footprint";
+  scan.header.frame_id = frame.str();
   scan.angle_min = -KHEPERAIV_LIDAR_ANGLE_SPAN.GetValue() * 0.5;
   scan.angle_max = KHEPERAIV_LIDAR_ANGLE_SPAN.GetValue() * 0.5;
   scan.angle_increment = KHEPERAIV_LIDAR_ANGLE_SPAN.GetValue() / m_pcLIDAR->GetNumReadings();
@@ -255,14 +256,16 @@ void CKheperaIVRos::publishOdometry()
   /*
    * publish odom messages and TF transform
    */
-  string header_frame_id = "/odom";
-  string child_frame_id = "/base_footprint";
+  stringstream header_frame_id;
+  header_frame_id << "/" << GetId() << "/odom";
+  stringstream child_frame_id;
+  child_frame_id << "/" << GetId() << "/base_footprint";
   geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(odom_yaw);
 
   geometry_msgs::TransformStamped odom_trans;
   odom_trans.header.stamp = time;
-  odom_trans.header.frame_id = header_frame_id;
-  odom_trans.child_frame_id = child_frame_id;
+  odom_trans.header.frame_id = header_frame_id.str();
+  odom_trans.child_frame_id = child_frame_id.str();
   odom_trans.transform.translation.x = odom_x;
   odom_trans.transform.translation.y = odom_y;
   odom_trans.transform.translation.z = 0.0;
@@ -271,12 +274,12 @@ void CKheperaIVRos::publishOdometry()
 
   nav_msgs::Odometry odom;
   odom.header.stamp = time;
-  odom.header.frame_id = header_frame_id;
+  odom.header.frame_id = header_frame_id.str();
   odom.pose.pose.position.x = odom_x;
   odom.pose.pose.position.y = odom_y;
   odom.pose.pose.position.z = 0.0;
   odom.pose.pose.orientation = odom_quat;
-  odom.child_frame_id = child_frame_id;
+  odom.child_frame_id = child_frame_id.str();
   odom.twist.twist.linear.x = odom_dx;
   odom.twist.twist.linear.y = odom_dy;
   odom.twist.twist.angular.z = odom_w;
