@@ -80,16 +80,19 @@ int main(int argc, char **argv)
             data.data = robot_name;
             ROS_INFO_STREAM("ROBOT NAME "<<robot_name);
             // frontier_req_pub_explore.publish(data);
+            bool request=true;
             while(!frontier_data_received_for_explore && ros::ok())
             {
                 ROS_INFO_STREAM("Waiting for frontier data: "<<robot_name);
-                frontier_req_pub_explore.publish(data);
-                ros::Duration(0.2).sleep();
+                if(request)
+                  frontier_req_pub_explore.publish(data);
+                request=false;
+                ros::Duration(0.1).sleep();
                 ros::spinOnce();
             }
             explore_interface->goToPoint(frontier, false);
-            ros::Duration(5).sleep();
             frontier_data_received_for_explore = false;
+            ros::Duration(15).sleep();
         }
         else if (!explore && stop_explore){
             if(explore)

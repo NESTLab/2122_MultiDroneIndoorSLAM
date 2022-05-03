@@ -12,7 +12,7 @@
   <!-- * Controllers * -->
   <!-- *************** -->
   <controllers>
-    <kheperaiv_ros_controller id="robot_" library="libkheperaiv_ros.so">
+    <kheperaiv_ros_controller id="tb3_" library="libkheperaiv_ros.so">
       <actuators>
         <differential_steering implementation="default" />
         <range_and_bearing implementation="default" />
@@ -23,7 +23,7 @@
         <range_and_bearing implementation="medium"
                                      medium="rab" />
         <kheperaiv_lidar implementation="default"
-               show_rays="true"
+               show_rays="false"
                noise_level="0.1"/>
       </sensors>
       <params alpha="7.5" delta="0.1" velocity="5" ticks_per_second="10"/>
@@ -43,8 +43,20 @@
 		<box id="Wall_0" size="5.5,0.15,2.5" movable="false">
 			<body position="5.23699,2.86346,0" orientation="0.04583662361046586,-0.0,0.0" />
 		</box>
+		<box id="landmark_1" size="0.2,0.2,2.5" movable="false">
+			<body position="5.23699,3.01346,0" orientation="0.04583662361046586,-0.0,0.0" />
+		</box>
 		<box id="Wall_1" size="10.25,0.15,2.5" movable="false">
 			<body position="7.91601,-2.1844,0" orientation="-89.95437383553924,0.0,0.0" />
+		</box>
+		<box id="landmark_2" size="0.2,0.2,2.5" movable="false">
+			<body position="8.06601,0,0" orientation="0.04583662361046586,-0.0,0.0" />
+		</box>
+		<box id="landmark_3" size="0.2,0.2,2.5" movable="false">
+			<body position="8.06601,-4,0" orientation="0.04583662361046586,-0.0,0.0" />
+		</box>
+		<box id="landmark_4" size="0.2,0.2,2.5" movable="false">
+			<body position="8.16601,-11,0" orientation="0.04583662361046586,-0.0,0.0" />
 		</box>
 		<box id="Wall_11" size="5.5,0.15,2.5" movable="false">
 			<body position="5.23214,-0.802082,0" orientation="-179.95458429468897,0.0,0.0" />
@@ -103,6 +115,9 @@
 		<box id="Wall_41" size="3.75,0.15,2.5" movable="false">
 			<body position="4.36346,1.01277,0" orientation="0.04583662361046586,-0.0,0.0" />
 		</box>
+		<box id="landmark_0" size="0.2,0.2,2.5" movable="false">
+			<body position="4.36346,0.86277,0" orientation="0.04583662361046586,-0.0,0.0" />
+		</box>
 		<box id="Wall_43" size="2,0.15,2.5" movable="false">
 			<body position="0.017018,0.909266,0" orientation="-179.95458429468897,0.0,0.0" />
 		</box>
@@ -121,17 +136,34 @@
 		<!--
         The robot (add more later!).
     -->
-    <distribute>
-      <position method="uniform" min="-0.25,-1,0" max="0.25,1,0"/>
+    <!-- <distribute>
+      <position method="constant" values="-0.0,0,0"/>
       <orientation method="constant" values="0,0,0"/>
       <entity quantity="1" max_trials="100">
 
-        <kheperaiv id="robot_">
-          <controller config="robot_"/>
+        <kheperaiv id="tb3_">
+          <controller config="tb3_"/>
         </kheperaiv>
 
       </entity>
-    </distribute>
+    </distribute> -->
+
+
+  <kheperaiv id="tb3_0">
+    <body position="-0.0,0,0" orientation="0,0,0" />
+    <controller config="tb3_"/>
+  </kheperaiv>
+
+  <kheperaiv id="tb3_1">
+    <body position="2,4,0" orientation="-90,0,0" />
+    <controller config="tb3_"/>
+  </kheperaiv>
+
+  <kheperaiv id="tb3_2">
+    <body position="2,4.5,0" orientation="-90,0,0" />
+    <controller config="tb3_"/>
+  </kheperaiv>
+
   </arena>
 
   <!-- ******************* -->
@@ -156,7 +188,9 @@
     <qt-opengl lua_editor="false">
       <camera>
         <placements>
-          <placement index="0" position="2,-2, 70.34" look_at="2,0,0" up="1,0,0" lens_focal_length="300" />
+          <placement index="0" position="2.27149,0.0911733,50.2839" look_at="2.27149,0.119593,49.2843" up="1,0,0" lens_focal_length="200" />
+          <placement index="1" position="4.62402,-6.02835,51.3296" look_at="4.62402,-5.99993,50.33" up="1,0,0" lens_focal_length="80" />
+          <placement index="2" position="2,-2, 70.34" look_at="2,0,0" up="1,0,0" lens_focal_length="300" />
         </placements>
       </camera>
     </qt-opengl>

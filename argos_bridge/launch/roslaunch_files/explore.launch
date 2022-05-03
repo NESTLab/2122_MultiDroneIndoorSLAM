@@ -1,5 +1,12 @@
 <launch>
     <include file="$(find argos_bridge)/launch/roslaunch_files/explore_single.launch">
-        <arg name="ns" value="robot_0"/>
+        <arg name="ns" value="tb3_0"/>
+        <arg name="open_rviz" value="true"/>
+    </include>
+    <include file="$(find argos_bridge)/launch/roslaunch_files/explore_single.launch">
+        <arg name="ns" value="tb3_1"/>
+    </include>
+    <include file="$(find argos_bridge)/launch/roslaunch_files/explore_single.launch">
+        <arg name="ns" value="tb3_2"/>
     </include>
 </launch>

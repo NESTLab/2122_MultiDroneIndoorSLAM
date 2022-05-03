@@ -106,7 +106,7 @@ void CKheperaIVRos::debug(bool debug)
   {
     return;
   }
-  RLOG << time.toSec() << endl;
+  // RLOG << time.toSec() << endl;
 }
 
 void CKheperaIVRos::updateTime()
@@ -266,7 +266,7 @@ void CKheperaIVRos::publishOdometry()
   odom_trans.transform.translation.z = 0.0;
   odom_trans.transform.rotation = odom_quat;
   odom_broadcaster->sendTransform(odom_trans);
-  RLOG << "publish transform" << endl;
+  // RLOG << "publish transform" << endl;
   nav_msgs::Odometry odom;
   odom.header.stamp = time;
   odom.header.frame_id = header_frame_id;
