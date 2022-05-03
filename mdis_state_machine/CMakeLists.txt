@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  argos_bridge
   actionlib_msgs
   actionlib
   move_base_msgs
@@ -43,6 +44,7 @@ catkin_package(
     roscpp
     rospy
     std_msgs
+    argos_bridge
     actionlib_msgs
     message_runtime
     actionlib

@@ -32,8 +32,8 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   meet_loc_x = current_pose.x;
   meet_loc_y = current_pose.y;
 
-  data_dump_location.x = -6;
-  data_dump_location.y = -5;
+  data_dump_location.x = 4.5;
+  data_dump_location.y = 0;
 
   time_for_exploration = MIN_TIME_FOR_EXPLORATION;
 
@@ -310,16 +310,21 @@ void GoToMeet::exitPoint()
 }
 
 
-void GoToMeet::connCB(const mdis_state_machine::Connection::ConstPtr msg)
+void GoToMeet::connCB(const argos_bridge::losList::ConstPtr msg)
 {
   if(!this_state)
     return;
 
-  if(getRobotOfInterestName() == (msg->connection_to.data))
+  for(int i = 0; i<msg->robots.size(); i++)
   {
-    connected = true;
-    connected_robot_name = msg->connection_to.data;
-    time_of_last_conn = ros::Time::now();
+    std::string partner_robot_name = msg->robots.at(i).robotName;
+    partner_robot_name = partner_robot_name.substr(0,robot_name_length);
+    if(getRobotOfInterestName() == (partner_robot_name))
+    {
+      connected = true;
+      connected_robot_name = partner_robot_name;
+      time_of_last_conn = ros::Time::now();
+    }
   }
 }
 
@@ -865,16 +870,21 @@ void GoToDumpData::exitPoint()
 }
 
 
-void GoToDumpData::connCB(const mdis_state_machine::Connection::ConstPtr msg)
+void GoToDumpData::connCB(const argos_bridge::losList::ConstPtr msg)
 {
   if(!this_state)
     return;
     
-  if(getRobotOfInterestName() == (msg->connection_to.data))
+  for(int i = 0; i<msg->robots.size(); i++)
   {
-    connected = true;
-    connected_robot_name = msg->connection_to.data;
-    time_of_last_conn = ros::Time::now();
+    std::string partner_robot_name = msg->robots.at(i).robotName;
+    partner_robot_name = partner_robot_name.substr(0,robot_name_length);
+    if(getRobotOfInterestName() == (partner_robot_name))
+    {
+      connected = true;
+      connected_robot_name = partner_robot_name;
+      time_of_last_conn = ros::Time::now();
+    }
   }
 }
 

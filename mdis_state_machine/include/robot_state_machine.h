@@ -8,6 +8,7 @@
 #include <cmath>
 #include <explore_lite/FrontiersArray.h>
 #include <std_msgs/String.h>
+#include "argos_bridge/losList.h"
 
 #include <std_msgs/Int8.h>
 #include <mdis_state_machine/RobotsState.h>
@@ -76,6 +77,7 @@ protected:
    static TEAM_STATES last_robot_state;
 
    int testing_waiting_time = 5;
+   int robot_name_length = 5;
 
    geometry_msgs::Point data_dump_location;
 
@@ -225,7 +227,7 @@ private:
 class GoToMeet: public RobotState{
 public:
    GoToMeet(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_MEET, "GoToMeet", nh, testing){
-      conn_sub = nh.subscribe(nh.getNamespace() + "/connection_check", 1000, &GoToMeet::connCB, this);     
+      conn_sub = nh.subscribe(nh.getNamespace() + "/lineOfSight", 1000, &GoToMeet::connCB, this);     
       connection_request_sub = nh.subscribe("/connection_request", 1000, &GoToMeet::connectionRequestCB, this);
       connection_request_pub = nh.advertise<mdis_state_machine::ConnectionRequest>("/connection_request", 1000);     
    }
@@ -248,7 +250,7 @@ private:
    ros::Subscriber connection_request_sub;
    ros::Subscriber conn_sub;
 
-   void connCB(const mdis_state_machine::Connection::ConstPtr msg);
+   void connCB(const argos_bridge::losList::ConstPtr msg);
    void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
 
    void publishConnectionRequest();
@@ -387,7 +389,7 @@ public:
    GoToDumpData(ros::NodeHandle &nh, bool testing):RobotState(GO_TO_DUMP_DATA, "GoToDumpData", nh, testing){
       connection_request_sub = nh.subscribe("/connection_request", 1000, &GoToDumpData::connectionRequestCB, this);
       connection_request_pub = nh.advertise<mdis_state_machine::ConnectionRequest>("/connection_request", 1000);     
-      conn_sub = nh.subscribe(nh.getNamespace() + "/connection_check", 1000, &GoToDumpData::connCB, this);  
+      conn_sub = nh.subscribe(nh.getNamespace() + "/lineOfSight", 1000, &GoToDumpData::connCB, this);  
    }
    bool isDone() override ;
 
@@ -408,7 +410,7 @@ private:
    ros::Subscriber connection_request_sub;
    ros::Subscriber conn_sub;
 
-   void connCB(const mdis_state_machine::Connection::ConstPtr msg);
+   void connCB(const argos_bridge::losList::ConstPtr msg);
    void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
 
    void publishConnectionRequest();
@@ -444,7 +446,7 @@ private:
    ros::Publisher connection_request_pub;
    ros::Subscriber connection_request_sub;
 
-   void connCB(const mdis_state_machine::Connection::ConstPtr msg);
+   void connCB(const argos_bridge::losList::ConstPtr msg);
    void connectionRequestCB(const mdis_state_machine::ConnectionRequest::ConstPtr msg);
 
    void publishConnectionRequest();

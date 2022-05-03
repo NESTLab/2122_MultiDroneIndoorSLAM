@@ -2,7 +2,16 @@
     <param name="/use_sim_time" value="true" />
     <arg name="model" default="burger"/>
     <arg name="open_rviz" default="false"/>
+    <arg name='map_service' default='dynamic_map'/>
     <arg name="ns" default="tb3_0"/>
+    <arg name="config_file" default="argos_demo.yaml" doc="model type [burger, waffle, waffle_pi]"/>
+    <arg name="launch_file" default="$(find example)/launch/gazebo.launch" doc="model type [burger, waffle, waffle_pi]"/> 
+    <arg name='ip_address' default=''/>
+    <arg name='role_name' default=''/>
+    <arg name="role" default="1"/>
+    <arg name="parent_name" default=""/>
+    <arg name="child_name" default=""/>
+
 <!-- ======================================================================================================================== -->
     <node pkg="tf" type="static_transform_publisher" name="$(arg ns)_tf_broadcaster"  args="0 0 0 0 0 0 /$(arg ns)/base_footprint /$(arg ns)/base_link 10"/>
 <!-- ======================================================================================================================== -->
@@ -27,7 +36,29 @@
   </group>
 
 <!-- ======================================================================================================================== -->
+  <group ns = "$(arg ns)">
+    <node name="team_scheduler" pkg="mdis_state_machine" type="team_scheduler" args="$(arg role) $(arg parent_name) $(arg child_name)" output="screen"/>
 
+    <node name='merge_handler' pkg='coms' type='merge_handler.py' output="screen">
+        <param name="robot_name" value="$(arg ns)"/>
+        <param name="map_service" value="$(arg map_service)"/>
+    </node>
+  
+    <node name="coms_net" pkg="coms" type="lite_net.py" output="screen">
+        <param name="environment" value="sim" />
+        <param name="ip" value="$(arg ip_address)" />
+        <param name="launch" value="$(arg launch_file)"/>
+        <param name="config" value="$(arg config_file)"/>
+        <param name="role" value="$(arg role_name)"/>
+    </node>
+  
+    <node name='gmapping_merger' pkg='coms' type='gmapping_merger.py' output="screen">
+        <param name="robot_name" value="$(arg ns)"/>
+        <param name="map_service" value="$(arg map_service)"/>
+    </node>
+</group>
+
+<!-- ======================================================================================================================== -->
 <!-- Start rviz -->
 <group if="$(arg open_rviz)">
     <node pkg="rviz" type="rviz" name="$(arg ns)_rviz" required="true" args="-d $(find turtlebot3_gazebo)/rviz/path_following.rviz"/>
