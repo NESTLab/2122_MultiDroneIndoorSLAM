@@ -95,7 +95,7 @@ void CKheperaIVRos::ControlStep()
   this->publishProximity();
   this->publishLIDAR();
   this->publishOdometry();
-  this->debug(true);
+  this->debug(false);
   // Wait for any callbacks to be called.
   ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0));
 }
@@ -106,7 +106,7 @@ void CKheperaIVRos::debug(bool debug)
   {
     return;
   }
-  // RLOG << time.toSec() << endl;
+  RLOG << time.toSec() << endl;
 }
 
 void CKheperaIVRos::updateTime()
@@ -144,6 +144,7 @@ void CKheperaIVRos::publishLineOfSight()
 {
   // broadcast current robot to all LOS
   char nulls[2] = {'0', '0'};
+  list_of_los_robots_.clear();
   uint8_t *empty = reinterpret_cast<uint8_t *>(&nulls);
 
   const char *id = GetId().c_str();
@@ -182,12 +183,19 @@ void CKheperaIVRos::publishLineOfSight()
     //   }
     // }
     std::string s(reinterpret_cast<const char *>(data), packets[i].Data.Size());
-    
+    s = s.substr(0,robot_name_length_);
     // TODO add parsing for name length
+    list_of_los_robots_.push_back(s);
+
     losmsg.robotName = s; // incoming_msg.str();
     loslist.robots.push_back(losmsg);
   }
   losPub.publish(loslist);
+}
+
+void CKheperaIVRos::getListOfLOSRobots(std::vector<std::string>& list_of_los_robots)
+{
+  list_of_los_robots = list_of_los_robots_;
 }
 
 char const *CKheperaIVRos::parse_id_number(const std::string data)

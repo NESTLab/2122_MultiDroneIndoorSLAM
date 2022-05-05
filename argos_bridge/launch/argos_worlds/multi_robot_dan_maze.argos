@@ -188,11 +188,13 @@
     <qt-opengl lua_editor="false">
       <camera>
         <placements>
-          <placement index="0" position="2.27149,0.0911733,50.2839" look_at="2.27149,0.119593,49.2843" up="1,0,0" lens_focal_length="200" />
-          <placement index="1" position="4.62402,-6.02835,51.3296" look_at="4.62402,-5.99993,50.33" up="1,0,0" lens_focal_length="80" />
-          <placement index="2" position="2,-2, 70.34" look_at="2,0,0" up="1,0,0" lens_focal_length="300" />
+          <placement index="0" position="2.27149,2.98747,50.5699" look_at="2.27149,3.01589,49.5703" up="1,0,0" lens_focal_length="500" />
+          <placement index="1" position="2.27149,0.0911733,50.2839" look_at="2.27149,0.119593,49.2843" up="1,0,0" lens_focal_length="200" />
+          <placement index="2" position="4.62402,-6.02835,51.3296" look_at="4.62402,-5.99993,50.33" up="1,0,0" lens_focal_length="80" />
+          <placement index="3" position="2,-2, 70.34" look_at="2,0,0" up="1,0,0" lens_focal_length="300" />
         </placements>
       </camera>
+      <user_functions label="id_qtuser_functions" library="libid_qtuser_functions.so"/>
     </qt-opengl>
   </visualization>
 </argos-configuration>

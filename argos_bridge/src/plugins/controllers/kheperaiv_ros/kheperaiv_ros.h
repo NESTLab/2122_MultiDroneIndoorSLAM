@@ -1,5 +1,6 @@
 /*
  * AUTHOR: Peter Nikopoulos <peter@nikopoulos.net>
+ * Update 1.0: Ashay Aswale <asaswale@wpi.edu>
  *
  * Connects Kheperaiv IV robot to ROS
  *
@@ -32,6 +33,8 @@
 #include "geometry_msgs/Twist.h"
 #include "std_msgs/Bool.h"
 #include "math.h"
+
+#include <argos3/plugins/simulator/visualizations/qt-opengl/qtopengl_user_functions.h>
 
 #define DEG2RAD(x) (x * 0.01745329252) // *PI/180
 #define RAD2DEG(x) (x * 57.2957795131) // *180/PI
@@ -175,10 +178,16 @@ private:
   double odom_Vl;
 
   double goStraightConstant = 0.00001;
+
+  std::vector<std::string> list_of_los_robots_;
+  int robot_name_length_=5;
+
 public:
   // We need only a single ROS node, although there are individual publishers
   // and subscribers for each instance of the class.
   static ros::NodeHandle* nodeHandle;
+
+  void getListOfLOSRobots(std::vector<std::string>& list_of_los_robots);
 };
 
 #endif
