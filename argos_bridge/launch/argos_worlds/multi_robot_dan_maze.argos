@@ -133,6 +133,9 @@
 		<box id="Wall_6" size="1,0.15,2.5" movable="false">
 			<body position="7.49277,-4.38474,0" orientation="0.04583662361046586,-0.0,0.0" />
 		</box>
+		<!-- <box id="trial_box" size="1,0.15,2.5" movable="false">
+			<body position="2,-1,0" orientation="0.04583662361046586,-0.0,0.0" />
+		</box> -->
 		<!--
         The robot (add more later!).
     -->

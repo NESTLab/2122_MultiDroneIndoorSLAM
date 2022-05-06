@@ -155,7 +155,7 @@ int main(int argc, char** argv)
      child_name = argv[3];
 
   //  if(role == RELAY && !testing)
-       ros::Duration(10).sleep();
+      //  ros::Duration(10).sleep();
 
     
    std::string robot_name = ros::this_node::getNamespace();

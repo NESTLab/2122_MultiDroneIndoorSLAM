@@ -38,6 +38,17 @@ void CIDQTUserFunctions::Draw(CKheperaIVEntity& c_entity) {
    DrawText(CVector3(0.10, 0.05, 0.3),   // position
             connected_robots); // text
 
+   CVector3 cPosition_z(0,0,0.1), cPosition;
+   cController.getMotionVector(cPosition);
+   DrawRay(CRay3(cPosition_z, cPosition), CColor::BLUE);
+
+   std::string robot_state = cController.getRobotState();
+   DrawText(CVector3(0.10, 0.1, 0.3),   // position
+            robot_state); // text
+
+  //  CVector3 cMovebaseGoal;
+  //  cController.getMovebaseGoalVector(cMovebaseGoal);
+  //  DrawCircle(cMovebaseGoal, CQuaternion(CRadians(0), CVector3::Z), 0.1, CColor(0, 255, 0));
 }
 
 /****************************************/

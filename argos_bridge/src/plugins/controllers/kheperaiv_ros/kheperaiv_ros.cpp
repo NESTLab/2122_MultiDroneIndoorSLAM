@@ -76,6 +76,14 @@ void CKheperaIVRos::Init(TConfigurationNode &t_node)
   cmdVelTopic << "/" << GetId() << "/cmd_vel";
   cmdVelSub = nodeHandle->subscribe(cmdVelTopic.str(), 1, &CKheperaIVRos::cmdVelCallback, this);
 
+  stringstream robotStateTopic;
+  robotStateTopic << "/" << GetId() << "/robots_state";
+  robotStateSub = nodeHandle->subscribe(robotStateTopic.str(), 1, &CKheperaIVRos::robotStateCallback, this);
+
+  stringstream movebaseGoalTopic;
+  movebaseGoalTopic << "/" << GetId() << "/move_base/current_goal";
+  movebaseGoalSub = nodeHandle->subscribe(movebaseGoalTopic.str(), 1, &CKheperaIVRos::movebaseGoalCallback, this);
+
   // time
   time = ros::Time(0.0);
 
@@ -198,6 +206,21 @@ void CKheperaIVRos::getListOfLOSRobots(std::vector<std::string>& list_of_los_rob
   list_of_los_robots = list_of_los_robots_;
 }
 
+void CKheperaIVRos::getMotionVector(CVector3& cVelocity)
+{
+  cVelocity = cVelocity_;
+}
+
+std::string CKheperaIVRos::getRobotState()
+{
+  return robot_action_;
+}
+
+void CKheperaIVRos::getMovebaseGoalVector(CVector3& cMovebaseGoal)
+{
+  cMovebaseGoal = cMovebaseGoal_;
+}
+
 char const *CKheperaIVRos::parse_id_number(const std::string data)
 {
   return data.c_str();
@@ -240,7 +263,7 @@ void CKheperaIVRos::publishOdometry()
   {
     double R = (KHEPERAIV_BASE_RADIUS / 100.0f) * ((odom_Vl + odom_Vr) / (odom_Vr - odom_Vl));
 
-    std::cout << "R " << R << std::endl;
+    // std::cout << "R " << R << std::endl;
     odom_w = (odom_Vr - odom_Vl) / (KHEPERAIV_BASE_RADIUS * 2 / 100.0f);
     double ICCx = odom_x - R * sin(odom_yaw);
     double ICCy = odom_y + R * cos(odom_yaw);
@@ -304,7 +327,25 @@ void CKheperaIVRos::cmdVelCallback(const geometry_msgs::Twist &twist)
   // and right wheel speeds.
   leftSpeed = (v - KHEPERAIV_BASE_RADIUS * w) * KHEPERAIV_WHEEL_RADIUS;
   rightSpeed = (v + KHEPERAIV_BASE_RADIUS * w) * KHEPERAIV_WHEEL_RADIUS;
+
+  cVelocity_ = CVector3(3*twist.linear.x/5, 3*twist.angular.z/10, 0.1);
+
   m_pcWheels->SetLinearVelocity(leftSpeed, rightSpeed);
+}
+
+void CKheperaIVRos::robotStateCallback(const mdis_state_machine::RobotsState& robot_state)
+{
+  int state = robot_state.robot_state;
+  if(robot_state_action_map_.count(state)>0)
+    robot_action_ = robot_state_action_map_[state];
+  else
+    robot_action_ = "IRREGULAR_STATE_FOUND";
+}
+
+void CKheperaIVRos::movebaseGoalCallback(const geometry_msgs::PoseStamped& pose)
+{
+  geometry_msgs::Point position = pose.pose.position;
+  cMovebaseGoal_ = CVector3(position.x, position.y, 0.1);
 }
 
 /*
