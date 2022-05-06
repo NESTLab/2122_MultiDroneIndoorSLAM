@@ -317,16 +317,16 @@ void CKheperaIVRos::publishOdometry()
 
 void CKheperaIVRos::cmdVelCallback(const geometry_msgs::Twist &twist)
 {
-  Real v = twist.linear.x * 1000.0f;  // Forward speed
-  Real w = twist.angular.z * 1000.0f; // Rotational speed
+  Real v = twist.linear.x * 100.0f;  // Forward speed
+  Real w = twist.angular.z * 100.0f; // Rotational speed
   if (abs(w) < goStraightConstant)
   {
     w = 0.0;
   }
   // Use the kinematics of a differential-drive robot to derive the left
   // and right wheel speeds.
-  leftSpeed = (v - KHEPERAIV_BASE_RADIUS * w) * KHEPERAIV_WHEEL_RADIUS;
-  rightSpeed = (v + KHEPERAIV_BASE_RADIUS * w) * KHEPERAIV_WHEEL_RADIUS;
+  leftSpeed = (v - KHEPERAIV_BASE_RADIUS * w);// * KHEPERAIV_WHEEL_RADIUS;
+  rightSpeed = (v + KHEPERAIV_BASE_RADIUS * w);// * KHEPERAIV_WHEEL_RADIUS;
 
   cVelocity_ = CVector3(3*twist.linear.x/5, 3*twist.angular.z/10, 0.1);
 
