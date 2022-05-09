@@ -9,8 +9,8 @@ from mdis_state_machine import *
 TEST_DIR = pathlib.Path(__file__).parent.absolute()
 LAUNCH_DIR = os.path.join(TEST_DIR.parent.absolute(), 'launch')
 LAUNCH_FILE = os.path.join(LAUNCH_DIR, 'test_state_machine.launch')
-EXPLORER_NAME = "test_robot_1"
-RELAY_NAME = "test_robot_2"
+EXPLORER_NAME = "tb3_1"
+RELAY_NAME = "tb3_2"
 DATA_CENTER = "tb3_0"
 
 

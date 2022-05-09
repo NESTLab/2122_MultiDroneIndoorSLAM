@@ -1,12 +1,12 @@
 <launch>
   <!-- The argument 5 is to notify the code that it is in testing mode for the robot Explorer -->
-  <group ns = "test_robot_1">
-    <node pkg="mdis_state_machine" type="team_scheduler" name="team_scheduler" args="6 test_robot_2 test_robot_3" output="screen"/>
+  <group ns = "tb3_1">
+    <node pkg="mdis_state_machine" type="team_scheduler" name="team_scheduler" args="6 tb3_2 tb3_3" output="screen"/>
   </group>
 
   <!-- The argument 6 is to notify the code that it is in testing mode for the robot Relay -->
-  <group ns = "test_robot_2">
-    <node pkg="mdis_state_machine" type="team_scheduler" name="team_scheduler" args="5 tb3_0 test_robot_1" output="screen"/>
+  <group ns = "tb3_2">
+    <node pkg="mdis_state_machine" type="team_scheduler" name="team_scheduler" args="5 tb3_0 tb3_1" output="screen"/>
   </group>
 
   <!-- The argument 6 is to notify the code that it is in testing mode for the robot Relay -->

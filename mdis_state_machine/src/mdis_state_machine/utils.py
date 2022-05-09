@@ -2,6 +2,8 @@ import rospy
 from subprocess import Popen, DEVNULL
 from mdis_state_machine.msg import RobotsState
 from mdis_state_machine.msg import Connection
+from argos_bridge.msg import losList
+from argos_bridge.msg import los
 from mdis_state_machine.msg import ConnectionRequest
 from geometry_msgs.msg import Point
 from geometry_msgs.msg import PoseArray
@@ -33,7 +35,7 @@ headstart_to_check = 3
 max_time_to_wait_to_change_state = 1
 message_wait_timeout = 1
 robot_state_topic = "/robots_state"
-connection_check_topic = "/connection_check"
+connection_check_topic = "/lineOfSight"
 testing_switch_trigger_topic = "/testing_switch_trigger"
 testing_frontier_publish_topic = "/frontier_list"
 testing_frontier_request_topic = "/frontier_request"
@@ -57,8 +59,10 @@ def verifyConnStateChange(init_state, change_state, robot_name, robot_partner):
 
 	parent_name = String(data=robot_partner)
 	conn_robot_name = String(data=robot_name)
-	robot_conn_msg = Connection()
-	robot_conn_msg.connection_to = parent_name
+	robot_conn_msg = losList()
+	robots_connected = los()
+	robots_connected.robotName=parent_name.data
+	robot_conn_msg.robots.append(robots_connected) 
 
 	robot_conn_request_msg = ConnectionRequest()
 	robot_conn_request_msg.robot_name = parent_name
@@ -66,7 +70,7 @@ def verifyConnStateChange(init_state, change_state, robot_name, robot_partner):
 
 	connection_topic_name = gen_topic_name([robot_name, connection_check_topic])
 	# interest_topic_name = gen_topic_name([robot_partner, connection_request_topic])
-	pub = rospy.Publisher(connection_topic_name, Connection, queue_size=10)
+	pub = rospy.Publisher(connection_topic_name, losList, queue_size=10)
 	conn_req_pub = rospy.Publisher(connection_request_topic, ConnectionRequest, queue_size=10)
 	rospy.sleep(0.5)
 	pub.publish(robot_conn_msg)
