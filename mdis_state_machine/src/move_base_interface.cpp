@@ -103,6 +103,7 @@ bool MoveBaseInterface::goToPoint(geometry_msgs::Point &goal, bool wait_for_resu
     // @to-do fix later
     // return move_base_client_->getState().status_list.front() == actionlib_msgs::GoalStatus::SUCCEEDED;
   }
+  ros::Duration(1.0).sleep();
   return true;
 }
 

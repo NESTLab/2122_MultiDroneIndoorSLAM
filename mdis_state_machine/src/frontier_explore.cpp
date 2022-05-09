@@ -90,6 +90,8 @@ int main(int argc, char **argv)
                 ros::Duration(0.1).sleep();
                 ros::spinOnce();
             }
+            if (!(explore && !stop_explore))
+              continue;
             explore_interface->goToPoint(frontier, false);
             frontier_data_received_for_explore = false;
             ros::Duration(05).sleep();

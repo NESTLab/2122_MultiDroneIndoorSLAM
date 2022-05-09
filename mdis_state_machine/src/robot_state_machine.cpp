@@ -138,10 +138,11 @@ TEAM_STATES GoToExplore::transition()
 
   if(isDone())
   {
-    if(explore_interface->navigationSucceeded())
-      return EXPLORE;
-    else
-      return ERROR_STATE;
+    return EXPLORE;
+    // if(explore_interface->navigationSucceeded())
+    //   return EXPLORE;
+    // else
+    //   return ERROR_STATE;
   }
   else
     return GO_TO_EXPLORE;
@@ -165,6 +166,7 @@ void GoToExplore::exitPoint()
 {
    send_once = false;
    last_robot_state = (TEAM_STATES)(m_unId);
+   explore_interface->stopRobot();
    printMessage("Exiting the state GO_TO_EXPLORE");
 }
 
@@ -515,6 +517,7 @@ bool DecideNextMeeting::entryPoint()
    updated_meeting_location = false;
    frontier_received = false;
    this_state = true;
+   frontiers_list.clear();
    return true;
 }
 
@@ -557,8 +560,9 @@ void DecideNextMeeting::getBestFrontiersCB(const geometry_msgs::PoseArray::Const
 {
   if(!this_state)
     return;
-    
-   for (int i=0;i<msg->poses.size();i++){
+  
+  frontiers_list.clear();
+  for (int i=0;i<msg->poses.size();i++){
      frontiers_list.push_back(msg->poses.at(i).position);
   }
   frontier_received = true;
