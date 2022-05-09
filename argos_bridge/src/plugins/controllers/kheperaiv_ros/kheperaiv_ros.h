@@ -214,7 +214,7 @@ private:
     {8, "END_MEETING"},
     {9, "GO_TO_DUMP_DATA"},
    {10, "DATA_CENTER_READY_TO_MEET"},
-   {11, "ERROR_STATE"}
+   {99, "ERROR_STATE"}
   };
 
 public:
