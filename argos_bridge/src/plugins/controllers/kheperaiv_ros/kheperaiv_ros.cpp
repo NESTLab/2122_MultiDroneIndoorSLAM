@@ -94,6 +94,7 @@ void CKheperaIVRos::Init(TConfigurationNode &t_node)
   m_pcRABA = GetActuator<CCI_RangeAndBearingActuator>("range_and_bearing");
   m_pcRABS = GetSensor<CCI_RangeAndBearingSensor>("range_and_bearing");
   m_pcLIDAR = GetSensor<CCI_KheperaIVLIDARSensor>("kheperaiv_lidar");
+  m_pcPosition = GetSensor<CCI_PositioningSensor>("positioning");
 }
 
 void CKheperaIVRos::ControlStep()
@@ -244,67 +245,41 @@ void CKheperaIVRos::publishProximity()
 
 void CKheperaIVRos::publishOdometry()
 {
-  odom_Vl = m_pcEncoder->GetReading().VelocityLeftWheel * KHEPERAIV_WHEEL_RADIUS / 100.0f;
-  odom_Vr = m_pcEncoder->GetReading().VelocityRightWheel * KHEPERAIV_WHEEL_RADIUS / 100.0f;
+  CRadians cX, cY, cZ;
+  CCI_PositioningSensor::SReading sReadings;
 
-  /*
-   * Update forward kinematic model of differental drive robot.
-   */
-  if (abs(odom_Vr - odom_Vl) < goStraightConstant)
-  {
-    // Vl = Vr # drive in a straight line
-    odom_w = 0.0;
-    odom_x += odom_Vl * cos(odom_yaw) * timestep;
-    odom_y += odom_Vl * sin(odom_yaw) * timestep;
-    odom_dx = odom_Vl * cos(odom_yaw);
-    odom_dy = odom_Vl * sin(odom_yaw);
-  }
-  else
-  {
-    double R = (KHEPERAIV_BASE_RADIUS / 100.0f) * ((odom_Vl + odom_Vr) / (odom_Vr - odom_Vl));
+  sReadings = m_pcPosition->GetReading();
+  sReadings.Orientation.ToEulerAngles(cZ, cY, cX);
+  // RLOG<<sReadings.Position.GetX()<<std::endl;
+  // RLOG<<cZ.GetValue()<<std::endl;
 
-    // std::cout << "R " << R << std::endl;
-    odom_w = (odom_Vr - odom_Vl) / (KHEPERAIV_BASE_RADIUS * 2 / 100.0f);
-    double ICCx = odom_x - R * sin(odom_yaw);
-    double ICCy = odom_y + R * cos(odom_yaw);
-    double prev = odom_x;
-    odom_x = (odom_x - ICCx) * cos(odom_w * timestep) - (odom_y - ICCy) * sin(odom_w * timestep) + ICCx;
-    odom_dx = odom_x - prev / timestep;
-    prev = odom_y;
-    odom_y = (odom_x - ICCx) * sin(odom_w * timestep) + (odom_y - ICCy) * cos(odom_w * timestep) + ICCy;
-    odom_dy = odom_y - prev / timestep;
-    odom_yaw += odom_w * timestep;
-    if (abs(R) < goStraightConstant)
-    {
-      odom_dx = 0.0;
-      odom_dy = 0.0;
-    }
-  }
+  tf2::Quaternion myQuaternion;
+  myQuaternion.setRPY(cX.GetValue(), cY.GetValue(), cZ.GetValue() );
+  geometry_msgs::Quaternion quat_msg = tf2::toMsg(myQuaternion);
 
   /*
    * publish odom messages and TF transform
    */
   string header_frame_id = GetId() + "/odom";
   string child_frame_id = GetId() + "/base_footprint";
-  geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(odom_yaw);
 
   geometry_msgs::TransformStamped odom_trans;
   odom_trans.header.stamp = time;
   odom_trans.header.frame_id = header_frame_id;
   odom_trans.child_frame_id = child_frame_id;
-  odom_trans.transform.translation.x = odom_x;
-  odom_trans.transform.translation.y = odom_y;
+  odom_trans.transform.translation.x = sReadings.Position.GetX();
+  odom_trans.transform.translation.y = sReadings.Position.GetY();
   odom_trans.transform.translation.z = 0.0;
-  odom_trans.transform.rotation = odom_quat;
+  odom_trans.transform.rotation = quat_msg;
   odom_broadcaster->sendTransform(odom_trans);
   // RLOG << "publish transform" << endl;
   nav_msgs::Odometry odom;
   odom.header.stamp = time;
   odom.header.frame_id = header_frame_id;
-  odom.pose.pose.position.x = odom_x;
-  odom.pose.pose.position.y = odom_y;
+  odom.pose.pose.position.x = sReadings.Position.GetX();
+  odom.pose.pose.position.y = sReadings.Position.GetY();
   odom.pose.pose.position.z = 0.0;
-  odom.pose.pose.orientation = odom_quat;
+  odom.pose.pose.orientation = quat_msg;
   odom.child_frame_id = child_frame_id;
   odom.twist.twist.linear.x = odom_dx;
   odom.twist.twist.linear.y = odom_dy;

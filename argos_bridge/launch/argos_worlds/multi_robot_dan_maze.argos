@@ -25,6 +25,7 @@
         <kheperaiv_lidar implementation="default"
                show_rays="false"
                noise_level="0.1"/>
+        <positioning         implementation="default" />
       </sensors>
       <params alpha="7.5" delta="0.1" velocity="5" ticks_per_second="10"/>
     </kheperaiv_ros_controller>

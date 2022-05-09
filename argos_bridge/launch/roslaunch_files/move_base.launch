@@ -1,7 +1,8 @@
 <launch>
   <arg name="model" default="burger"/>
   <arg name="ns" default="robot_0"/>
-  <arg name="move_forward_only" default="true" />
+  <arg name="move_forward_only" default="false" />
+  <arg name="robot_name" default="tb3_0"/>
 
   <!-- move_base -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" ns="$(arg ns)">
@@ -11,7 +12,9 @@
     <param name="local_costmap/robot_base_frame" value="$(arg ns)/base_footprint"/>
     <param name="local_costmap/global_frame" value="$(arg ns)/odom"/>
     <rosparam file="$(find turtlebot3_navigation)/param/costmap_common_params_$(arg model).yaml" command="load" ns="global_costmap" />
-    <rosparam file="$(find turtlebot3_navigation)/param/costmap_common_params_$(arg model).yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find turtlebot3_navigation)/param/costmap_common_params_$(arg model)_local.yaml" command="load" ns="local_costmap"  subst_value="True">
+      <arg name="robot_name" value="$(arg ns)"/>
+    </rosparam>
     <rosparam file="$(find turtlebot3_navigation)/param/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find turtlebot3_navigation)/param/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find turtlebot3_navigation)/param/move_base_params.yaml" command="load" />

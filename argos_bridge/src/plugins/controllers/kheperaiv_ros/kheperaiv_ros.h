@@ -25,6 +25,7 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_actuator.h>
 /* Definition of the range and bearing sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_sensor.h>
+#include <argos3/plugins/robots/generic/control_interface/ci_positioning_sensor.h>
 
 #include <memory.h>
 #include <tf/transform_broadcaster.h>
@@ -37,6 +38,9 @@
 #include <argos3/plugins/simulator/visualizations/qt-opengl/qtopengl_user_functions.h>
 #include <mdis_state_machine/RobotsState.h>
 #include "geometry_msgs/PoseStamped.h"
+
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #define DEG2RAD(x) (x * 0.01745329252) // *PI/180
 #define RAD2DEG(x) (x * 57.2957795131) // *180/PI
@@ -145,6 +149,8 @@ private:
   CCI_RangeAndBearingSensor* m_pcRABS;
   /* Pointer to the kheperaiv lidar sensor */
   CCI_KheperaIVLIDARSensor* m_pcLIDAR;
+
+  CCI_PositioningSensor* m_pcPosition;
 
   /* Wheel speed */
   Real m_fWheelVelocity;
