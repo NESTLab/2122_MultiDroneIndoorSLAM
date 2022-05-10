@@ -1,8 +1,8 @@
 #include <robot_state_machine.h>
 
-float RobotState::meet_loc_x = 0.0;
+float RobotState::meet_loc_x = 1.5;
 float RobotState::meet_loc_y = 0.0;
-float RobotState::explore_loc_x = 0.0;
+float RobotState::explore_loc_x = 2.5;
 float RobotState::explore_loc_y = 0.0;
 float RobotState::time_for_exploration = 45.0;
 TEAM_STATES RobotState::last_robot_state = IDLE;
@@ -29,8 +29,8 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
 
   geometry_msgs::Point current_pose = explore_interface->getRobotCurrentPose().pose.position;
-  meet_loc_x = current_pose.x;
-  meet_loc_y = current_pose.y;
+  // meet_loc_x = current_pose.x;
+  // meet_loc_y = current_pose.y;
 
   data_dump_location.x = 1.5;
   data_dump_location.y = 0;
