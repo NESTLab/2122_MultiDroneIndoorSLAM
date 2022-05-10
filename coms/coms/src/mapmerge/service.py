@@ -54,7 +54,7 @@ def mapmerge_pipeline(map1, map2, method="hough", scale_process=False, median_pr
         else:
             transformed_map2, M, acpt = merge_fn(map1, map2)
         #transformed_map2 = apply_warp(map2, M)
-        if acceptance_index(map1, map2) > 0.95:
+        if acceptance_index(map1, map2) > 0.975:
             return map2
         cv2.imwrite(f"map1_acpt_{acpt}_time_{datetime.now()}.png", map1)
         cv2.imwrite(f"map2_acpt_{acpt}_time_{datetime.now()}.png", map2)
