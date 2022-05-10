@@ -56,8 +56,8 @@ def mapmerge_pipeline(map1, map2, method="hough", scale_process=False, median_pr
         #transformed_map2 = apply_warp(map2, M)
         # log errors
         if acpt < 0.9:
-            cv2.imwrite(f"map1_acpt_{acpt}_time_{datetime.now()}", map1)
-            cv2.imwrite(f"map2_acpt_{acpt}_time_{datetime.now()}", map2)
-            cv2.imwrite(f"aligned_acpt_{acpt}_time_{datetime.now()}", transformed_map2)
+            cv2.imwrite(f"map1_acpt_{acpt}_time_{datetime.now().png}", map1)
+            cv2.imwrite(f"map2_acpt_{acpt}_time_{datetime.now().png}", map2)
+            cv2.imwrite(f"aligned_acpt_{acpt}_time_{datetime.now().png}", transformed_map2)
         merged_map = combine_aligned_maps(transformed_map2, map1)
         return merged_map
