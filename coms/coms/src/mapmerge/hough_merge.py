@@ -3,7 +3,7 @@ from skimage.transform import hough_line, hough_line_peaks
 import matplotlib.pyplot as plt
 import scipy
 import cv2
-from mapmerge.merge_utils import apply_warp, acceptance_index, median_filter
+from mapmerge.merge_utils import apply_warp, acceptance_index, median_filter, combine_aligned_maps
 
 from mapmerge.constants import *
 
@@ -38,6 +38,17 @@ def hough_map_transform(map):
     edge_map[edge_map == OCCUPIED] = 1  # temp
     edge_map[edge_map == UNKNOWN] = 0
     edge_map[edge_map == FREE] = 0
+    # edge_map[edge_map == 255] = 1  # temp
+    # edge_map[edge_map != 1] = 0
+    # edge_map[edge_map == FREE] = 0
+
+    # kernel = np.ones((5, 5), np.uint8)
+    # edge_map2 = cv2.dilate(edge_map, kernel, iterations=1)
+    # edge_map2 = cv2.medianBlur(edge_map2, ksize=3)
+    # fig, axes = plt.subplots(1, 2)
+    # axes[0].imshow(edge_map)
+    # axes[1].imshow(edge_map2)
+    # plt.show()
     # plt.imshow(edge_map, cmap="gray")
     # plt.show()
     h, theta, d = hough_line(edge_map, theta=tested_angles)
@@ -89,17 +100,20 @@ def hough_mapmerge(map1, map2, num=21, robust=True, eps=2):
 
     # add r+/-eps into candidates for robust version
     robust_max = [0]
-    if robust:
-        for r in local_max:
-            robust_max.append(r)
-            robust_max.append(r+eps)
-            robust_max.append(r-eps)
-            robust_max.append(r + 2*eps)
-            robust_max.append(r - 2*eps)
-        local_max = robust_max
+    # if robust:
+    #     for r in local_max:
+    #         robust_max.append(r)
+    #         robust_max.append(r+eps)
+    #         robust_max.append(r-eps)
+    #         robust_max.append(r + 2*eps)
+    #         robust_max.append(r - 2*eps)
+
+    local_max = robust_max
     
     SX_M1 = axis_spectrum(0, map1)
     SY_M1 = axis_spectrum(1, map1)
+
+    scores = {}
 
     map3 = None
     for rot in local_max:
@@ -126,5 +140,25 @@ def hough_mapmerge(map1, map2, num=21, robust=True, eps=2):
             best_map = cand_map
             best_M[:,:2] = M_rotation[:,:2]
             best_M[:,2] = M_translation[:,2]
-            
+
+        scores[rot] = acpt
+
+    # print(scores)            
     return best_map, best_M, best_acpt # , local_max
+
+# if __name__ == "__main__":
+
+#     m1 = cv2.imread("/home/connor/Downloads/test_maps/images_map/start.png", 0)
+#     m2 = cv2.imread("/home/connor/Downloads/test_maps/images_map/start2.png", 0)
+
+#     merge, M, acpt = hough_mapmerge(m1, m2, num=0)
+
+#     fig, axes = plt.subplots(1, 4)
+#     axes[0].imshow(m1)
+#     axes[1].imshow(m2)
+#     axes[2].imshow(merge)
+
+#     combine = combine_aligned_maps(m1, merge)
+#     axes[3].imshow(combine)
+#     plt.show()
+#     print(acpt)
