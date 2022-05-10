@@ -99,7 +99,7 @@ def hough_mapmerge(map1, map2, num=21, robust=True, eps=2):
     local_max = extract_local_maximums(CC_M1_M2, num)
 
     # add r+/-eps into candidates for robust version
-    robust_max = [0]
+    robust_max = [0, 1, -1, 2, -2, 3, -3]
     # if robust:
     #     for r in local_max:
     #         robust_max.append(r)
