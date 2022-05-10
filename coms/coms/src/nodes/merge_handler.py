@@ -33,6 +33,7 @@ class MergeHandler:
             self.bag = rosbag.Bag(f'{self.robot_name}_log.bag', 'w')
 
         self.has_merged = False
+        self.map_info = None
 
         # map data
         self.seq = 0
@@ -72,7 +73,8 @@ class MergeHandler:
             self.bag.write('map', msg)
 
         self.map_header = msg.header
-        self.map_info = msg.info
+        if self.map_info is None:  # try not rewriting headers (pose estimate)
+            self.map_info = msg.info
         # breakpoint()
         MergeHandler.parse_and_save(msg, self.latest_map)
         # unpack gmapping
