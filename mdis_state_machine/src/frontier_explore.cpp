@@ -54,7 +54,7 @@ void getBestFrontiersCB(const geometry_msgs::PoseArray& msg)
       frontier=curr_frontier.position;      
     }
   }
-   frontier = msg.poses.at(0).position;
+  //  frontier = msg.poses.at(0).position;
    
   frontier_data_received_for_explore = true;
 }

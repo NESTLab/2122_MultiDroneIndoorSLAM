@@ -22,6 +22,7 @@
     <include file="$(find argos_bridge)/launch/roslaunch_files/move_base.launch">
         <arg name="ns" value="$(arg ns)"/>
         <arg name="model" value="$(arg model)"/>
+        <arg name="robot_name" value="$(arg ns)"/>
     </include>
 <!-- ======================================================================================================================== -->
     <!-- <include file="$(find explore_lite)/launch/explore.launch">

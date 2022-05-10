@@ -32,7 +32,7 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   meet_loc_x = current_pose.x;
   meet_loc_y = current_pose.y;
 
-  data_dump_location.x = 4.5;
+  data_dump_location.x = 1.5;
   data_dump_location.y = 0;
 
   time_for_exploration = MIN_TIME_FOR_EXPLORATION;
