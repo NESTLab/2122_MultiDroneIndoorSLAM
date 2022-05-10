@@ -5,11 +5,14 @@ import numpy as np
 from mapmerge.keypoint_merge import sift_mapmerge, orb_mapmerge
 from mapmerge.merge_utils import resize_map, combine_aligned_maps, acceptance_index
 
+import cv2 
+from datetime import datetime
+
 # SELECT SCALES TO USE IN SCALE PROCESS (Test-Time Augmentation)
 SCALES = [0.5, 0.75, 1, 1.25, 2.0]  # classic scale regime for TTA
 SCALES_FAST = [0.5, 0.75, 1, 1.25]  # exclude 2x scale for faster runtime
 
-def mapmerge_pipeline(map1, map2, method="hough", scale_process=False, median_process=True):
+def mapmerge_pipeline(map1, map2, method="hough", scale_process=False, median_process=False):
     """
     end-to-end map merge pipeline for testing
     
@@ -28,7 +31,7 @@ def mapmerge_pipeline(map1, map2, method="hough", scale_process=False, median_pr
     else:
         merge_fn = hough_mapmerge
     map1, map2 = pad_maps(map1, map2)
-    if scale_process:
+    if scale_process:  # do not use for now
         ious = []
         merges = []
         for scale in SCALES_FAST:
@@ -47,9 +50,14 @@ def mapmerge_pipeline(map1, map2, method="hough", scale_process=False, median_pr
     else:
         M = None
         if median_process:
-            _, M = merge_fn(median_filter(map1), median_filter(map2))
+            transformed_map2, M, acpt = merge_fn(median_filter(map1), median_filter(map2))
         else:
-            _, M = merge_fn(map1, map2)
-        transformed_map2 = apply_warp(map2, M)
+            transformed_map2, M, acpt = merge_fn(map1, map2)
+        #transformed_map2 = apply_warp(map2, M)
+        # log errors
+        if acpt < 0.9:
+            cv2.imwrite(f"map1_acpt_{acpt}_time_{datetime.now()}", map1)
+            cv2.imwrite(f"map2_acpt_{acpt}_time_{datetime.now()}", map2)
+            cv2.imwrite(f"aligned_acpt_{acpt}_time_{datetime.now()}", transformed_map2)
         merged_map = combine_aligned_maps(transformed_map2, map1)
         return merged_map
