@@ -99,7 +99,12 @@ def hough_mapmerge(map1, map2, num=21, robust=True, eps=2):
     local_max = extract_local_maximums(CC_M1_M2, num)
 
     # add r+/-eps into candidates for robust version
-    robust_max = [0, 1, -1, 2, -2, 3, -3]
+    robust_max = [0]
+    # TODO remove these comments to solve for rotation as well
+    # IF GOING TO SOLVE FOR ROTATION, FIRST MERGE WITH DATA CENTER ROBOT WILL LIKELY FAIl
+    # AS THE MAP HAS LITTLE/NO LINEAR FEATURES. THE DATA CENTER SHOULD INSTEAD TAKE THE RELAY ROBOT
+    # AS ITS INITIAL MAP FOR THE FIRST MERGE.
+    
     # if robust:
     #     for r in local_max:
     #         robust_max.append(r)
@@ -146,19 +151,45 @@ def hough_mapmerge(map1, map2, num=21, robust=True, eps=2):
     # print(scores)            
     return best_map, best_M, best_acpt # , local_max
 
+# def preprocess(map):
+#     cross = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], np.uint8)
+#     square = np.ones((3,3), np.uint8)
+#     corrected = cv2.dilate(map, square, iterations=2)
+#     corrected = cv2.medianBlur(corrected, ksize=3)
+#     corrected = cv2.erode(corrected, cross, iterations=2)
+#     return corrected
+
 # if __name__ == "__main__":
 
-#     m1 = cv2.imread("/home/connor/Downloads/test_maps/images_map/start.png", 0)
-#     m2 = cv2.imread("/home/connor/Downloads/test_maps/images_map/start2.png", 0)
+#     # m1 = cv2.imread("/home/connor/Downloads/test_maps/images_map/start.png", 0)
 
-#     merge, M, acpt = hough_mapmerge(m1, m2, num=0)
+#     # m1 = np.where(m1 == 255, 1, m1)
+#     # m1 = np.where(m1 == 0, 255, m1)
+#     # m1 = np.where(m1 == 1, 0, m1)
 
-#     fig, axes = plt.subplots(1, 4)
-#     axes[0].imshow(m1)
-#     axes[1].imshow(m2)
-#     axes[2].imshow(merge)
+#     # m2 = cv2.imread("/home/connor/Downloads/test_maps/images_map/start2.png", 0)
 
-#     combine = combine_aligned_maps(m1, merge)
-#     axes[3].imshow(combine)
+#     # m2 = np.where(m2 == 255, 1, m2)
+#     # m2 = np.where(m2 == 0, 255, m2)
+#     # m2 = np.where(m1 == 1, 0, m2)
+
+#     # merge, M, acpt = hough_mapmerge(m1, m2, num=0)
+
+#     # fig, axes = plt.subplots(1, 4)
+#     # axes[0].imshow(m1)
+#     # axes[1].imshow(m2)
+#     # axes[2].imshow(merge)
+
+#     # combine = combine_aligned_maps(m1, merge)
+#     # axes[3].imshow(combine)
+#     # plt.show()
+#     # print(acpt)
+
+#     m1 = cv2.imread("/home/connor/Pictures/merge_to_clean.png", 0)
+
+#     fig, axes = plt.subplots(1, 2)
+
+#     axes[0].imshow(m1, cmap="gray")
+#     axes[1].imshow(preprocess(m1), cmap="gray")
 #     plt.show()
-#     print(acpt)
+    
