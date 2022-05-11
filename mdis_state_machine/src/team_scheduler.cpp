@@ -154,8 +154,8 @@ int main(int argc, char** argv)
    if(role != EXPLORER)
      child_name = argv[3];
 
-  //  if(role == RELAY && !testing)
-      //  ros::Duration(10).sleep();
+   if(role == RELAY && !testing)
+       ros::Duration(10).sleep();
 
     
    std::string robot_name = ros::this_node::getNamespace();

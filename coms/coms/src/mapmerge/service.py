@@ -19,9 +19,9 @@ def postprocess(map):
     """
     cross = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], np.uint8)
     square = np.ones((3,3), np.uint8)
-    corrected = cv2.dilate(map, square, iterations=2)
+    corrected = cv2.dilate(map, square, iterations=1)
     corrected = cv2.medianBlur(corrected, ksize=3)
-    corrected = cv2.erode(corrected, cross, iterations=2)
+    corrected = cv2.erode(corrected, square, iterations=1)
     return corrected
 
 def mapmerge_pipeline(map1, map2, method="hough", scale_process=False, median_process=False):

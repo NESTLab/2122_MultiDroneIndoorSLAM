@@ -44,17 +44,17 @@ void getBestFrontiersCB(const geometry_msgs::PoseArray& msg)
    }
 
   float min_dis=100000.0;
-  for (auto& curr_frontier : msg.poses)
-  {
-    //euclidean distance to frontier from explorer meeting point
-    float self_distance_from_frontier = explore_interface->getDistancePrediction(curr_frontier.position); //experimenting new method
+  // for (auto& curr_frontier : msg.poses)
+  // {
+  //   //euclidean distance to frontier from explorer meeting point
+  //   float self_distance_from_frontier = explore_interface->getDistancePrediction(curr_frontier.position); //experimenting new method
   
-    if (self_distance_from_frontier<=min_dis){
-      min_dis = self_distance_from_frontier;
-      frontier=curr_frontier.position;      
-    }
-  }
-  //  frontier = msg.poses.at(0).position;
+  //   if (self_distance_from_frontier<=min_dis){
+  //     min_dis = self_distance_from_frontier;
+  //     frontier=curr_frontier.position;      
+  //   }
+  // }
+   frontier = msg.poses.at(0).position;
    
   frontier_data_received_for_explore = true;
 }
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
               continue;
             explore_interface->goToPoint(frontier, false);
             frontier_data_received_for_explore = false;
-            ros::Duration(05).sleep();
+            ros::Duration(1).sleep();
         }
         else if (!explore && stop_explore){
             if(explore)

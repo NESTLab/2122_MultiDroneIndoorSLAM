@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm /root/.ros/*.png
+
 # kill existing ecosystem
 ./killall.sh
 # run an argos environment with a ros launchfile
