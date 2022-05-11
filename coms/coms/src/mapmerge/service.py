@@ -60,4 +60,5 @@ def mapmerge_pipeline(map1, map2, method="hough", scale_process=False, median_pr
         cv2.imwrite(f"map2_time_{datetime.now()}_acpt_{np.round(acpt, 2)}.png", map2)
         cv2.imwrite(f"merge_time_{datetime.now()}_acpt_{np.round(acpt, 2)}.png", transformed_map2)
         merged_map = combine_aligned_maps(transformed_map2, map1)
+        merged_map = median_filter(merged_map, 3)
         return merged_map
