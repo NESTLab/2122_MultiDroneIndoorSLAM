@@ -12,6 +12,18 @@ from datetime import datetime
 SCALES = [0.5, 0.75, 1, 1.25, 2.0]  # classic scale regime for TTA
 SCALES_FAST = [0.5, 0.75, 1, 1.25]  # exclude 2x scale for faster runtime
 
+def postprocess(map):
+    """
+    remove dotted lines and combine multiple lines from merge noise
+    using morphological operations
+    """
+    cross = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], np.uint8)
+    square = np.ones((3,3), np.uint8)
+    corrected = cv2.dilate(map, square, iterations=2)
+    corrected = cv2.medianBlur(corrected, ksize=3)
+    corrected = cv2.erode(corrected, cross, iterations=2)
+    return corrected
+
 def mapmerge_pipeline(map1, map2, method="hough", scale_process=False, median_process=False):
     """
     end-to-end map merge pipeline for testing
@@ -56,9 +68,14 @@ def mapmerge_pipeline(map1, map2, method="hough", scale_process=False, median_pr
         #transformed_map2 = apply_warp(map2, M)
         if acceptance_index(map1, map2) > 0.975:
             return map2
+        # LOGGING
         cv2.imwrite(f"map1_time_{datetime.now()}_acpt_{np.round(acpt, 2)}.png", map1)
         cv2.imwrite(f"map2_time_{datetime.now()}_acpt_{np.round(acpt, 2)}.png", map2)
         cv2.imwrite(f"merge_time_{datetime.now()}_acpt_{np.round(acpt, 2)}.png", transformed_map2)
         merged_map = combine_aligned_maps(transformed_map2, map1)
-        merged_map = median_filter(merged_map, 3)
+        
+        # TODO post process merging artifacts if desired (uncomment line)
+        merged_map = postprocess(merged_map)
         return merged_map
+
+
