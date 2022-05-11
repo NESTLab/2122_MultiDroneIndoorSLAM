@@ -204,7 +204,7 @@ private:
   double goStraightConstant = 0.00001;
 
   std::vector<std::string> list_of_los_robots_;
-  int robot_name_length_=5;
+  int robot_name_length_=9;
   CVector3 cVelocity_, cMovebaseGoal_;
   std::string robot_action_;
 

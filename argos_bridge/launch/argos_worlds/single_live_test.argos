@@ -26,6 +26,7 @@
         <kheperaiv_lidar implementation="default"
                show_rays="false"
                noise_level="0.1"/>
+        <positioning         implementation="default" />
       </sensors>
       <params alpha="7.5" delta="0.1" velocity="5" />
     </kheperaiv_ros_controller>
@@ -43,16 +44,10 @@
     <!--
         The robot (add more later!).
     -->
-  <kheperaiv id="robot_">
+  <kheperaiv id="robot_0">
     <controller config="robot_"/>
   </kheperaiv>
 
-  <kheperaiv id="robot_">
-    <controller config="robot_"/>
-  </kheperaiv>
-
-
-    
     <!-- <distribute>
       <position method="uniform" min="-0.25,-1,0" max="0.25,1,0"/>
       <orientation method="constant" values="0,0,0"/>
@@ -69,18 +64,30 @@
   <!-- *********************** -->
     <!-- * Arena configuration * -->
     <!-- *********************** -->
-    <arena size="2.5, 2.5, 1" center="0,0,0.5" >
-      <box id="wall_north" size="2,0.1,0.5" movable="false">
+    <arena size="3, 4, 1" center="0,0,0.5" >
+      <box id="wall_1" size="0.1,4,0.5" movable="false">
+        <body position="1.5,0,0" orientation="0,0,0" />
+      </box>
+      <box id="wall_2" size="3,0.1,0.5" movable="false">
+        <body position="0,-2,0" orientation="0,0,0" />
+      </box>
+      <box id="wall_3" size="0.1,4,0.5" movable="false">
+        <body position="-1.5,0,0" orientation="0,0,0" />
+      </box>
+      <box id="wall_4" size="1,0,1,0.5" movable="false">
+        <body position="-0.75,2,0" orientation="0,0,0" />
+      </box>
+      <box id="wall_5" size="1,0.1,0.5" movable="false">
+        <body position="0.75,2,0" orientation="0,0,0" />
+      </box>
+      <box id="wall_6" size="2,0.1,0.5" movable="false">
         <body position="0,1,0" orientation="0,0,0" />
       </box>
-      <box id="wall_south" size="2,0.1,0.5" movable="false">
-        <body position="0,-1,0" orientation="0,0,0" />
+      <box id="wall_7" size="2,0.1,0.5" movable="false">
+        <body position="0.5,0,0" orientation="0,0,0" />
       </box>
-      <box id="wall_east" size="0.1,2,0.5" movable="false">
-        <body position="1,0,0" orientation="0,0,0" />
-      </box>
-      <box id="wall_west" size="0.1,2,0.5" movable="false">
-        <body position="-1,0,0" orientation="0,0,0" />
+      <box id="wall_8" size="2,0.1,0.5" movable="false">
+        <body position="-0.5,-1,0" orientation="0,0,0" />
       </box>
     </arena>
 
