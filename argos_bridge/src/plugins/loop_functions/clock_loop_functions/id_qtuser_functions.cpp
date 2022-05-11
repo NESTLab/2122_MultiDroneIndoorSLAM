@@ -30,13 +30,13 @@ void CIDQTUserFunctions::Draw(CKheperaIVEntity& c_entity) {
     * See also the description in
     * $ argos3 -q foot-bot
     */
-   DrawText(CVector3(0.10, 0.0, 0.3),   // position
-            c_entity.GetId()); // text
+   // DrawText(CVector3(0.10, 0.0, 0.3),   // position
+     //       c_entity.GetId()); // text
    
 
-   std::string connected_robots = "connected: " + getLOSMessage(cController);
-   DrawText(CVector3(0.10, 0.05, 0.3),   // position
-            connected_robots); // text
+   // std::string connected_robots = "connected: " + getLOSMessage(cController);
+   // DrawText(CVector3(0.10, 0.05, 0.3),   // position
+   //          connected_robots); // text
 
    CVector3 cPosition_z(0,0,0.1), cPosition;
    cController.getMotionVector(cPosition);
