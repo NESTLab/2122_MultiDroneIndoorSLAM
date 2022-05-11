@@ -26,10 +26,14 @@ class MergeHandler:
         self.map_publisher = rospy.Publisher("merged_map", OccupancyGrid, queue_size=10)
         self.gmapping_subscriber = rospy.Subscriber("map", OccupancyGrid, self.gmapping_cb)
         self.rate = rospy.Rate(10)  # 10hz
+        self.busy = False
 
         # logging
         if self.logging:
             self.bag = rosbag.Bag(f'{self.robot_name}_log.bag', 'w')
+
+        self.has_merged = False
+        self.map_info = None
 
         # map data
         self.seq = 0
@@ -62,17 +66,21 @@ class MergeHandler:
             increase map update speed
             set map transform to remain the same after merges.
         """
+        if self.busy:
+          return
 
         if self.logging:
             self.bag.write('map', msg)
 
-
+        self.map_header = msg.header
+        if self.map_info is None:  # try not rewriting headers (pose estimate)
+            self.map_info = msg.info
         # breakpoint()
         MergeHandler.parse_and_save(msg, self.latest_map)
         # unpack gmapping
         new_map = ros_to_numpy(msg.data).reshape(-1,msg.info.width)
-        self.merge_map(new_map)
-        print("merge")
+        self.merge_map(new_map, gmap=True)
+        # print("merge")
 
     @staticmethod
     def parse_and_save(msg, old_map):
@@ -95,6 +103,7 @@ class MergeHandler:
         """
         Gonna just do a ros merge for now:
         """
+        self.busy=True
         name = req.robot_id
         new_map = self.get_map(name)
 
@@ -102,9 +111,11 @@ class MergeHandler:
             np.save(f, self.latest_map)
         with open(f'other{1}.npy', 'wb') as f:
             np.save(f, new_map)
-        return self.merge_map(new_map)
+        result = self.merge_map(new_map)
+        self.busy=False
+        return result
 
-    def merge_map(self, new_map: np.array([])) -> bool:
+    def merge_map(self, new_map: np.array([]), gmap=False) -> bool:
         """
         merges a map.
         configurable number of retries and error catching
@@ -117,10 +128,11 @@ class MergeHandler:
         try:
             # print(new_map.shape)
             # print(self.latest_map.shape)
-
-            self.latest_map = mapmerge_pipeline(new_map, self.latest_map)
-            # TODO checks and maybe a lock? depends on the rospy callback threading
-            # self.latest_map = merged
+            if not self.has_merged and gmap:
+                self.latest_map = new_map
+            else:
+                self.latest_map = mapmerge_pipeline(new_map, self.latest_map)
+                self.has_merged = True
             return True
         except Exception as e:
             rospy.logerr(f"Could not merge maps: {e}")
@@ -153,10 +165,18 @@ class MergeHandler:
     def create_occupancy_msg(self, seq: int) -> OccupancyGrid:
         occ = OccupancyGrid()
         # header
-        occ.header.seq = seq
-        # metadata
+        # occ.header.seq = seq
+        # occ.header.frame_id = "tb3_"+self.robot_name[-1]+"/map"
+        # occ.header.stamp = rospy.Time.now()
+
+        # # metadata
+        # occ.info.resolution = 0.05000000074505806
+        # occ.info.origin.orientation.w = 1.0
+        occ.header = self.map_header
+        occ.info = self.map_info
         occ.info.height = self.latest_map.shape[0]
         occ.info.width = self.latest_map.shape[1]
+
         # data
         occ.data = tuple(numpy_to_ros(self.latest_map.flatten()))
         return occ

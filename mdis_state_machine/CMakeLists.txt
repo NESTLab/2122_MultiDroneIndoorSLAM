@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  argos_bridge
   actionlib_msgs
   actionlib
   move_base_msgs
@@ -16,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   octomap_msgs
   nav_msgs
+  coms
   tf
 )
 
@@ -24,7 +26,7 @@ catkin_python_setup()
 add_message_files(
   FILES
   Connection.msg
-  DataCommunication.msg
+  ConnectionRequest.msg
   RobotsState.msg
 )
 
@@ -42,6 +44,7 @@ catkin_package(
     roscpp
     rospy
     std_msgs
+    argos_bridge
     actionlib_msgs
     message_runtime
     actionlib
@@ -95,6 +98,11 @@ target_link_libraries(team_scheduler ${PROJECT_NAME} ${catkin_LIBRARIES})
 add_executable(connection_check src/connection_check.cpp)
 add_dependencies(connection_check ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(connection_check ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+add_executable(frontier_explore src/frontier_explore.cpp)
+add_dependencies(frontier_explore ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(frontier_explore ${PROJECT_NAME} ${catkin_LIBRARIES})
+
 
 install(TARGETS move_base_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

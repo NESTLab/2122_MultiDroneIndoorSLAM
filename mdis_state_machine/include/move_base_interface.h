@@ -1,3 +1,4 @@
+#pragma once
 #include <actionlib/client/simple_action_client.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <tf/transform_listener.h>
@@ -5,13 +6,14 @@
 #include <actionlib_msgs/GoalStatus.h>
 #include <nav_msgs/GetPlan.h>
 #include <nav_msgs/Path.h>
+#include <std_msgs/Empty.h>
 #include <tf/transform_listener.h>
-
+#include <visualization_msgs/Marker.h>
 
 class MoveBaseInterface
 {
   public:
-    MoveBaseInterface(ros::NodeHandle nh);
+    MoveBaseInterface(ros::NodeHandle nh, bool testing=false);
     ~MoveBaseInterface(){};
 
     /**
@@ -45,7 +47,7 @@ class MoveBaseInterface
      * @param end_pose 
      * @return float distance of the calculated trajectory
      */
-    float getDistancePrediction(geometry_msgs::Point &goal);
+    float getDistancePrediction(const geometry_msgs::Point &goal);
 
     /**
      * @brief Get the Time Prediction For Travel object
@@ -96,6 +98,13 @@ class MoveBaseInterface
      */
     geometry_msgs::PoseStamped getRobotCurrentPose();
 
+    /**
+     * @brief Get the Robot Current Pose object
+     * 
+     * @return geometry_msgs::PoseStamped    Robot's current pose
+     */
+    geometry_msgs::PoseStamped getOtherRobotCurrentPose(const std::string& robot_name);
+
 
     //////////// TO-DO ////////////
     /**
@@ -108,6 +117,10 @@ class MoveBaseInterface
      */
     bool recoverRobot();
 
+    bool navigationSucceeded();
+
+    bool navigationDone();
+
   private:
     ros::NodeHandle nh_;
     // typedef for move base
@@ -116,7 +129,10 @@ class MoveBaseInterface
 
     ros::ServiceClient move_base_planning_client_;
     ros::Publisher debug_generated_path_pub;
-    
+    ros::Publisher vis_pub;
+    visualization_msgs::Marker marker;
+
+    ros::Subscriber testing_switch_trigger_sub;
     tf::TransformListener tf_listener_;
     
     move_base_msgs::MoveBaseGoal move_base_action_goal_;
@@ -125,11 +141,16 @@ class MoveBaseInterface
     std::string logging_prefix_ = "[ "+ namespace_prefix +" | mdis_state_machine | move_base_interface ] ";
     std::string map_frame;
     std::string robot_frame;
+    bool testing_mode;
 
     const int MAX_ATTEMPTS = 5;
     const float ROBOT_SPEED = (14/68.4); // Experimentally derived
 
     float calculatePathLength(const nav_msgs::Path& path);
+    void testSwitchTrigCB(std_msgs::Empty msg);
+    static bool testing_switch_trigger;
 
     geometry_msgs::PoseStamped transformTf2msg(const tf::StampedTransform& transform);
+    void initiateMarkers();
+    void publishRvizMarker(const geometry_msgs::Point& point);
 };

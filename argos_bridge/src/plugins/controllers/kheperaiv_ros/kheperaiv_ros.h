@@ -1,5 +1,6 @@
 /*
  * AUTHOR: Peter Nikopoulos <peter@nikopoulos.net>
+ * Update 1.0: Ashay Aswale <asaswale@wpi.edu>
  *
  * Connects Kheperaiv IV robot to ROS
  *
@@ -24,6 +25,7 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_actuator.h>
 /* Definition of the range and bearing sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_sensor.h>
+#include <argos3/plugins/robots/generic/control_interface/ci_positioning_sensor.h>
 
 #include <memory.h>
 #include <tf/transform_broadcaster.h>
@@ -32,6 +34,13 @@
 #include "geometry_msgs/Twist.h"
 #include "std_msgs/Bool.h"
 #include "math.h"
+
+#include <argos3/plugins/simulator/visualizations/qt-opengl/qtopengl_user_functions.h>
+#include <mdis_state_machine/RobotsState.h>
+#include "geometry_msgs/PoseStamped.h"
+
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #define DEG2RAD(x) (x * 0.01745329252) // *PI/180
 #define RAD2DEG(x) (x * 57.2957795131) // *180/PI
@@ -80,6 +89,16 @@ public:
    * The callback method for getting new commanded speed on the cmd_vel topic.
    */
   void cmdVelCallback(const geometry_msgs::Twist& twist);
+
+  /*
+   * The callback method for getting new commanded speed on the cmd_vel topic.
+   */
+  void robotStateCallback(const mdis_state_machine::RobotsState& robot_state);
+
+  /*
+   * The callback method for getting new commanded speed on the cmd_vel topic.
+   */
+  void movebaseGoalCallback(const geometry_msgs::PoseStamped& robot_state);
 
   /*
    * published on the clock topic to sync ros and argos
@@ -131,6 +150,8 @@ private:
   /* Pointer to the kheperaiv lidar sensor */
   CCI_KheperaIVLIDARSensor* m_pcLIDAR;
 
+  CCI_PositioningSensor* m_pcPosition;
+
   /* Wheel speed */
   Real m_fWheelVelocity;
   /* Angle Tolerance range to go straight.
@@ -159,10 +180,17 @@ private:
   // Subscriber for cmd_vel (Twist message) topic.
   ros::Subscriber cmdVelSub;
 
+  // Subscriber for cmd_vel (Twist message) topic.
+  ros::Subscriber robotStateSub;
+
+  // Subscriber for cmd_vel (Twist message) topic.
+  ros::Subscriber movebaseGoalSub;
+
   std::unique_ptr<tf::TransformBroadcaster> odom_broadcaster;
   /* physics info */
-  float timestep = 0.01; // time between updates in seconds
+  float timestep = 0.1; // time between updates in seconds
   ros::Time time;
+  ros::Time prevtime;
   double odom_x = 0.0;
   double odom_y = 0.0;
   double odom_yaw = 0.0;
@@ -174,10 +202,39 @@ private:
   double odom_Vl;
 
   double goStraightConstant = 0.00001;
+
+  std::vector<std::string> list_of_los_robots_;
+  int robot_name_length_=9;
+  CVector3 cVelocity_, cMovebaseGoal_;
+  std::string robot_action_;
+
+  std::map<int, std::string> robot_state_action_map_{
+    {0, "IDLE"},
+    {1, "GO_TO_EXPLORE"},
+    {2, "EXPLORE"},
+    {3, "GO_TO_MEET"},
+    {4, "TRANSIT_TO_MEET"},
+    {5, "MERGE_MAP"},
+    {6, "DECIDE_NEXT_MEETING"},
+    {7, "RECEIVE_NEXT_MEETING"},
+    {8, "END_MEETING"},
+    {9, "GO_TO_DUMP_DATA"},
+   {10, "DATA_CENTER_READY_TO_MEET"},
+   {99, "ERROR_STATE"}
+  };
+
 public:
   // We need only a single ROS node, although there are individual publishers
   // and subscribers for each instance of the class.
   static ros::NodeHandle* nodeHandle;
+
+  void getListOfLOSRobots(std::vector<std::string>& list_of_los_robots);
+
+  void getMotionVector(CVector3& cVelocity);
+
+  std::string getRobotState();
+
+  void getMovebaseGoalVector(CVector3& cMovebaseGoal);
 };
 
 #endif

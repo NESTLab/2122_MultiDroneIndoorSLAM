@@ -1,2 +1,1 @@
-std_msgs/String robot_name
 int8 robot_state

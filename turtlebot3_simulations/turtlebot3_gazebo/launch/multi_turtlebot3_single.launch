@@ -19,6 +19,7 @@
   <arg name="role" default="1"/>
   <arg name="parent_name" default=""/>
   <arg name="child_name" default=""/>
+  <arg name='start_map' default='true'/>
 
   <group ns = "$(arg ns)">
     <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
@@ -30,7 +31,7 @@
     
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model $(arg ns) -x $(arg tb3_x_pos) -y $(arg tb3_y_pos) -z $(arg tb3_z_pos) -Y $(arg tb3_yaw) -param robot_description" />
 
-    <node name="team_scheduler" pkg="mdis_state_machine" type="team_scheduler" args="$(arg role) $(arg parent_name) $(arg child_name)"/>
+    <node name="team_scheduler" pkg="mdis_state_machine" type="team_scheduler" args="$(arg role) $(arg parent_name) $(arg child_name)" output="screen"/>
 
     <node name='merge_handler' pkg='coms' type='merge_handler.py' output="screen">
         <param name="robot_name" value="$(arg ns)"/>
@@ -41,6 +42,13 @@
         <param name="robot_name" value="$(arg ns)"/>
         <param name="map_service" value="$(arg map_service)"/>
     </node>
+
+    <node pkg="mdis_state_machine" type="connection_check" name="connection_check" args="4"/>
+    <node pkg="mdis_state_machine" type="frontier_explore" name="frontier_explore" output="screen">
+      <param name="robot_name" value="$(arg ns)"/>
+    </node>
+
+	  <node pkg="multi_map_ros" name="find_fontier" type="frontier_clustering.py" output="screen"/>
   
     <node name="coms_net" pkg="coms" type="lite_net.py" output="screen">
         <param name="environment" value="sim" />
@@ -56,7 +64,7 @@
   </include>
   
   <!-- <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" ns="$(arg ns)"/> -->
-  <!-- <node pkg="tf" type="static_transform_publisher" name="$(arg ns)_map_tf_broadcaster" args="0 0 0 0 0 0  /$(arg ns)/odom /map 100"/> -->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="$(arg ns)_map_tf_broadcaster" args="0 0 0 0 0 0  /$(arg ns)/odom /$(arg ns)/map 100"/> -->
 
   <!-- <include file="$(find turtlebot3_gazebo)/launch/multi_amcl.launch">
     <arg name="ns" value="$(arg ns)"/>
@@ -65,9 +73,10 @@
   <include file="$(find turtlebot3_gazebo)/launch/multi_move_base.launch">
     <arg name="ns" value="$(arg ns)"/>
   </include>
+  
 
-  <include file="$(find explore_lite)/launch/explore.launch">
+  <!-- <include file="$(find explore_lite)/launch/explore.launch">
     <arg name="ns" value="$(arg ns)"/>
-  </include>
+  </include> -->
 
 </launch>

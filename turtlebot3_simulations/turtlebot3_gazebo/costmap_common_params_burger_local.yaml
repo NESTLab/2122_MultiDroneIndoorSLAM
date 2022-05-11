@@ -9,4 +9,4 @@ cost_scaling_factor: 3.0
 
 map_type: costmap
 observation_sources: scan
-scan: {sensor_frame: $(arg robot_name)/base_scan, data_type: LaserScan, topic: /$(arg robot_name)/scan, marking: true, clearing: true}
+scan: {sensor_frame: $(arg robot_name)/base_footprint, data_type: LaserScan, topic: /$(arg robot_name)/scan, marking: true, clearing: true}

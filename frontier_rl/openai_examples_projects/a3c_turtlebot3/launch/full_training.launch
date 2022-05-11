@@ -1,0 +1,12 @@
+<launch>
+
+    <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_all.launch"/>
+    <include file="$(find turtlebot3_gazebo)/launch/multi_turtlebot3_slam.launch"/>
+    <node pkg="multi_map_ros" name="find_fontier" type="frontier_clustering.py" output="screen"/>
+    <node pkg="multi_map_ros" name="publish_inputs_rl" type="publish_inputs_for_learning.py" output="screen"/>
+    <node pkg="multi_map_ros" name="mapping_reset_node" type="move_base_reset.py" output="screen"/>
+    <rosparam command="load" file="$(find a3c_turtlebot3)/config/a2c_params.yaml" />
+    <node pkg="a3c_turtlebot3" name="turtlebot3_world" type="a2c.py" output="screen"/>
+
+</launch>
+

@@ -10,15 +10,19 @@ install: install-state-machine
 	$(SETUP); \
 	$(MAKE) -C $(WORKDIR)/coms install
 
-test-state-machine: test-state-machine-explorer test-state-machine-relay
+test-state-machine: test-state-machine-team
 
-test-state-machine-explorer: install-state-machine
-	$(SETUP); \
-	python3 -m unittest $(WORKDIR)/mdis_state_machine/tests/test_state_shift_explorer.py
+# test-state-machine-explorer: install-state-machine
+# 	$(SETUP); \
+# 	python3 -m unittest $(WORKDIR)/mdis_state_machine/tests/test_state_shift_explorer.py
 
-test-state-machine-relay: install-state-machine
+test-state-machine-team: install-state-machine
 	$(SETUP); \
-	python3 -m unittest $(WORKDIR)/mdis_state_machine/tests/test_state_shift_relay.py
+	python3 -m unittest $(WORKDIR)/mdis_state_machine/tests/test_state_shift_team.py
+
+# test-state-machine-relay: install-state-machine
+# 	$(SETUP); \
+# 	python3 -m unittest $(WORKDIR)/mdis_state_machine/tests/test_state_shift_relay.py
 
 test-coms:
 	$(SETUP); \

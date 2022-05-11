@@ -1,0 +1,8 @@
+prefix=/home/peter/src/argos_bridge/argos_bridge/.build/devel
+
+Name: argos_bridge
+Description: Description of argos_bridge
+Version: 0.0.0
+Cflags: -I/home/peter/src/argos_bridge/argos_bridge/.build/devel/include
+Libs: -L${prefix}/lib 
+Requires: roscpp std_msgs tf geometry_msgs nav_msgs sensor_msgs urdf dynamic_reconfigure rosgraph_msgs message_runtime
