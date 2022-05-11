@@ -18,7 +18,7 @@
     </include>
     <include file="$(find argos_bridge)/launch/roslaunch_files/explore_single.launch">
         <arg name="ns" value="tb3_2"/>
-        <arg name="open_rviz" value="true"/>
+        <!-- <arg name="open_rviz" value="true"/> -->
         <arg name="role" value="0"/>
         <arg name="parent_name" value="tb3_0"/>
         <arg name="child_name" value="tb3_1"/>
