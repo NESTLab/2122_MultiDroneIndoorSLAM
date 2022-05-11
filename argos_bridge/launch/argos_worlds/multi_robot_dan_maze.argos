@@ -183,17 +183,17 @@
     </distribute> -->
 
 
-  <kheperaiv id="tb3_0">
+  <kheperaiv id="Khepera_2">
     <body position="-0.0,0,0" orientation="0,0,0" />
     <controller config="tb3_"/>
   </kheperaiv>
 
-  <kheperaiv id="tb3_1">
+  <kheperaiv id="Khepera_1">
     <body position="2,4,0" orientation="-90,0,0" />
     <controller config="tb3_"/>
   </kheperaiv>
 
-  <kheperaiv id="tb3_2">
+  <kheperaiv id="Khepera_3">
     <body position="2,4.5,0" orientation="-90,0,0" />
     <controller config="tb3_"/>
   </kheperaiv>

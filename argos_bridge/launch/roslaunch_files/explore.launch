@@ -1,6 +1,6 @@
 <launch>
     <include file="$(find argos_bridge)/launch/roslaunch_files/explore_single.launch">
-        <arg name="ns" value="tb3_0"/>
+        <arg name="ns" value="Khepera_2"/>
         <arg name="role" value="2"/>
         <arg name="parent_name" value="dummy_1"/>
         <arg name="child_name" value="dummy_2"/>
@@ -8,20 +8,20 @@
         <arg name="role_name" value="relay"/>
     </include>
     <include file="$(find argos_bridge)/launch/roslaunch_files/explore_single.launch">
-        <arg name="ns" value="tb3_1"/>
+        <arg name="ns" value="Khepera_1"/>
         <arg name="open_rviz" value="true"/>
         <arg name="role" value="1"/>
-        <arg name="parent_name" value="tb3_2"/>
+        <arg name="parent_name" value="Khepera_3"/>
         <arg name="role_name" value="explorer"/>
         <arg name="child_name" value=""/>
         <arg name="ip_address" value="192.168.0.1"/>
     </include>
     <include file="$(find argos_bridge)/launch/roslaunch_files/explore_single.launch">
-        <arg name="ns" value="tb3_2"/>
+        <arg name="ns" value="Khepera_3"/>
         <!-- <arg name="open_rviz" value="true"/> -->
         <arg name="role" value="0"/>
-        <arg name="parent_name" value="tb3_0"/>
-        <arg name="child_name" value="tb3_1"/>
+        <arg name="parent_name" value="Khepera_2"/>
+        <arg name="child_name" value="Khepera_1"/>
         <arg name="role_name" value="relay"/>
         <arg name="ip_address" value="192.168.0.2"/>
     </include>
