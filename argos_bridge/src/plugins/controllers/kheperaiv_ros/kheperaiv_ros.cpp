@@ -45,7 +45,7 @@ ros::NodeHandle *CKheperaIVRos::nodeHandle = initROS();
 
 CKheperaIVRos::CKheperaIVRos() : m_pcWheels(NULL),
                                  m_pcProximity(NULL),
-                                 m_fWheelVelocity(2.5f),
+                                 m_fWheelVelocity(5.0f),
                                  m_pcRABA(NULL),
                                  m_pcRABS(NULL),
                                  m_pcLIDAR(NULL)

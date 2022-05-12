@@ -146,7 +146,7 @@ class MoveBaseInterface
     bool testing_mode;
 
     const int MAX_ATTEMPTS = 5;
-    const float NAVIGATION_TERMINATE_THRESHOLD = 0.5;
+    const float NAVIGATION_TERMINATE_THRESHOLD = 1.0;
     const float ROBOT_SPEED = (14/68.4); // Experimentally derived
 
     float calculatePathLength(const nav_msgs::Path& path);

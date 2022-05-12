@@ -4,7 +4,7 @@ float RobotState::meet_loc_x = 0.0;
 float RobotState::meet_loc_y = 1.75;
 float RobotState::explore_loc_x = -0.5;
 float RobotState::explore_loc_y = 0.25;
-float RobotState::time_for_exploration = 30.0;
+float RobotState::time_for_exploration =45.0;
 TEAM_STATES RobotState::last_robot_state = IDLE;
 
 std::string RobotState::parent_robot_name = "";

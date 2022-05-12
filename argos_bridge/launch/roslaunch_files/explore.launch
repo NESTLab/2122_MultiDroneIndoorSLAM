@@ -17,7 +17,7 @@
         <arg name="ip_address" value="192.168.1.201"/>
     </include>
     <include file="$(find argos_bridge)/launch/roslaunch_files/explore_single.launch">
-        <arg name="ns" value="Khepera_3"/>
+        <arg name="ns" value="Khepera_5"/>
         <!-- <arg name="open_rviz" value="true"/> -->
         <arg name="role" value="0"/>
         <arg name="parent_name" value="Khepera_2"/>

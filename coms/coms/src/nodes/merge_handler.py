@@ -82,8 +82,8 @@ class MergeHandler:
         MergeHandler.parse_and_save(msg, self.latest_map)
         # unpack gmapping
         new_map = ros_to_numpy(msg.data).reshape(-1,msg.info.width)
-        if(self.robot_name == "Khepera_2"):          
-          new_map.fill(UNKNOWN)
+        #if(self.robot_name == "Khepera_2"):          
+        #  new_map.fill(UNKNOWN)
         self.merge_map(new_map, gmap=True)
         # print("merge")
 

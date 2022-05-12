@@ -35,6 +35,7 @@
   <!-- * Loop functions * -->
   <!-- ****************** -->
    <loop_functions label="MasterLoopFunctions">
+    <sub_loop_function label="BaseNetworking" />
     <sub_loop_function library="libclock_loop_functions" label="clock_loop_functions" />
   </loop_functions>
 
@@ -95,7 +96,14 @@
   <!-- * Physics engines * -->
   <!-- ******************* -->
   <physics_engines>
-    <dynamics2d id="dyn2d"/>
+        <tracking>
+      <updaters>
+        <vicon_updater host="192.168.1.211"/>
+      </updaters>
+      <assigners>
+        <Khepera default="Khepera_"/>
+      </assigners>
+    </tracking>
   </physics_engines>
 
   <!-- ********* -->
