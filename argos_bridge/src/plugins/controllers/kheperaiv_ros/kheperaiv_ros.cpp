@@ -260,7 +260,7 @@ void CKheperaIVRos::publishOdometry()
   /*
    * publish odom messages and TF transform
    */
-  string header_frame_id = GetId() + "/odom";
+  string header_frame_id = GetId() + "/map";
   string child_frame_id = GetId() + "/base_footprint";
 
   geometry_msgs::TransformStamped odom_trans;

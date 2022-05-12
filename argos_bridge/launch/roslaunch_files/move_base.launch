@@ -10,7 +10,7 @@
     <param name="global_costmap/global_frame" value="$(arg ns)/map"/>
     <param name="global_costmap/robot_base_frame" value="$(arg ns)/base_footprint"/>
     <param name="local_costmap/robot_base_frame" value="$(arg ns)/base_footprint"/>
-    <param name="local_costmap/global_frame" value="$(arg ns)/odom"/>
+    <param name="local_costmap/global_frame" value="$(arg ns)/map"/>
     <rosparam file="$(find turtlebot3_navigation)/param/costmap_common_params_$(arg model).yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find turtlebot3_navigation)/param/costmap_common_params_$(arg model)_local.yaml" command="load" ns="local_costmap"  subst_value="True">
       <arg name="robot_name" value="$(arg ns)"/>
