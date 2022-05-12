@@ -8,12 +8,15 @@ from mapmerge.keypoint_merge import orb_mapmerge
 from mapmerge.ros_utils import pgm_to_numpy, numpy_to_ros, ros_to_numpy
 import numpy as np
 import rosbag
+from mapmerge.constants import *
 
 
 class MergeHandler:
     def __init__(self):
         # load rospy parameters
-        self.robot_name = rospy.get_param('ns', 'robot_1')
+        self.robot_name = rospy.get_namespace()
+        self.robot_name = self.robot_name[1:]
+        self.robot_name = self.robot_name[:-1]
         self.starting_map_path = rospy.get_param('starting_map', '')
         self.logging = bool(rospy.get_param('logging', 0))
         self.debug = bool(rospy.get_param('debug', 1))
@@ -79,6 +82,8 @@ class MergeHandler:
         MergeHandler.parse_and_save(msg, self.latest_map)
         # unpack gmapping
         new_map = ros_to_numpy(msg.data).reshape(-1,msg.info.width)
+        if(self.robot_name == "Khepera_2"):          
+          new_map.fill(UNKNOWN)
         self.merge_map(new_map, gmap=True)
         # print("merge")
 
