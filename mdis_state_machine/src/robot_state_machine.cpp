@@ -1,7 +1,7 @@
 #include <robot_state_machine.h>
 
 float RobotState::meet_loc_x = 0.0;
-float RobotState::meet_loc_y = 2.0;
+float RobotState::meet_loc_y = 1.75;
 float RobotState::explore_loc_x = -0.5;
 float RobotState::explore_loc_y = 0.25;
 float RobotState::time_for_exploration = 90.0;
@@ -33,7 +33,7 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   // meet_loc_y = current_pose.y;
 
   data_dump_location.x = 0;
-  data_dump_location.y = 2;
+  data_dump_location.y = 1.75;
 
   time_for_exploration = MIN_TIME_FOR_EXPLORATION;
 
