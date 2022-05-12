@@ -121,6 +121,8 @@ class MoveBaseInterface
 
     bool navigationDone();
 
+    bool reachedClose();
+
   private:
     ros::NodeHandle nh_;
     // typedef for move base
@@ -144,6 +146,7 @@ class MoveBaseInterface
     bool testing_mode;
 
     const int MAX_ATTEMPTS = 5;
+    const float NAVIGATION_TERMINATE_THRESHOLD = 0.5;
     const float ROBOT_SPEED = (14/68.4); // Experimentally derived
 
     float calculatePathLength(const nav_msgs::Path& path);
@@ -151,6 +154,8 @@ class MoveBaseInterface
     static bool testing_switch_trigger;
 
     geometry_msgs::PoseStamped transformTf2msg(const tf::StampedTransform& transform);
+    geometry_msgs::Point curr_goal;
+
     void initiateMarkers();
     void publishRvizMarker(const geometry_msgs::Point& point);
 };

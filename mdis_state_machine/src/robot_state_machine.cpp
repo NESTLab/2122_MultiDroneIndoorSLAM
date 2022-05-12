@@ -4,7 +4,7 @@ float RobotState::meet_loc_x = 0.0;
 float RobotState::meet_loc_y = 1.75;
 float RobotState::explore_loc_x = -0.5;
 float RobotState::explore_loc_y = 0.25;
-float RobotState::time_for_exploration = 90.0;
+float RobotState::time_for_exploration = 30.0;
 TEAM_STATES RobotState::last_robot_state = IDLE;
 
 std::string RobotState::parent_robot_name = "";
@@ -29,8 +29,10 @@ RobotState::RobotState(uint64_t un_id, const std::string& str_name, ros::NodeHan
   robot_state_pub = nh.advertise<mdis_state_machine::RobotsState>(nh.getNamespace() + "/robots_state", 1000);     
 
   geometry_msgs::Point current_pose = explore_interface->getRobotCurrentPose().pose.position;
-  // meet_loc_x = current_pose.x;
-  // meet_loc_y = current_pose.y;
+  meet_loc_x = current_pose.x;
+  meet_loc_y = current_pose.y;
+  explore_loc_x = current_pose.x;
+  explore_loc_y = current_pose.y;
 
   data_dump_location.x = 0;
   data_dump_location.y = 1.75;
@@ -126,7 +128,9 @@ bool GoToExplore::entryPoint()
 
 bool GoToExplore::isDone()
 {
-  return explore_interface->navigationDone();
+  bool nav_done = explore_interface->navigationDone();
+  bool reached = explore_interface->reachedClose();
+  return nav_done || reached;
 }
 
 TEAM_STATES GoToExplore::transition()
@@ -236,6 +240,7 @@ bool GoToMeet::entryPoint()
    connection_request_received = false;
    send_once = true;
    this_state = true;
+   robot_moving = false;
    return true;
 }
 
@@ -257,6 +262,9 @@ TEAM_STATES GoToMeet::transition()
 
    if(isDone())
    {
+     bool reached = explore_interface->reachedClose();
+      if(reached)
+        GO_TO_MEET; 
       if(!explore_interface->navigationSucceeded())
          return ERROR_STATE;
    }
@@ -281,6 +289,13 @@ void GoToMeet::step()
 
   std::string message = getFormattedMessage("Robot Going to: ");
   ROS_INFO_STREAM(message<<getMeetingPoint());
+
+  bool reached = explore_interface->reachedClose();
+  if(reached && robot_moving)
+  {
+    robot_moving = false;
+    // explore_interface->stopRobot();
+  }
 }
 
 void GoToMeet::publishConnectionRequest()
@@ -297,6 +312,7 @@ void GoToMeet::sendRobotToLocation()
    geometry_msgs::Point nav_point = getMeetingPoint();
    explore_interface->goToPoint(nav_point);
    send_once = false;
+   robot_moving = true;
 }
 
 void GoToMeet::exitPoint()

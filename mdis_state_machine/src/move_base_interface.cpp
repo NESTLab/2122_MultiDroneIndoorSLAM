@@ -87,6 +87,8 @@ bool MoveBaseInterface::goToPoint(geometry_msgs::Point &goal, bool wait_for_resu
 {
   if(testing_mode)
     return true;
+
+  curr_goal = goal;
     
   move_base_action_goal_.target_pose.pose.position = goal;
   move_base_action_goal_.target_pose.pose.orientation.w = 1.;
@@ -109,6 +111,9 @@ bool MoveBaseInterface::goToPoint(geometry_msgs::Point &goal, bool wait_for_resu
 
 bool MoveBaseInterface::stopRobot()
 {
+  geometry_msgs::Point zero_point;
+  curr_goal = zero_point; 
+
   if(testing_mode)
     return true;
     
@@ -341,4 +346,17 @@ bool MoveBaseInterface::navigationDone()
     
   bool done = move_base_client_->getState().isDone();
   return done;
+}
+
+bool MoveBaseInterface::reachedClose()
+{
+  if(curr_goal.x == 0 && curr_goal.y == 0)
+  {
+    ROS_WARN_STREAM(logging_prefix_ << "ZERO pose given. Please check if the given gosl is set in curr_goal");
+  }
+  geometry_msgs::Point robot_loc = getRobotCurrentPose().pose.position; 
+  float diff_x = robot_loc.x - curr_goal.x;
+  float diff_y = robot_loc.y - curr_goal.y;
+  float diff = std::hypot(diff_x, diff_y);
+  return diff <= NAVIGATION_TERMINATE_THRESHOLD;
 }
