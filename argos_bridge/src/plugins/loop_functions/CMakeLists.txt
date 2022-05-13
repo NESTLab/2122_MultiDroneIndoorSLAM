@@ -1,1 +1,3 @@
 add_subdirectory(clock_loop_functions)
+add_subdirectory(networking_loop_functions)
+

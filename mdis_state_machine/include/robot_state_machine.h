@@ -65,7 +65,7 @@ protected:
    // ros::Subscriber interest_sub;
    std::string m_strName;
    std::string robot_name;
-   std::string data_center_name = "Khepera_2";
+   std::string data_center_name = "Khepera_3";
    static float explore_loc_x, explore_loc_y;
    static float meet_loc_x, meet_loc_y;
    

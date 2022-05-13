@@ -35,6 +35,7 @@
   <!-- * Loop functions * -->
   <!-- ****************** -->
    <loop_functions label="MasterLoopFunctions">
+    <sub_loop_function library="libargos3plugin_simulator_tracking_networking" label="BaseNetworking" />
     <sub_loop_function library="libclock_loop_functions" label="clock_loop_functions" />
   </loop_functions>
 
@@ -76,7 +77,7 @@
       <box id="wall_8" size="2,0.05,0.5" movable="false">
         <body position="-0.5,-1,0" orientation="0,0,0" />
       </box>
-      <kheperaiv id="Khepera_2">
+      <kheperaiv id="Khepera_3">
         <body position="-0.0,1.9,0" orientation="-90,0,0" />
         <controller config="Khepera_"/>
       </kheperaiv>
@@ -95,7 +96,14 @@
   <!-- * Physics engines * -->
   <!-- ******************* -->
   <physics_engines>
-    <dynamics2d id="dyn2d"/>
+        <tracking>
+      <updaters>
+        <vicon_updater host="192.168.1.211"/>
+      </updaters>
+      <assigners>
+        <Khepera default="Khepera_"/>
+      </assigners>
+    </tracking>
   </physics_engines>
 
   <!-- ********* -->
