@@ -94,7 +94,7 @@ int main(int argc, char **argv)
               continue;
             explore_interface->goToPoint(frontier, false);
             frontier_data_received_for_explore = false;
-            ros::Duration(1).sleep();
+            ros::Duration(2.5).sleep();
         }
         else if (!explore && stop_explore){
             if(explore)

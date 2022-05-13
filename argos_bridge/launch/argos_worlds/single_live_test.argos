@@ -87,7 +87,7 @@
         <controller config="Khepera_"/>
       </kheperaiv>
 
-      <kheperaiv id="Khepera_5">
+      <kheperaiv id="Khepera_2">
         <body position="0.2,1.5,0" orientation="-90,0,0" />
         <controller config="Khepera_"/>
       </kheperaiv>

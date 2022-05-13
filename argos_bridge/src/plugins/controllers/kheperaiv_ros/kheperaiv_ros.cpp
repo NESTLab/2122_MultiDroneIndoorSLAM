@@ -302,6 +302,7 @@ void CKheperaIVRos::cmdVelCallback(const geometry_msgs::Twist &twist)
   // and right wheel speeds.
   leftSpeed = (v - KHEPERAIV_BASE_RADIUS * w);// * KHEPERAIV_WHEEL_RADIUS;
   rightSpeed = (v + KHEPERAIV_BASE_RADIUS * w);// * KHEPERAIV_WHEEL_RADIUS;
+  RLOG<<v<<"  "<<leftSpeed<<"  "<<rightSpeed<<std::endl;
 
   cVelocity_ = CVector3(3*twist.linear.x/5, 3*twist.angular.z/10, 0.1);
 
