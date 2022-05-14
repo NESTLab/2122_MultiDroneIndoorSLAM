@@ -84,7 +84,7 @@ protected:
    bool interested;
    bool is_explorer;
    bool meeting_started, go_for_exploration;
-   const float MIN_TIME_FOR_EXPLORATION = 90;
+   const float MIN_TIME_FOR_EXPLORATION = 180;
 
    MoveBaseInterface *explore_interface;
    ros::Publisher robot_state_pub;
@@ -439,6 +439,7 @@ public:
 private:
    bool this_state = false;
    bool connection_request_received;
+   bool rotate_once = true;
 
    int downtime_counter;
    const int MAX_DOWNTIME = 10;

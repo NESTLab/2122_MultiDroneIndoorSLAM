@@ -1,7 +1,7 @@
 #include <robot_state_machine.h>
 
 float RobotState::meet_loc_x = 1.5;
-float RobotState::meet_loc_y = 0.0;
+float RobotState::meet_loc_y = -2.0;
 float RobotState::explore_loc_x = -0.5;
 float RobotState::explore_loc_y = 0.25;
 float RobotState::time_for_exploration =45.0;
@@ -961,7 +961,17 @@ TEAM_STATES DataCenterReadyToMeet::transition()
 
 void DataCenterReadyToMeet::step()
 {
-
+  if(rotate_once)
+  {
+    geometry_msgs::Point nav_point;
+    nav_point.x = meet_loc_x;
+    nav_point.y = meet_loc_y;
+    explore_interface->goToPoint(nav_point, true);
+    nav_point.x = 1.2;
+    nav_point.y = 0;
+    explore_interface->goToPoint(nav_point, true);
+    rotate_once = false;
+  }
   publishRobotState();
   printMessageThrottled("Executing the step for DATA_CENTER_READY_TO_MEET");
 }
